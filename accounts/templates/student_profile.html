@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .profile-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .profile-pic-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .profile-pic {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #3498db;
+        }
+        
+        .profile-pic-placeholder {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: white;
+            border: 5px solid #3498db;
+        }
+        
+        .upload-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            border: 3px solid white;
+        }
+        
+        .upload-btn:hover {
+            background: #2980b9;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .profile-info {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #666;
+            font-weight: 600;
+        }
+        
+        .info-value {
+            color: #333;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            display: none;
+        }
+        
+        .btn-submit.show {
+            display: block;
+        }
+        
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .student-id-badge {
+            background: #3498db;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>👤 My Profile</h1>
+        <a href="{% url 'student_dashboard' %}">← Back to Dashboard</a>
+    </nav>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="profile-card">
+            <div class="profile-header">
+                <form method="POST" enctype="multipart/form-data" id="profileForm">
+                    {% csrf_token %}
+                    <div class="profile-pic-container">
+                        {% if student.profile_picture %}
+                            <img src="{{ student.profile_picture.url }}" alt="Profile" class="profile-pic" id="profileImage">
+                        {% else %}
+                            <div class="profile-pic-placeholder" id="profilePlaceholder">
+                                {{ student.full_name.0 }}
+                            </div>
+                        {% endif %}
+                        <label for="fileInput" class="upload-btn" title="Change profile picture">
+                            📷
+                        </label>
+                        <input type="file" id="fileInput" name="profile_picture" accept="image/*" onchange="previewImage(event)">
+                    </div>
+                    
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        Save Profile Picture
+                    </button>
+                </form>
+                
+                <h2>{{ student.full_name }}</h2>
+                <span class="student-id-badge">ID: {{ student.student_id }}</span>
+            </div>
+            
+            <div class="profile-info">
+                <div class="info-row">
+                    <span class="info-label">Full Name</span>
+                    <span class="info-value">{{ student.full_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Student ID</span>
+                    <span class="info-value">{{ student.student_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Class</span>
+                    <span class="info-value">{{ student.class_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email</span>
+                    <span class="info-value">{{ student.email }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Phone</span>
+                    <span class="info-value">{{ student.phone }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Registered On</span>
+                    <span class="info-value">{{ student.created_at|date:"F d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Remove placeholder if it exists
+                    const placeholder = document.getElementById('profilePlaceholder');
+                    if (placeholder) {
+                        placeholder.outerHTML = '<img src="' + e.target.result + '" alt="Profile" class="profile-pic" id="profileImage">';
+                    } else {
+                        // Update existing image
+                        document.getElementById('profileImage').src = e.target.result;
+                    }
+                    
+                    // Show submit button
+                    document.getElementById('submitBtn').classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>

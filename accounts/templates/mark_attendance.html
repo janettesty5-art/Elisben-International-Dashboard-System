@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Attendance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .filter-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .filter-card h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .filter-form {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+        
+        .btn-filter {
+            background: #2ecc71;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        
+        .btn-filter:hover {
+            background: #27ae60;
+        }
+        
+        .attendance-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .attendance-card h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .student-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .student-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .student-info {
+            flex: 1;
+        }
+        
+        .student-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .student-id {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .attendance-options {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .attendance-btn {
+            padding: 8px 20px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .attendance-btn input[type="radio"] {
+            display: none;
+        }
+        
+        .attendance-btn.present {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .attendance-btn.absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .attendance-btn.late {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .attendance-btn input[type="radio"]:checked + label {
+            border-color: #333;
+        }
+        
+        .attendance-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 30px;
+        }
+        
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>✅ Mark Attendance</h1>
+        <a href="{% url 'teacher_dashboard' %}">← Back to Dashboard</a>
+    </nav>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- Class Selection -->
+        <div class="filter-card">
+            <h2>Select Class</h2>
+            <form method="GET" class="filter-form">
+                <div class="form-group">
+                    <label for="class_name">Class *</label>
+                    <select name="class_name" id="class_name" required>
+                        <option value="">-- Select Class --</option>
+                        {% for class in classes %}
+                        <option value="{{ class }}" {% if class == selected_class %}selected{% endif %}>
+                            {{ class }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn-filter">Load Students</button>
+            </form>
+        </div>
+        
+        <!-- Attendance Form -->
+        {% if students %}
+        <div class="attendance-card">
+            <h2>Mark Attendance - {{ selected_class }} - {{ today }}</h2>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="class_name" value="{{ selected_class }}">
+                <input type="hidden" name="date" value="{{ today }}">
+                
+                <div class="student-list">
+                    {% for student in students %}
+                    <div class="student-item">
+                        <div class="student-info">
+                            <div class="student-name">{{ student.full_name }}</div>
+                            <div class="student-id">{{ student.student_id }}</div>
+                        </div>
+                        
+                        <div class="attendance-options">
+                            <label class="attendance-btn present">
+                                <input type="radio" name="status_{{ student.id }}" value="Present" required>
+                                <span>✓ Present</span>
+                            </label>
+                            
+                            <label class="attendance-btn absent">
+                                <input type="radio" name="status_{{ student.id }}" value="Absent">
+                                <span>✗ Absent</span>
+                            </label>
+                            
+                            <label class="attendance-btn late">
+                                <input type="radio" name="status_{{ student.id }}" value="Late">
+                                <span>⏰ Late</span>
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <button type="submit" class="btn-submit">
+                    Save Attendance
+                </button>
+            </form>
+        </div>
+        {% elif selected_class %}
+        <div class="attendance-card">
+            <div class="empty-state">
+                <div class="empty-state-icon">📚</div>
+                <h3>No Students Found</h3>
+                <p>There are no students registered in {{ selected_class }}.</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="attendance-card">
+            <div class="empty-state">
+                <div class="empty-state-icon">👆</div>
+                <h3>Select a Class</h3>
+                <p>Choose a class from the dropdown above to mark attendance.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        // Add active state to selected radio buttons
+        document.querySelectorAll('.attendance-btn input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Remove active class from siblings
+                this.closest('.attendance-options').querySelectorAll('.attendance-btn').forEach(btn => {
+                    btn.style.borderColor = 'transparent';
+                });
+                // Add active class to selected
+                if (this.checked) {
+                    this.closest('.attendance-btn').style.borderColor = '#333';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

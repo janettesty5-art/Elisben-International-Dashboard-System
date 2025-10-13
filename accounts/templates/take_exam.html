@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Exam - {{ exam.title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 20px 40px;
+        }
+        
+        .navbar h1 {
+            font-size: 22px;
+            margin-bottom: 5px;
+        }
+        
+        .exam-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .timer-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .timer {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        
+        .question-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .question-number {
+            background: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .question-text {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .option:hover {
+            border-color: #3498db;
+            background: #f8f9fa;
+        }
+        
+        .option input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .option-label {
+            background: #3498db;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-right: 15px;
+            font-weight: bold;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .option-text {
+            flex: 1;
+            color: #333;
+        }
+        
+        .option input[type="radio"]:checked + .option-label {
+            background: #27ae60;
+        }
+        
+        .submit-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 18px 50px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            animation: slideDown 0.3s;
+        }
+        
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .modal-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        
+        .modal h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .modal p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .btn-modal {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-cancel {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-confirm {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-modal:hover {
+            opacity: 0.9;
+        }
+        
+        .warning-text {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>📝 {{ exam.title }}</h1>
+        <div class="exam-info">
+            {{ exam.subject }} | {{ exam.class_name }} | {{ questions.count }} Questions
+        </div>
+    </nav>
+    
+    <div class="container">
+        <!-- Timer -->
+        <div class="timer-card">
+            <div>
+                <strong>Time Remaining:</strong>
+            </div>
+            <div class="timer" id="timer">{{ exam.duration_minutes }}:00</div>
+        </div>
+        
+        <!-- Exam Form -->
+        <form id="examForm" method="POST">
+            {% csrf_token %}
+            
+            {% for question in questions %}
+            <div class="question-card">
+                <span class="question-number">Question {{ question.question_number }}</span>
+                <div class="question-text">{{ question.question_text }}</div>
+                
+                <div class="options">
+                    <label class="option">
+                        <input type="radio" name="question_{{ question.id }}" value="A" required>
+                        <span class="option-label">A</span>
+                        <span class="option-text">{{ question.option_a }}</span>
+                    </label>
+                    
+                    <label class="option">
+                        <input type="radio" name="question_{{ question.id }}" value="B" required>
+                        <span class="option-label">B</span>
+                        <span class="option-text">{{ question.option_b }}</span>
+                    </label>
+                    
+                    <label class="option">
+                        <input type="radio" name="question_{{ question.id }}" value="C" required>
+                        <span class="option-label">C</span>
+                        <span class="option-text">{{ question.option_c }}</span>
+                    </label>
+                    
+                    <label class="option">
+                        <input type="radio" name="question_{{ question.id }}" value="D" required>
+                        <span class="option-label">D</span>
+                        <span class="option-text">{{ question.option_d }}</span>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Submit Section -->
+            <div class="submit-section">
+                <p style="color: #666; margin-bottom: 20px;">
+                    Make sure you've answered all questions before submitting!
+                </p>
+                <button type="button" class="btn-submit" onclick="showConfirmation()">
+                    Submit Exam
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon">⚠️</div>
+            <h2>Submit Exam?</h2>
+            <p>Are you sure you want to submit this exam?</p>
+            <p class="warning-text">This action is irreversible!</p>
+            <div class="modal-buttons">
+                <button type="button" class="btn-modal btn-cancel" onclick="closeModal()">
+                    No, Continue Working
+                </button>
+                <button type="button" class="btn-modal btn-confirm" onclick="submitExam()">
+                    Yes, Submit Now
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+       // Timer functionality
+        let totalSeconds = parseInt('{{ exam.duration_minutes }}') * 60;
+        const timerElement = document.getElementById('timer');
+        
+        
+        function updateTimer() {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (totalSeconds <= 0) {
+                alert('Time is up! Your exam will be submitted automatically.');
+                document.getElementById('examForm').submit();
+            }
+            
+            // Change color when less than 5 minutes
+            if (totalSeconds <= 300) {
+                timerElement.style.color = '#e74c3c';
+            }
+            
+            totalSeconds--;
+        }
+        
+        // Update timer every second
+        setInterval(updateTimer, 1000);
+        
+        // Modal functions
+        function showConfirmation() {
+            // Check if all questions are answered
+            const form = document.getElementById('examForm');
+            const radios = form.querySelectorAll('input[type="radio"]');
+            const questionNames = new Set();
+            
+            radios.forEach(radio => {
+                questionNames.add(radio.name);
+            });
+            
+            let allAnswered = true;
+            questionNames.forEach(name => {
+                const checked = form.querySelector(`input[name="${name}"]:checked`);
+                if (!checked) {
+                    allAnswered = false;
+                }
+            });
+            
+            if (!allAnswered) {
+                alert('Please answer all questions before submitting!');
+                return;
+            }
+            
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+        
+        function submitExam() {
+            document.getElementById('examForm').submit();
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('confirmModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        // Prevent accidental page refresh
+        window.addEventListener('beforeunload', function (e) {
+            e.preventDefault();
+            e.returnValue = '';
+        });
+    </script>
+</body>
+</html>
