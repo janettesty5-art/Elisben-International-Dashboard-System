@@ -20,6 +20,38 @@ class Admin(models.Model):
         return f"{self.full_name} ({self.admin_id})"
 
 
+# NEW: Principal Model
+class Principal(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    principal_id = models.CharField(max_length=20, unique=True)
+    full_name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.principal_id:
+            self.principal_id = f"PRI{''.join(random.choices(string.digits, k=6))}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.principal_id})"
+
+
+# NEW: Bursar Model
+class Bursar(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    bursar_id = models.CharField(max_length=20, unique=True)
+    full_name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.bursar_id:
+            self.bursar_id = f"BUR{''.join(random.choices(string.digits, k=6))}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.bursar_id})"
+
+
 # Teacher Model
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -29,7 +61,7 @@ class Teacher(models.Model):
     phone = models.CharField(max_length=15)
     subject = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
-    registered_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True)
+    registered_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.teacher_id:
@@ -50,7 +82,7 @@ class Student(models.Model):
     class_name = models.CharField(max_length=50)
     profile_picture = models.ImageField(upload_to='student_profiles/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    registered_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True)
+    registered_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.student_id:
@@ -71,6 +103,7 @@ class Exam(models.Model):
     created_by = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    shuffle_questions = models.BooleanField(default=True)  # NEW: Shuffle for each student
 
     def save(self, *args, **kwargs):
         if not self.exam_id:
@@ -126,6 +159,134 @@ class StudentAnswer(models.Model):
         return f"{self.submission.student.full_name} - Q{self.question.question_number}"
 
 
+# NEW: Academic Result/Grade System
+class AcademicSession(models.Model):
+    session_name = models.CharField(max_length=50)  # e.g., "2024/2025"
+    is_current = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.session_name
+
+
+class Term(models.Model):
+    TERM_CHOICES = [
+        ('First', 'First Term'),
+        ('Second', 'Second Term'),
+        ('Third', 'Third Term'),
+    ]
+    session = models.ForeignKey(AcademicSession, on_delete=models.CASCADE)
+    term = models.CharField(max_length=10, choices=TERM_CHOICES)
+    is_current = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['session', 'term']
+
+    def __str__(self):
+        return f"{self.session.session_name} - {self.term} Term"
+
+
+class SubjectGrade(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    term = models.ForeignKey(Term, on_delete=models.CASCADE)
+    subject = models.CharField(max_length=100)
+    
+    # Test Scores (CA)
+    test_1 = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    test_2 = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    test_3 = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    total_ca = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Sum of tests
+    
+    # Exam Scores
+    exam = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    
+    # Total and Grade
+    total_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # CA + Exam
+    grade = models.CharField(max_length=2, blank=True)  # A, B, C, D, E, F
+    remark = models.CharField(max_length=20, blank=True)  # EXCELLENT, VERY GOOD, GOOD, PASS, FAIL
+    
+    # Position in class
+    position = models.IntegerField(null=True, blank=True)
+    
+    # Teacher
+    recorded_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['student', 'term', 'subject']
+
+    def calculate_totals(self):
+        """Calculate CA, Total Score, and Grade"""
+        self.total_ca = self.test_1 + self.test_2 + self.test_3
+        self.total_score = self.total_ca + self.exam
+        
+        # Calculate grade
+        if self.total_score >= 80:
+            self.grade = 'A'
+            self.remark = 'EXCELLENT'
+        elif self.total_score >= 70:
+            self.grade = 'B'
+            self.remark = 'VERY GOOD'
+        elif self.total_score >= 60:
+            self.grade = 'C'
+            self.remark = 'GOOD'
+        elif self.total_score >= 50:
+            self.grade = 'D'
+            self.remark = 'PASS'
+        elif self.total_score >= 40:
+            self.grade = 'E'
+            self.remark = 'POOR'
+        else:
+            self.grade = 'F'
+            self.remark = 'FAIL'
+
+    def save(self, *args, **kwargs):
+        self.calculate_totals()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.subject} - {self.term}"
+
+
+# Result Summary with Remarks
+class ResultSummary(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    term = models.ForeignKey(Term, on_delete=models.CASCADE)
+    
+    # Overall statistics
+    total_subjects = models.IntegerField(default=0)
+    total_score = models.DecimalField(max_digits=7, decimal_places=2, default=0)
+    average_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    position_in_class = models.IntegerField(null=True, blank=True)
+    
+    # Attendance
+    times_school_opened = models.IntegerField(default=0)
+    times_present = models.IntegerField(default=0)
+    times_absent = models.IntegerField(default=0)
+    
+    # Remarks
+    class_teacher_remark = models.TextField(blank=True)
+    class_teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, related_name='class_teacher_remarks')
+    
+    principal_remark = models.TextField(blank=True)
+    principal = models.ForeignKey(Principal, on_delete=models.SET_NULL, null=True, blank=True, related_name='principal_remarks')
+    
+    # Next term info
+    next_term_begins = models.DateField(null=True, blank=True)
+    next_term_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['student', 'term']
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.term} - Summary"
+
+
 # Attendance Model
 class Attendance(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -169,18 +330,35 @@ class BorrowRecord(models.Model):
         return f"{self.student.full_name} - {self.book.title}"
 
 
-# Finance/Fee Record
+# NEW: Enhanced Fee Record for Bursar
 class FeeRecord(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    term = models.ForeignKey(Term, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Fee details
+    total_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Payment tracking
     fee_type = models.CharField(max_length=100)
     payment_date = models.DateField()
     payment_method = models.CharField(max_length=50, choices=[('Cash', 'Cash'), ('Bank Transfer', 'Bank Transfer'), ('Card', 'Card')])
-    recorded_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True)
+    is_balanced = models.BooleanField(default=False)
+    
+    # Who recorded
+    recorded_by = models.ForeignKey(Bursar, on_delete=models.SET_NULL, null=True, blank=True, related_name='bursar_records')
+    recorded_by_admin = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_records')
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        self.balance = self.total_fee - self.amount_paid
+        self.is_balanced = (self.balance <= 0)
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.student.full_name} - {self.fee_type}: ₦{self.amount}"
+        return f"{self.student.full_name} - {self.fee_type}: ₦{self.amount_paid}"
 
 
 # Recent Activity Log
@@ -191,9 +369,13 @@ class ActivityLog(models.Model):
         ('student_deleted', 'Student Deleted'),
         ('teacher_deleted', 'Teacher Deleted'),
         ('exam_created', 'Exam Created'),
+        ('exam_edited', 'Exam Edited'),  # NEW
+        ('exam_deleted', 'Exam Deleted'),  # NEW
         ('exam_submitted', 'Exam Submitted'),
         ('attendance_marked', 'Attendance Marked'),
         ('fee_recorded', 'Fee Recorded'),
+        ('grades_entered', 'Grades Entered'),  # NEW
+        ('result_generated', 'Result Generated'),  # NEW
         ('book_added', 'Book Added'),
         ('book_borrowed', 'Book Borrowed'),
         ('book_returned', 'Book Returned'),
@@ -201,7 +383,7 @@ class ActivityLog(models.Model):
     
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
     description = models.TextField()
-    performed_by_type = models.CharField(max_length=20)  # 'admin', 'teacher', 'student'
+    performed_by_type = models.CharField(max_length=20)  # 'admin', 'teacher', 'student', 'principal', 'bursar'
     performed_by_name = models.CharField(max_length=200)
     timestamp = models.DateTimeField(auto_now_add=True)
 

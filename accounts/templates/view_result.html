@@ -45,7 +45,6 @@
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             text-align: center;
-            margin-bottom: 30px;
         }
         
         .result-icon {
@@ -89,79 +88,17 @@
             font-weight: bold;
         }
         
-        .answers-section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        
-        .answers-section h2 {
-            margin-bottom: 25px;
-            color: #333;
-        }
-        
-        .answer-item {
+        .info-message {
+            background: #e7f3ff;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 4px solid;
+            margin-top: 30px;
+            border-left: 4px solid #2196F3;
         }
         
-        .answer-correct {
-            background: #d4edda;
-            border-color: #27ae60;
-        }
-        
-        .answer-incorrect {
-            background: #f8d7da;
-            border-color: #e74c3c;
-        }
-        
-        .question-number {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        
-        .question-text {
-            color: #555;
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-        
-        .answer-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-        }
-        
-        .your-answer {
-            color: #666;
-        }
-        
-        .correct-answer {
-            color: #27ae60;
-            font-weight: bold;
-        }
-        
-        .result-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        
-        .badge-correct {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .badge-incorrect {
-            background: #e74c3c;
-            color: white;
+        .info-message p {
+            color: #0066cc;
+            margin: 0;
         }
     </style>
 </head>
@@ -209,57 +146,14 @@
                 <div class="detail-item">
                     <div class="detail-label">Incorrect Answers</div>
                     <div class="detail-value" style="color: #e74c3c;">
-                        {{ submission.total_questions|add:"-"|add:submission.correct_answers }}
+                        {{ submission.total_questions|add:submission.correct_answers|add:"-"|add:submission.correct_answers }}
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Detailed Answers -->
-        <div class="answers-section">
-            <h2>Detailed Answer Review</h2>
             
-            {% for answer in answers %}
-            <div class="answer-item {% if answer.is_correct %}answer-correct{% else %}answer-incorrect{% endif %}">
-                <div class="question-number">
-                    Question {{ answer.question.question_number }}
-                    {% if answer.is_correct %}
-                        <span class="result-badge badge-correct">✓ Correct</span>
-                    {% else %}
-                        <span class="result-badge badge-incorrect">✗ Incorrect</span>
-                    {% endif %}
-                </div>
-                <div class="question-text">{{ answer.question.question_text }}</div>
-                <div class="answer-row">
-                    <span class="your-answer">
-                        <strong>Your Answer:</strong> {{ answer.selected_answer }}
-                        {% if answer.selected_answer == 'A' %}
-                            - {{ answer.question.option_a }}
-                        {% elif answer.selected_answer == 'B' %}
-                            - {{ answer.question.option_b }}
-                        {% elif answer.selected_answer == 'C' %}
-                            - {{ answer.question.option_c }}
-                        {% elif answer.selected_answer == 'D' %}
-                            - {{ answer.question.option_d }}
-                        {% endif %}
-                    </span>
-                    {% if not answer.is_correct %}
-                    <span class="correct-answer">
-                        <strong>Correct:</strong> {{ answer.question.correct_answer }}
-                        {% if answer.question.correct_answer == 'A' %}
-                            - {{ answer.question.option_a }}
-                        {% elif answer.question.correct_answer == 'B' %}
-                            - {{ answer.question.option_b }}
-                        {% elif answer.question.correct_answer == 'C' %}
-                            - {{ answer.question.option_c }}
-                        {% elif answer.question.correct_answer == 'D' %}
-                            - {{ answer.question.option_d }}
-                        {% endif %}
-                    </span>
-                    {% endif %}
-                </div>
+            <div class="info-message">
+                <p><strong>ℹ️ Note:</strong> Detailed answer review is not available for this exam. If you have questions about specific problems, please contact your teacher.</p>
             </div>
-            {% endfor %}
         </div>
     </div>
 </body>

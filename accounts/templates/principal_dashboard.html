@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard</title>
+    <title>Principal Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -17,7 +17,7 @@
         }
         
         .navbar {
-            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            background: linear-gradient(135deg, #8e44ad 0%, #663399 100%);
             color: white;
             padding: 20px 40px;
             display: flex;
@@ -52,22 +52,50 @@
             margin: 0 auto;
         }
         
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #8e44ad;
+        }
+        
         .actions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
         }
         
         .action-btn {
             background: white;
-            padding: 30px;
+            padding: 25px;
             border-radius: 15px;
             text-align: center;
             text-decoration: none;
             color: #333;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             transition: transform 0.2s;
+            display: block;
         }
         
         .action-btn:hover {
@@ -76,7 +104,7 @@
         }
         
         .action-btn .icon {
-            font-size: 45px;
+            font-size: 40px;
             margin-bottom: 10px;
         }
         
@@ -91,6 +119,7 @@
         .section h2 {
             margin-bottom: 20px;
             color: #333;
+            font-size: 22px;
         }
         
         table {
@@ -110,36 +139,16 @@
             color: #666;
         }
         
-        .badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .badge-active {
-            background: #d4edda;
-            color: #155724;
-        }
-        
-        .badge-inactive {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .btn-export {
-            background: #2ecc71;
+        .btn-delete {
+            background: #ff4757;
             color: white;
             padding: 8px 15px;
             border: none;
             border-radius: 6px;
+            cursor: pointer;
             text-decoration: none;
             display: inline-block;
             font-size: 13px;
-        }
-        
-        .btn-export:hover {
-            background: #27ae60;
         }
         
         .alert {
@@ -156,11 +165,10 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>👨‍🏫 Teacher Dashboard</h1>
+        <h1>👔 Principal Dashboard</h1>
         <div class="user-info">
-            <span>Welcome, {{ teacher.full_name }}</span>
-            <span style="opacity: 0.8;">Subject: {{ teacher.subject }}</span>
-            <span style="opacity: 0.7;">ID: {{ teacher.teacher_id }}</span>
+            <span>Welcome, {{ principal.full_name }}</span>
+            <span style="opacity: 0.7;">ID: {{ principal.principal_id }}</span>
             <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
         </div>
     </nav>
@@ -174,99 +182,90 @@
             {% endfor %}
         {% endif %}
         
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Students</h3>
+                <div class="number">{{ student_count }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Teachers</h3>
+                <div class="number">{{ teacher_count }}</div>
+            </div>
+        </div>
+        
         <!-- Quick Actions -->
         <div class="actions-grid">
-            <a href="{% url 'create_exam' %}" class="action-btn">
-                <div class="icon">📝</div>
-                <div><strong>Create CBT Exam</strong></div>
-                <div style="font-size: 12px; color: #999; margin-top: 5px;">Add MCQ Questions</div>
+            <a href="{% url 'register_student' %}" class="action-btn">
+                <div class="icon">👨‍🎓</div>
+                <div>Register Student</div>
             </a>
-            <a href="{% url 'enter_grades' %}" class="action-btn">
-                <div class="icon">📊</div>
-                <div><strong>Enter Grades</strong></div>
-                <div style="font-size: 12px; color: #999; margin-top: 5px;">Record Test & Exam Scores</div>
-            </a>
-            <a href="{% url 'mark_attendance' %}" class="action-btn">
-                <div class="icon">✅</div>
-                <div><strong>Mark Attendance</strong></div>
-                <div style="font-size: 12px; color: #999; margin-top: 5px;">Track Student Presence</div>
+            <a href="{% url 'register_teacher' %}" class="action-btn">
+                <div class="icon">👨‍🏫</div>
+                <div>Register Teacher</div>
             </a>
         </div>
         
-        <!-- My Exams -->
+        <!-- Students List -->
         <div class="section">
-            <h2>My Created Exams</h2>
+            <h2>Registered Students</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Exam ID</th>
-                        <th>Title</th>
+                        <th>Student ID</th>
+                        <th>Full Name</th>
                         <th>Class</th>
-                        <th>Questions</th>
-                        <th>Duration</th>
-                        <th>Created Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Registered Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for exam in exams %}
+                    {% for student in students %}
                     <tr>
-                        <td><strong>{{ exam.exam_id }}</strong></td>
-                        <td>{{ exam.title }}</td>
-                        <td>{{ exam.class_name }}</td>
-                        <td>{{ exam.questions.count }}</td>
-                        <td>{{ exam.duration_minutes }} mins</td>
-                        <td>{{ exam.created_at|date:"M d, Y" }}</td>
-                        <td>
-                            {% if exam.is_active %}
-                                <span class="badge badge-active">Active</span>
-                            {% else %}
-                                <span class="badge badge-inactive">Inactive</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'export_results' exam.id %}" class="btn-export">
-                                📊 Export Results
-                            </a>
-                        </td>
+                        <td>{{ student.student_id }}</td>
+                        <td>{{ student.full_name }}</td>
+                        <td>{{ student.class_name }}</td>
+                        <td>{{ student.email }}</td>
+                        <td>{{ student.phone }}</td>
+                        <td>{{ student.created_at|date:"M d, Y" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #999;">No exams created yet</td>
+                        <td colspan="6" style="text-align: center; color: #999;">No students registered yet</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         
-        <!-- Recent Submissions -->
+        <!-- Teachers List -->
         <div class="section">
-            <h2>Recent Exam Submissions</h2>
+            <h2>Registered Teachers</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Student Name</th>
-                        <th>Student ID</th>
-                        <th>Exam</th>
-                        <th>Score</th>
-                        <th>Correct/Total</th>
-                        <th>Submitted At</th>
+                        <th>Teacher ID</th>
+                        <th>Full Name</th>
+                        <th>Subject</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Registered Date</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for submission in recent_submissions %}
+                    {% for teacher in teachers %}
                     <tr>
-                        <td>{{ submission.student.full_name }}</td>
-                        <td>{{ submission.student.student_id }}</td>
-                        <td>{{ submission.exam.title }}</td>
-                        <td><strong>{{ submission.score }}%</strong></td>
-                        <td>{{ submission.correct_answers }}/{{ submission.total_questions }}</td>
-                        <td>{{ submission.submitted_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ teacher.teacher_id }}</td>
+                        <td>{{ teacher.full_name }}</td>
+                        <td>{{ teacher.subject }}</td>
+                        <td>{{ teacher.email }}</td>
+                        <td>{{ teacher.phone }}</td>
+                        <td>{{ teacher.created_at|date:"M d, Y" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" style="text-align: center; color: #999;">No submissions yet</td>
+                        <td colspan="6" style="text-align: center; color: #999;">No teachers registered yet</td>
                     </tr>
                     {% endfor %}
                 </tbody>

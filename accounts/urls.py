@@ -14,11 +14,21 @@ urlpatterns = [
     path('admin/delete-teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
     path('admin/finance/', views.manage_finance, name='manage_finance'),
     
+    # Principal URLs
+    path('principal/dashboard/', views.principal_dashboard, name='principal_dashboard'),
+    
+    # Bursar URLs
+    path('bursar/dashboard/', views.bursar_dashboard, name='bursar_dashboard'),
+    path('bursar/finance/', views.manage_finance, name='bursar_finance'),
+    
     # Teacher URLs
     path('teacher/dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('teacher/create-exam/', views.create_exam, name='create_exam'),
     path('teacher/add-questions/<int:exam_id>/', views.add_questions, name='add_questions'),
+    path('teacher/edit-question/<int:question_id>/', views.edit_question, name='edit_question'),
+    path('teacher/delete-exam/<int:exam_id>/', views.delete_exam, name='delete_exam'),
     path('teacher/mark-attendance/', views.mark_attendance, name='mark_attendance'),
+    path('teacher/enter-grades/', views.enter_grades, name='enter_grades'),
     path('teacher/export-results/<int:exam_id>/', views.export_results, name='export_results'),
     
     # Student URLs

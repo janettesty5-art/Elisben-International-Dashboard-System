@@ -1,8 +1,8 @@
 from django.contrib import admin
 from .models import (
-    Admin, Teacher, Student, Exam, Question, 
-    ExamSubmission, StudentAnswer, Attendance, 
-    Book, BorrowRecord, FeeRecord, ActivityLog
+    Admin, Principal, Bursar, Teacher, Student, Exam, Question, 
+    ExamSubmission, StudentAnswer, Attendance, Book, BorrowRecord, 
+    FeeRecord, ActivityLog, AcademicSession, Term, SubjectGrade, ResultSummary
 )
 
 @admin.register(Admin)
@@ -10,6 +10,18 @@ class AdminModelAdmin(admin.ModelAdmin):
     list_display = ['admin_id', 'full_name', 'user', 'created_at']
     search_fields = ['admin_id', 'full_name']
     readonly_fields = ['admin_id', 'created_at']
+
+@admin.register(Principal)
+class PrincipalAdmin(admin.ModelAdmin):
+    list_display = ['principal_id', 'full_name', 'user', 'created_at']
+    search_fields = ['principal_id', 'full_name']
+    readonly_fields = ['principal_id', 'created_at']
+
+@admin.register(Bursar)
+class BursarAdmin(admin.ModelAdmin):
+    list_display = ['bursar_id', 'full_name', 'user', 'created_at']
+    search_fields = ['bursar_id', 'full_name']
+    readonly_fields = ['bursar_id', 'created_at']
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
@@ -27,7 +39,7 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
-    list_display = ['exam_id', 'title', 'subject', 'class_name', 'created_by', 'is_active', 'created_at']
+    list_display = ['exam_id', 'title', 'subject', 'class_name', 'created_by', 'is_active', 'shuffle_questions', 'created_at']
     search_fields = ['exam_id', 'title', 'subject']
     list_filter = ['class_name', 'subject', 'is_active', 'created_at']
     readonly_fields = ['exam_id', 'created_at']
@@ -72,10 +84,10 @@ class BorrowRecordAdmin(admin.ModelAdmin):
 
 @admin.register(FeeRecord)
 class FeeRecordAdmin(admin.ModelAdmin):
-    list_display = ['student', 'amount', 'fee_type', 'payment_date', 'payment_method', 'recorded_by']
-    list_filter = ['fee_type', 'payment_method', 'payment_date']
+    list_display = ['student', 'total_fee', 'amount_paid', 'balance', 'is_balanced', 'fee_type', 'payment_date', 'payment_method']
+    list_filter = ['fee_type', 'payment_method', 'is_balanced', 'payment_date']
     search_fields = ['student__full_name']
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_at', 'balance', 'is_balanced']
 
 @admin.register(ActivityLog)
 class ActivityLogAdmin(admin.ModelAdmin):
@@ -83,3 +95,29 @@ class ActivityLogAdmin(admin.ModelAdmin):
     list_filter = ['action', 'performed_by_type', 'timestamp']
     search_fields = ['description', 'performed_by_name']
     readonly_fields = ['timestamp']
+
+@admin.register(AcademicSession)
+class AcademicSessionAdmin(admin.ModelAdmin):
+    list_display = ['session_name', 'is_current', 'created_at']
+    list_filter = ['is_current', 'created_at']
+    search_fields = ['session_name']
+
+@admin.register(Term)
+class TermAdmin(admin.ModelAdmin):
+    list_display = ['session', 'term', 'is_current', 'created_at']
+    list_filter = ['term', 'is_current', 'created_at']
+    search_fields = ['session__session_name']
+
+@admin.register(SubjectGrade)
+class SubjectGradeAdmin(admin.ModelAdmin):
+    list_display = ['student', 'term', 'subject', 'test_1', 'test_2', 'test_3', 'total_ca', 'exam', 'total_score', 'grade', 'remark']
+    list_filter = ['term', 'subject', 'grade', 'remark']
+    search_fields = ['student__full_name', 'subject']
+    readonly_fields = ['total_ca', 'total_score', 'grade', 'remark', 'created_at', 'updated_at']
+
+@admin.register(ResultSummary)
+class ResultSummaryAdmin(admin.ModelAdmin):
+    list_display = ['student', 'term', 'total_subjects', 'average_score', 'position_in_class']
+    list_filter = ['term']
+    search_fields = ['student__full_name']
+    readonly_fields = ['created_at', 'updated_at']
