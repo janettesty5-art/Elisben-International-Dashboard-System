@@ -94,18 +94,18 @@ def register_student(request):
     
     if request.method == 'POST':
         full_name = request.POST.get('full_name')
-        email = request.POST.get('email')
-        phone = request.POST.get('phone')
+        email = request.POST.get('email')  # Optional now
+        phone = request.POST.get('phone')  # Optional now
         class_name = request.POST.get('class_name')
         
-        username = email.split('@')[0] + str(random.randint(100, 999))
-        user = User.objects.create_user(username=username, email=email)
+        username = full_name.replace(' ', '').lower() + str(random.randint(100, 999))
+        user = User.objects.create_user(username=username, email=email if email else '')
         
         student = Student.objects.create(
             user=user,
             full_name=full_name,
-            email=email,
-            phone=phone,
+            email=email if email else None,
+            phone=phone if phone else None,
             class_name=class_name,
             registered_by=admin if 'admin' in request.path else None
         )
@@ -121,6 +121,77 @@ def register_student(request):
         return redirect('admin_dashboard' if 'admin' in request.path else 'principal_dashboard')
     
     return render(request, 'register_student.html')
+
+
+# NEW: Move Student to Alumni
+@login_required
+def move_to_alumni(request, student_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        student = Student.objects.get(id=student_id)
+        reason = request.POST.get('reason')
+        year_left = request.POST.get('year_left')
+        current_institution = request.POST.get('current_institution')
+        notes = request.POST.get('notes')
+        
+        # Create Alumni record
+        Alumni.objects.create(
+            student_id=student.student_id,
+            full_name=student.full_name,
+            email=student.email,
+            phone=student.phone,
+            last_class=student.class_name,
+            profile_picture=student.profile_picture,
+            reason=reason,
+            year_left=year_left,
+            current_institution=current_institution,
+            notes=notes,
+            original_registration_date=student.created_at,
+            moved_by=admin
+        )
+        
+        # Delete user account (this removes student from active list)
+        student_name = student.full_name
+        student.user.delete()
+        
+        ActivityLog.objects.create(
+            action='student_deleted',
+            description=f'Student {student_name} moved to Alumni - {reason}',
+            performed_by_type='admin',
+            performed_by_name=admin.full_name
+        )
+        
+        messages.success(request, f'{student_name} successfully moved to Alumni!')
+        return redirect('admin_dashboard')
+    
+    student = Student.objects.get(id=student_id)
+    context = {'student': student}
+    return render(request, 'move_to_alumni.html', context)
+
+
+# NEW: View Alumni
+@login_required
+def view_alumni(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except:
+        try:
+            principal = Principal.objects.get(user=request.user)
+        except:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    alumni_list = Alumni.objects.all().order_by('-moved_on')
+    
+    context = {
+        'alumni_list': alumni_list,
+    }
+    return render(request, 'view_alumni.html', context)
 
 
 @login_required

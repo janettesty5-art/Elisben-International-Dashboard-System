@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    Admin, Principal, Bursar, Teacher, Student, Exam, Question, 
+    Admin, Principal, Bursar, Teacher, Student, Alumni, Exam, Question, 
     ExamSubmission, StudentAnswer, Attendance, Book, BorrowRecord, 
     FeeRecord, ActivityLog, AcademicSession, Term, SubjectGrade, ResultSummary
 )

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Move to Alumni</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .form-card {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        .form-card h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .student-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .student-info p {
+            margin: 8px 0;
+            color: #555;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        
+        .btn-submit:hover {
+            opacity: 0.9;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+        
+        .warning-box p {
+            color: #856404;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🎓 Move Student to Alumni</h1>
+        <a href="{% url 'admin_dashboard' %}">← Back to Dashboard</a>
+    </nav>
+    
+    <div class="container">
+        <div class="form-card">
+            <h2>Move Student to Alumni</h2>
+            
+            <div class="student-info">
+                <p><strong>Student ID:</strong> {{ student.student_id }}</p>
+                <p><strong>Full Name:</strong> {{ student.full_name }}</p>
+                <p><strong>Current Class:</strong> {{ student.class_name }}</p>
+                <p><strong>Registered:</strong> {{ student.created_at|date:"M d, Y" }}</p>
+            </div>
+            
+            <div class="warning-box">
+                <p><strong>⚠️ Note:</strong> This will move the student to Alumni. All their records (grades, attendance, exam results) will be preserved but they won't be able to login anymore.</p>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="reason">Reason for Leaving *</label>
+                    <select name="reason" id="reason" required>
+                        <option value="">-- Select Reason --</option>
+                        <option value="Graduated">Graduated</option>
+                        <option value="Transferred">Transferred to Another School</option>
+                        <option value="Withdrawn">Withdrawn</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="year_left">Academic Year *</label>
+                    <input type="text" name="year_left" id="year_left" placeholder="e.g., 2024/2025" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="current_institution">Current Institution (Optional)</label>
+                    <input type="text" name="current_institution" id="current_institution" placeholder="Where did they go? (University, another school, etc.)">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Additional Notes (Optional)</label>
+                    <textarea name="notes" id="notes" placeholder="Any additional information..."></textarea>
+                </div>
+                
+                <button type="submit" class="btn-submit" onclick="return confirm('Are you sure you want to move this student to Alumni? This action cannot be undone!')">
+                    Move to Alumni
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-fill current academic year
+        const currentYear = new Date().getFullYear();
+        const nextYear = currentYear + 1;
+        document.getElementById('year_left').value = `${currentYear}/${nextYear}`;
+    </script>
+</body>
+</html>

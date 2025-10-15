@@ -9,6 +9,10 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none; /* Disable text selection */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         
         body {
@@ -329,10 +333,9 @@
     </div>
     
     <script>
-       // Timer functionality
+        // Timer functionality
         let totalSeconds = parseInt('{{ exam.duration_minutes }}') * 60;
         const timerElement = document.getElementById('timer');
-        
         
         function updateTimer() {
             const minutes = Math.floor(totalSeconds / 60);

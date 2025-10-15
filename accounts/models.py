@@ -77,8 +77,8 @@ class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     student_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=200)
-    email = models.EmailField()
-    phone = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)  # Made optional
+    phone = models.CharField(max_length=15, blank=True, null=True)  # Made optional
     class_name = models.CharField(max_length=50)
     profile_picture = models.ImageField(upload_to='student_profiles/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -91,6 +91,43 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.student_id})"
+
+
+# NEW: Alumni Model
+class Alumni(models.Model):
+    REASON_CHOICES = [
+        ('Graduated', 'Graduated'),
+        ('Transferred', 'Transferred'),
+        ('Withdrawn', 'Withdrawn'),
+    ]
+    
+    student_id = models.CharField(max_length=20, unique=True)
+    full_name = models.CharField(max_length=200)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=15, blank=True, null=True)
+    last_class = models.CharField(max_length=50)  # Last class attended
+    profile_picture = models.ImageField(upload_to='alumni_profiles/', null=True, blank=True)
+    
+    # Alumni specific info
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
+    year_left = models.CharField(max_length=10)  # e.g., "2024/2025"
+    moved_on = models.DateField(auto_now_add=True)
+    moved_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Keep original data
+    original_registration_date = models.DateTimeField()
+    
+    # Additional info
+    current_institution = models.CharField(max_length=200, blank=True, null=True)  # Where they went
+    notes = models.TextField(blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Alumni"
+
+    def __str__(self):
+        return f"{self.full_name} ({self.student_id}) - {self.reason}"
 
 
 # Exam Model
