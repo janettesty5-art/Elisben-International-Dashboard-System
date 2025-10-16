@@ -550,32 +550,36 @@ def mark_attendance(request):
         return redirect('unified_login')
     
     if request.method == 'POST':
-        class_name = request.POST.get('class_name')
-        date = request.POST.get('date')
-        students = Student.objects.filter(class_name=class_name)
-        
-        for student in students:
-            status = request.POST.get(f'status_{student.id}')
-            if status:
-                Attendance.objects.update_or_create(
-                    student=student,
-                    date=date,
-                    defaults={
-                        'status': status,
-                        'class_name': class_name,
-                        'marked_by': teacher
-                    }
-                )
-        
-        ActivityLog.objects.create(
-            action='attendance_marked',
-            description=f'Attendance marked for {class_name} on {date}',
-            performed_by_type='teacher',
-            performed_by_name=teacher.full_name
-        )
-        
-        messages.success(request, 'Attendance marked successfully!')
-        return redirect('mark_attendance')
+        try:
+            class_name = request.POST.get('class_name')
+            date = request.POST.get('date')
+            students = Student.objects.filter(class_name=class_name)
+            
+            for student in students:
+                status = request.POST.get(f'status_{student.id}')
+                if status:
+                    Attendance.objects.update_or_create(
+                        student=student,
+                        date=date,
+                        defaults={
+                            'status': status,
+                            'class_name': class_name,
+                            'marked_by': teacher
+                        }
+                    )
+            
+            ActivityLog.objects.create(
+                action='attendance_marked',
+                description=f'Attendance marked for {class_name} on {date}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, '✅ Attendance saved successfully!')
+            return redirect('mark_attendance')
+        except Exception as e:
+            messages.error(request, f'Error saving attendance: {str(e)}')
+            return redirect('mark_attendance')
     
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     selected_class = request.GET.get('class_name')
@@ -588,6 +592,40 @@ def mark_attendance(request):
         'today': datetime.now().date(),
     }
     return render(request, 'mark_attendance.html', context)
+
+
+# NEW: View Attendance Records
+@login_required
+def view_attendance(request):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    # Get filters
+    filter_class = request.GET.get('class_name')
+    filter_date = request.GET.get('date')
+    
+    # Build query
+    attendance_records = Attendance.objects.all().order_by('-date')
+    
+    if filter_class:
+        attendance_records = attendance_records.filter(class_name=filter_class)
+    
+    if filter_date:
+        attendance_records = attendance_records.filter(date=filter_date)
+    
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
+    
+    context = {
+        'teacher': teacher,
+        'attendance_records': attendance_records,
+        'classes': classes,
+        'filter_class': filter_class,
+        'filter_date': filter_date,
+    }
+    return render(request, 'view_attendance.html', context)
 
 
 # NEW: Enter Grades

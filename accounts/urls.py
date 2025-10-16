@@ -30,6 +30,7 @@ urlpatterns = [
     path('teacher/edit-question/<int:question_id>/', views.edit_question, name='edit_question'),
     path('teacher/delete-exam/<int:exam_id>/', views.delete_exam, name='delete_exam'),
     path('teacher/mark-attendance/', views.mark_attendance, name='mark_attendance'),
+    path('teacher/view-attendance/', views.view_attendance, name='view_attendance'),
     path('teacher/enter-grades/', views.enter_grades, name='enter_grades'),
     path('teacher/export-results/<int:exam_id>/', views.export_results, name='export_results'),
     
