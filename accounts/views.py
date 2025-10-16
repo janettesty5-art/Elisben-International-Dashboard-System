@@ -285,46 +285,52 @@ def manage_finance(request):
     try:
         admin = Admin.objects.get(user=request.user)
         is_admin = True
+        user_name = admin.full_name
     except:
         try:
             bursar = Bursar.objects.get(user=request.user)
             is_admin = False
+            user_name = bursar.full_name
         except:
             messages.error(request, 'Access denied.')
             return redirect('unified_login')
     
     if request.method == 'POST':
-        student_id = request.POST.get('student_id')
-        total_fee = request.POST.get('total_fee')
-        amount_paid = request.POST.get('amount_paid')
-        fee_type = request.POST.get('fee_type')
-        payment_method = request.POST.get('payment_method')
-        payment_date = request.POST.get('payment_date')
-        
-        student = Student.objects.get(student_id=student_id)
-        current_term = Term.objects.filter(is_current=True).first()
-        
-        fee_record = FeeRecord.objects.create(
-            student=student,
-            term=current_term,
-            total_fee=total_fee,
-            amount_paid=amount_paid,
-            fee_type=fee_type,
-            payment_method=payment_method,
-            payment_date=payment_date,
-            recorded_by=None if is_admin else bursar,
-            recorded_by_admin=admin if is_admin else None
-        )
-        
-        ActivityLog.objects.create(
-            action='fee_recorded',
-            description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name}',
-            performed_by_type='admin' if is_admin else 'bursar',
-            performed_by_name=admin.full_name if is_admin else bursar.full_name
-        )
-        
-        messages.success(request, 'Fee recorded successfully!')
-        return redirect('manage_finance')
+        try:
+            student_id = request.POST.get('student_id')
+            total_fee = float(request.POST.get('total_fee'))
+            amount_paid = float(request.POST.get('amount_paid'))
+            fee_type = request.POST.get('fee_type')
+            payment_method = request.POST.get('payment_method')
+            payment_date = request.POST.get('payment_date')
+            
+            student = Student.objects.get(student_id=student_id)
+            current_term = Term.objects.filter(is_current=True).first()
+            
+            fee_record = FeeRecord.objects.create(
+                student=student,
+                term=current_term,
+                total_fee=total_fee,
+                amount_paid=amount_paid,
+                fee_type=fee_type,
+                payment_method=payment_method,
+                payment_date=payment_date,
+                recorded_by=None if is_admin else bursar,
+                recorded_by_admin=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='fee_recorded',
+                description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name}',
+                performed_by_type='admin' if is_admin else 'bursar',
+                performed_by_name=user_name
+            )
+            
+            messages.success(request, '✅ PAYMENT RECORDED SUCCESSFULLY!')
+            return redirect('bursar_dashboard' if not is_admin else 'manage_finance')
+        except Exception as e:
+            messages.error(request, f'Error recording payment: {str(e)}')
+            return redirect('manage_finance')
     
     fee_records = FeeRecord.objects.all().order_by('-payment_date')
     students = Student.objects.all()
@@ -598,37 +604,41 @@ def enter_grades(request):
         subject = request.POST.get('subject')
         term_id = request.POST.get('term')
         
-        term = Term.objects.get(id=term_id)
-        students = Student.objects.filter(class_name=class_name)
-        
-        for student in students:
-            test_1 = request.POST.get(f'test1_{student.id}', 0)
-            test_2 = request.POST.get(f'test2_{student.id}', 0)
-            test_3 = request.POST.get(f'test3_{student.id}', 0)
-            exam = request.POST.get(f'exam_{student.id}', 0)
+        try:
+            term = Term.objects.get(id=term_id)
+            students = Student.objects.filter(class_name=class_name)
             
-            SubjectGrade.objects.update_or_create(
-                student=student,
-                term=term,
-                subject=subject,
-                defaults={
-                    'test_1': test_1,
-                    'test_2': test_2,
-                    'test_3': test_3,
-                    'exam': exam,
-                    'recorded_by': teacher
-                }
+            for student in students:
+                test_1 = float(request.POST.get(f'test1_{student.id}', 0))
+                test_2 = float(request.POST.get(f'test2_{student.id}', 0))
+                test_3 = float(request.POST.get(f'test3_{student.id}', 0))
+                exam = float(request.POST.get(f'exam_{student.id}', 0))
+                
+                SubjectGrade.objects.update_or_create(
+                    student=student,
+                    term=term,
+                    subject=subject,
+                    defaults={
+                        'test_1': test_1,
+                        'test_2': test_2,
+                        'test_3': test_3,
+                        'exam': exam,
+                        'recorded_by': teacher
+                    }
+                )
+            
+            ActivityLog.objects.create(
+                action='grades_entered',
+                description=f'Grades entered for {subject} - {class_name}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
             )
-        
-        ActivityLog.objects.create(
-            action='grades_entered',
-            description=f'Grades entered for {subject} - {class_name}',
-            performed_by_type='teacher',
-            performed_by_name=teacher.full_name
-        )
-        
-        messages.success(request, 'Grades entered successfully!')
-        return redirect('enter_grades')
+            
+            messages.success(request, '✅ Grades saved successfully!')
+            return redirect('enter_grades')
+        except Exception as e:
+            messages.error(request, f'Error saving grades: {str(e)}')
+            return redirect('enter_grades')
     
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     terms = Term.objects.all()
@@ -706,11 +716,14 @@ def student_profile(request):
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
     
-    if request.method == 'POST' and request.FILES.get('profile_picture'):
-        student.profile_picture = request.FILES['profile_picture']
-        student.save()
-        messages.success(request, 'Profile picture updated!')
-        return redirect('student_profile')
+    if request.method == 'POST':
+        if request.FILES.get('profile_picture'):
+            student.profile_picture = request.FILES['profile_picture']
+            student.save()
+            messages.success(request, '✅ Profile picture updated successfully!')
+            return redirect('student_profile')
+        else:
+            messages.error(request, 'Please select a picture to upload.')
     
     context = {'student': student}
     return render(request, 'student_profile.html', context)
