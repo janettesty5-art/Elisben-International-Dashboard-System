@@ -628,7 +628,226 @@ def view_attendance(request):
     return render(request, 'view_attendance.html', context)
 
 
-# NEW: Enter Grades
+# NEW: Complete Result Entry System
+@login_required
+def complete_result_entry(request):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    # Standard subjects for all classes
+    STANDARD_SUBJECTS = [
+        'ENGLISH LANGUAGE',
+        'MATHEMATICS',
+        'YORUBA LANGUAGE',
+        'BASIC SCIENCE',
+        'SOCIAL STUDIES',
+        'CIVIC EDUCATION',
+        'CULTURAL & CREATIVE ARTS',
+        'C.R.K / I.R.K',
+        'PHYSICAL & HEALTH EDUCATION',
+        'ICT (COMPUTER STUDIES)',
+        'AGRIC SCIENCE',
+        'HOME ECONOMICS',
+        'BUSINESS STUDIES',
+        'MUSIC',
+        'FRENCH LANGUAGE',
+        'BASIC TECHNOLOGY',
+    ]
+    
+    if request.method == 'POST':
+        try:
+            student_id = request.POST.get('student_id')
+            term_id = request.POST.get('term_id')
+            
+            student = Student.objects.get(id=student_id)
+            term = Term.objects.get(id=term_id)
+            
+            # Save all subject grades
+            for subject in STANDARD_SUBJECTS:
+                test1 = float(request.POST.get(f'test1_{subject}', 0) or 0)
+                test2 = float(request.POST.get(f'test2_{subject}', 0) or 0)
+                test3 = float(request.POST.get(f'test3_{subject}', 0) or 0)
+                exam = float(request.POST.get(f'exam_{subject}', 0) or 0)
+                
+                # Skip if all zeros
+                if test1 == 0 and test2 == 0 and test3 == 0 and exam == 0:
+                    continue
+                
+                SubjectGrade.objects.update_or_create(
+                    student=student,
+                    term=term,
+                    subject=subject,
+                    defaults={
+                        'test_1': test1,
+                        'test_2': test2,
+                        'test_3': test3,
+                        'exam': exam,
+                        'recorded_by': teacher
+                    }
+                )
+            
+            # Calculate positions and class averages
+            calculate_class_positions(student.class_name, term)
+            
+            # Create/Update Result Summary
+            create_result_summary(student, term)
+            
+            ActivityLog.objects.create(
+                action='grades_entered',
+                description=f'Complete result entered for {student.full_name} - {term}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Result saved successfully for {student.full_name}!')
+            return redirect('result_preview', student_id=student.id, term_id=term.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error saving result: {str(e)}')
+            return redirect('complete_result_entry')
+    
+    # GET request - show form
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
+    terms = Term.objects.all()
+    selected_class = request.GET.get('class_name')
+    students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
+    
+    context = {
+        'teacher': teacher,
+        'classes': classes,
+        'terms': terms,
+        'students': students,
+        'selected_class': selected_class,
+        'subjects': STANDARD_SUBJECTS,
+    }
+    return render(request, 'complete_result_entry.html', context)
+
+
+# Helper function to calculate positions
+def calculate_class_positions(class_name, term):
+    """Calculate position for each student in the class"""
+    students = Student.objects.filter(class_name=class_name)
+    
+    # Calculate total scores for each student
+    student_totals = []
+    for student in students:
+        grades = SubjectGrade.objects.filter(student=student, term=term)
+        total = sum([g.total_score for g in grades])
+        student_totals.append((student, total, grades.count()))
+    
+    # Sort by total score (descending)
+    student_totals.sort(key=lambda x: x[1], reverse=True)
+    
+    # Assign positions
+    total_students = len(student_totals)
+    for position, (student, total, subject_count) in enumerate(student_totals, 1):
+        # Update or create result summary
+        summary, created = ResultSummary.objects.get_or_create(
+            student=student,
+            term=term
+        )
+        summary.position_in_class = f"{position}/{total_students}"
+        summary.total_subjects = subject_count
+        summary.score_gained = total
+        summary.average_score = total / subject_count if subject_count > 0 else 0
+        summary.promotion_status = "PROMOTED" if summary.average_score >= 50 else "REPEAT"
+        summary.save()
+    
+    # Calculate class average for each subject
+    all_subjects = SubjectGrade.objects.filter(term=term, student__class_name=class_name).values_list('subject', flat=True).distinct()
+    
+    for subject in all_subjects:
+        grades = SubjectGrade.objects.filter(term=term, student__class_name=class_name, subject=subject)
+        if grades.exists():
+            avg = sum([g.total_score for g in grades]) / grades.count()
+            grades.update(class_average=round(avg, 2))
+            
+            # Calculate position in subject
+            subject_scores = [(g.student, g.total_score) for g in grades]
+            subject_scores.sort(key=lambda x: x[1], reverse=True)
+            
+            for pos, (student, score) in enumerate(subject_scores, 1):
+                SubjectGrade.objects.filter(
+                    student=student, 
+                    term=term, 
+                    subject=subject
+                ).update(position_in_subject=pos)
+
+
+# Helper function to create result summary
+def create_result_summary(student, term):
+    """Create or update result summary"""
+    grades = SubjectGrade.objects.filter(student=student, term=term)
+    
+    if not grades.exists():
+        return
+    
+    total_score = sum([g.total_score for g in grades])
+    subject_count = grades.count()
+    average = total_score / subject_count if subject_count > 0 else 0
+    
+    summary, created = ResultSummary.objects.get_or_create(
+        student=student,
+        term=term
+    )
+    
+    summary.total_subjects = subject_count
+    summary.score_gained = round(total_score, 2)
+    summary.average_score = round(average, 2)
+    summary.promotion_status = "PROMOTED" if average >= 50 else "REPEAT"
+    summary.save()
+
+
+# NEW: Result Preview
+@login_required  
+def result_preview(request, student_id, term_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except:
+        try:
+            principal = Principal.objects.get(user=request.user)
+        except:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    student = Student.objects.get(id=student_id)
+    term = Term.objects.get(id=term_id)
+    grades = SubjectGrade.objects.filter(student=student, term=term).order_by('subject')
+    summary = ResultSummary.objects.filter(student=student, term=term).first()
+    school_settings = SchoolSettings.objects.first()
+    
+    # Handle remarks submission
+    if request.method == 'POST':
+        if 'class_teacher_remark' in request.POST:
+            summary.class_teacher_remark = request.POST.get('class_teacher_remark')
+            summary.class_teacher = teacher if 'teacher' in request.path else None
+            summary.save()
+            messages.success(request, '✅ Class Teacher remark saved!')
+        
+        if 'principal_remark' in request.POST:
+            summary.principal_remark = request.POST.get('principal_remark')
+            summary.principal = principal if 'principal' in request.path else None
+            summary.save()
+            messages.success(request, '✅ Principal remark saved!')
+        
+        if 'hos_remark' in request.POST:
+            summary.hos_remark = request.POST.get('hos_remark')
+            summary.save()
+            messages.success(request, '✅ HOS remark saved!')
+        
+        return redirect('result_preview', student_id=student_id, term_id=term_id)
+    
+    context = {
+        'student': student,
+        'term': term,
+        'grades': grades,
+        'summary': summary,
+        'school_settings': school_settings,
+    }
+    return render(request, 'result_preview.html', context)
 @login_required
 def enter_grades(request):
     try:

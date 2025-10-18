@@ -196,7 +196,24 @@ class StudentAnswer(models.Model):
         return f"{self.submission.student.full_name} - Q{self.question.question_number}"
 
 
-# NEW: Academic Result/Grade System
+# NEW: School Settings Model
+class SchoolSettings(models.Model):
+    school_name = models.CharField(max_length=200, default="Elisben International College")
+    school_motto = models.CharField(max_length=200, default="Excellence in Education")
+    address = models.TextField(default="Surulere Quarters, Oke Osum Ikere Ekiti, Nigeria")
+    phone = models.CharField(max_length=50, default="+234 803 634 3681")
+    email = models.EmailField(default="admin@elisbencollege.com")
+    website = models.URLField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "School Settings"
+        verbose_name_plural = "School Settings"
+    
+    def __str__(self):
+        return self.school_name
+
+
+# Academic Result/Grade System
 class AcademicSession(models.Model):
     session_name = models.CharField(max_length=50)  # e.g., "2024/2025"
     is_current = models.BooleanField(default=False)
@@ -230,21 +247,22 @@ class SubjectGrade(models.Model):
     subject = models.CharField(max_length=100)
     
     # Test Scores (CA)
-    test_1 = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    test_2 = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    test_3 = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    total_ca = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Sum of tests
+    test_1 = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Max 100
+    test_2 = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Max 100
+    test_3 = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Max 100
+    total_ca = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Average of 3 tests (30%)
     
     # Exam Scores
-    exam = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    exam = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Max 100 (70%)
     
     # Total and Grade
     total_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # CA + Exam
     grade = models.CharField(max_length=2, blank=True)  # A, B, C, D, E, F
     remark = models.CharField(max_length=20, blank=True)  # EXCELLENT, VERY GOOD, GOOD, PASS, FAIL
     
-    # Position in class
-    position = models.IntegerField(null=True, blank=True)
+    # Position in subject and class average
+    position_in_subject = models.IntegerField(null=True, blank=True)
+    class_average = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     
     # Teacher
     recorded_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True)
@@ -255,11 +273,18 @@ class SubjectGrade(models.Model):
         unique_together = ['student', 'term', 'subject']
 
     def calculate_totals(self):
-        """Calculate CA, Total Score, and Grade"""
-        self.total_ca = self.test_1 + self.test_2 + self.test_3
-        self.total_score = self.total_ca + self.exam
+        """Calculate CA (average of 3 tests as 30%), Total Score, and Grade"""
+        # CA is average of 3 tests, scaled to 30%
+        avg_test = (self.test_1 + self.test_2 + self.test_3) / 3
+        self.total_ca = (avg_test * 30) / 100
         
-        # Calculate grade
+        # Exam is already out of 100, scale to 70%
+        exam_score = (self.exam * 70) / 100
+        
+        # Total score
+        self.total_score = self.total_ca + exam_score
+        
+        # Calculate grade based on total score
         if self.total_score >= 80:
             self.grade = 'A'
             self.remark = 'EXCELLENT'
@@ -294,9 +319,10 @@ class ResultSummary(models.Model):
     
     # Overall statistics
     total_subjects = models.IntegerField(default=0)
-    total_score = models.DecimalField(max_digits=7, decimal_places=2, default=0)
+    score_gained = models.DecimalField(max_digits=7, decimal_places=2, default=0)  # Total score
     average_score = models.DecimalField(max_digits=5, decimal_places=2, default=0)
-    position_in_class = models.IntegerField(null=True, blank=True)
+    position_in_class = models.CharField(max_length=20, blank=True)  # "8th/21"
+    promotion_status = models.CharField(max_length=50, blank=True)  # "PROMOTED" or "REPEAT"
     
     # Attendance
     times_school_opened = models.IntegerField(default=0)
@@ -310,9 +336,15 @@ class ResultSummary(models.Model):
     principal_remark = models.TextField(blank=True)
     principal = models.ForeignKey(Principal, on_delete=models.SET_NULL, null=True, blank=True, related_name='principal_remarks')
     
+    hos_remark = models.TextField(blank=True)  # Head of School
+    hos = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name='hos_remarks')
+    
     # Next term info
+    vacation_date = models.DateField(null=True, blank=True)
+    resumption_date = models.DateField(null=True, blank=True)
     next_term_begins = models.DateField(null=True, blank=True)
     next_term_fees = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    pta_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

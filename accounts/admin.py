@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import (
     Admin, Principal, Bursar, Teacher, Student, Alumni, Exam, Question, 
     ExamSubmission, StudentAnswer, Attendance, Book, BorrowRecord, 
-    FeeRecord, ActivityLog, AcademicSession, Term, SubjectGrade, ResultSummary
+    FeeRecord, ActivityLog, AcademicSession, Term, SubjectGrade, ResultSummary,
+    SchoolSettings
 )
 
 @admin.register(Admin)
@@ -36,6 +37,13 @@ class StudentAdmin(admin.ModelAdmin):
     search_fields = ['student_id', 'full_name', 'email', 'class_name']
     list_filter = ['class_name', 'created_at']
     readonly_fields = ['student_id', 'created_at']
+
+@admin.register(Alumni)
+class AlumniAdmin(admin.ModelAdmin):
+    list_display = ['student_id', 'full_name', 'last_class', 'reason', 'year_left', 'moved_on']
+    search_fields = ['student_id', 'full_name', 'last_class']
+    list_filter = ['reason', 'year_left', 'moved_on']
+    readonly_fields = ['student_id', 'original_registration_date', 'moved_on', 'created_at']
 
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):

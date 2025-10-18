@@ -31,7 +31,8 @@ urlpatterns = [
     path('teacher/delete-exam/<int:exam_id>/', views.delete_exam, name='delete_exam'),
     path('teacher/mark-attendance/', views.mark_attendance, name='mark_attendance'),
     path('teacher/view-attendance/', views.view_attendance, name='view_attendance'),
-    path('teacher/enter-grades/', views.enter_grades, name='enter_grades'),
+    path('teacher/enter-grades/', views.complete_result_entry, name='enter_grades'),
+    path('teacher/result-preview/<int:student_id>/<int:term_id>/', views.result_preview, name='result_preview'),
     path('teacher/export-results/<int:exam_id>/', views.export_results, name='export_results'),
     
     # Student URLs
