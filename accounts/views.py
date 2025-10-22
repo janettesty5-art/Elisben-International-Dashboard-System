@@ -1065,3 +1065,25 @@ def view_result(request, submission_id):
         'submission': submission,
     }
     return render(request, 'view_result_simple.html', context)
+
+    # TEMPORARY - Remove after creating admin
+def setup_admin(request):
+    """One-time setup view - DELETE AFTER USE"""
+    if Admin.objects.exists():
+        return HttpResponse("Setup already complete!")
+    
+    # Create superuser
+    user = User.objects.create_superuser(
+        username='admin',
+        password='adm503521',  # Change this!
+        email='admin@school.com'
+    )
+    
+    # Create Admin profile
+    admin = Admin.objects.create(
+        user=user,
+        admin_id='ADM503521',
+        full_name='System Administrator'
+    )
+    
+    return HttpResponse(f"✅ Admin created! ID: {admin.admin_id}, Password: admin123")
