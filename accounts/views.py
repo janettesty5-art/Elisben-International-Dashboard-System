@@ -1086,4 +1086,4 @@ def setup_admin(request):
         full_name='System Administrator'
     )
     
-    return HttpResponse(f"✅ Admin created! ID: {admin.admin_id}, Password: admin123")
+    return HttpResponse(f"✅ Admin created! ID: {admin.admin_id}, Password: adm503521")
