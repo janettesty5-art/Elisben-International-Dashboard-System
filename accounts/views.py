@@ -9,6 +9,7 @@ from .models import *
 import csv
 from datetime import datetime
 import random
+from django.http import HttpResponsefrom accounts.models import Admin, Principal, Bursar
 
 
 # ============= UNIFIED LOGIN (Updated with Principal & Bursar) =============
@@ -1066,24 +1067,60 @@ def view_result(request, submission_id):
     }
     return render(request, 'view_result_simple.html', context)
 
-    # TEMPORARY - Remove after creating admin
+
+
+   # TEMPORARY - Remove after creating roles
 def setup_admin(request):
     """One-time setup view - DELETE AFTER USE"""
-    if Admin.objects.exists():
-        return HttpResponse("Setup already complete!")
     
-    # Create superuser
-    user = User.objects.create_superuser(
-        username='admin',
-        password='adm503521',  # Change this!
-        email='admin@school.com'
-    )
+    results = []
     
-    # Create Admin profile
-    admin = Admin.objects.create(
-        user=user,
-        admin_id='ADM503521',
-        full_name='System Administrator'
-    )
+    # Create Admin
+    if not Admin.objects.filter(admin_id='ADM503521').exists():
+        admin_user = User.objects.create_superuser(
+            username='admin503521',
+            password='adm503521',
+            email='admin@school.com'
+        )
+        admin = Admin.objects.create(
+            user=admin_user,
+            admin_id='ADM503521',
+            full_name='System Administrator'
+        )
+        results.append(f"✅ Admin created! ID: {admin.admin_id}, Password: adm503521")
+    else:
+        results.append("ℹ️ Admin already exists")
     
-    return HttpResponse(f"✅ Admin created! ID: {admin.admin_id}, Password: adm503521")
+    # Create Principal
+    if not Principal.objects.filter(principal_id='PRI706181').exists():
+        principal_user = User.objects.create_user(
+            username='principal001',
+            password=' pri706181',  # Change to your preferred password
+            email='principal@school.com'
+        )
+        principal = Principal.objects.create(
+            user=principal_user,
+            principal_id=' PRI706181',
+            full_name='School Principal'
+        )
+        results.append(f"✅ Principal created! ID: {principal.principal_id}, Password: pri706181")
+    else:
+        results.append("ℹ️ Principal already exists")
+    
+    # Create Bursar
+    if not Bursar.objects.filter(bursar_id='BUR079418').exists():
+        bursar_user = User.objects.create_user(
+            username='bursar001',
+            password='bur079418',  # Change to your preferred password
+            email='bursar@school.com'
+        )
+        bursar = Bursar.objects.create(
+            user=bursar_user,
+            bursar_id='BUR079418',
+            full_name='School Bursar'
+        )
+        results.append(f"✅ Bursar created! ID: {bursar.bursar_id}, Password: bur079418")
+    else:
+        results.append("ℹ️ Bursar already exists")
+    
+    return HttpResponse("<br>".join(results))
