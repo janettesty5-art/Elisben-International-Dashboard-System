@@ -40,5 +40,4 @@ urlpatterns = [
     path('student/profile/', views.student_profile, name='student_profile'),
     path('student/take-exam/<str:exam_id>/', views.take_exam, name='take_exam'),
     path('student/result/<int:submission_id>/', views.view_result, name='view_result'),
-    path('setup-admin-once/', views.setup_admin, name='setup_admin')
 ]
