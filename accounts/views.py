@@ -11,12 +11,6 @@ from datetime import datetime
 import random
 from django.core.management import call_command
 
-
-try:
-    call_command('loaddata', 'data_final.json')
-except Exception as e:
-    print("Error loading data:", e)
-
 # ============= UNIFIED LOGIN (Updated with Principal & Bursar) =============
 def unified_login(request):
     if request.method == 'POST':
