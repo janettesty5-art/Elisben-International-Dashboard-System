@@ -1,0 +1,1827 @@
+[
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "auth",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "activitylog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "book"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "exam"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "admin"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "question"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "student"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "feerecord"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "examsubmission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "studentanswer"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "teacher"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "borrowrecord"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "attendance"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "academicsession"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "bursar"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "principal"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "term"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "subjectgrade"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "resultsummary"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "alumni"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "fields": {
+    "app_label": "accounts",
+    "model": "schoolsettings"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "uydfspoyhihfpdm3y9q8766wzuxpfnwa",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pAwMAVcuvcMZIBBqgaS0q6Md9cmXej2v_f-SwTa1hq2wUuYszgLI06_W6T04LaDfKd26zL1ti5zlLsiDzrktWd-Xg7376DSqN8aLShOzrOHootzYAAnZLBotZuURoNcWEX0JTnOWhX2MaEnlRGQrHh_AML6N2w:1v9wns:UTsBq1QiwQkKAYyFESRJO6E8xMeHSvMBVX8I02luKz0",
+    "expire_date": "2025-11-01T02:36:20.703Z"
+  }
+},
+{
+  "model": "accounts.exam",
+  "pk": 1,
+  "fields": {
+    "exam_id": "EXM0FSN7N",
+    "title": "First Term",
+    "subject": "Mathematic",
+    "class_name": "SS1",
+    "duration_minutes": 60,
+    "created_by": 1,
+    "created_at": "2025-10-13T01:38:07.496Z",
+    "is_active": true,
+    "shuffle_questions": true
+  }
+},
+{
+  "model": "accounts.exam",
+  "pk": 2,
+  "fields": {
+    "exam_id": "EXMCTY0YB",
+    "title": "First Term",
+    "subject": "English",
+    "class_name": "SS3",
+    "duration_minutes": 60,
+    "created_by": 1,
+    "created_at": "2025-10-13T01:43:33.459Z",
+    "is_active": true,
+    "shuffle_questions": true
+  }
+},
+{
+  "model": "accounts.question",
+  "pk": 1,
+  "fields": {
+    "exam": 1,
+    "question_text": "Choose the correct phrase",
+    "option_a": "She soot with me",
+    "option_b": "She was sitting with me",
+    "option_c": "she has being sitting with me",
+    "option_d": "she hasnt been sitting with me",
+    "correct_answer": "B",
+    "question_number": 1
+  }
+},
+{
+  "model": "accounts.question",
+  "pk": 2,
+  "fields": {
+    "exam": 2,
+    "question_text": "yusvtfqycystwyswhf",
+    "option_a": "She soot with me",
+    "option_b": "She was sitting with me",
+    "option_c": "she has being sitting with me",
+    "option_d": "she hasnt been sitting with me",
+    "correct_answer": "B",
+    "question_number": 1
+  }
+},
+{
+  "model": "accounts.examsubmission",
+  "pk": 1,
+  "fields": {
+    "student": 1,
+    "exam": 2,
+    "submitted_at": "2025-10-13T01:44:34.887Z",
+    "score": "0.00",
+    "total_questions": 1,
+    "correct_answers": 0
+  }
+},
+{
+  "model": "accounts.studentanswer",
+  "pk": 1,
+  "fields": {
+    "submission": 1,
+    "question": 2,
+    "selected_answer": "C",
+    "is_correct": false
+  }
+},
+{
+  "model": "accounts.schoolsettings",
+  "pk": 1,
+  "fields": {
+    "school_name": "Elisben International College",
+    "school_motto": "KNOWLEDGE FOR SELF RELIANCE",
+    "address": "Akure Rd, Oke Osun, Ikere Ekiti, Nigeria",
+    "phone": "+234 803 634 3681",
+    "email": "www.elisbeninternational1@gmail.com",
+    "website": null
+  }
+},
+{
+  "model": "accounts.academicsession",
+  "pk": 1,
+  "fields": {
+    "session_name": "2024/2025",
+    "is_current": true,
+    "created_at": "2025-10-14T12:19:46.079Z"
+  }
+},
+{
+  "model": "accounts.academicsession",
+  "pk": 2,
+  "fields": {
+    "session_name": "2024/2025",
+    "is_current": true,
+    "created_at": "2025-10-14T12:21:25.225Z"
+  }
+},
+{
+  "model": "accounts.term",
+  "pk": 1,
+  "fields": {
+    "session": 2,
+    "term": "First",
+    "is_current": true,
+    "created_at": "2025-10-14T12:22:06.616Z"
+  }
+},
+{
+  "model": "accounts.subjectgrade",
+  "pk": 1,
+  "fields": {
+    "student": 1,
+    "term": 1,
+    "subject": "ENGLISH LANGUAGE",
+    "test_1": "10.00",
+    "test_2": "10.00",
+    "test_3": "10.00",
+    "total_ca": "3.00",
+    "exam": "50.00",
+    "total_score": "38.00",
+    "grade": "F",
+    "remark": "FAIL",
+    "position_in_subject": 1,
+    "class_average": "38.00",
+    "recorded_by": 1,
+    "created_at": "2025-10-18T02:38:03.095Z",
+    "updated_at": "2025-10-18T02:38:03.095Z"
+  }
+},
+{
+  "model": "accounts.subjectgrade",
+  "pk": 2,
+  "fields": {
+    "student": 1,
+    "term": 1,
+    "subject": "MATHEMATICS",
+    "test_1": "10.00",
+    "test_2": "10.00",
+    "test_3": "10.00",
+    "total_ca": "3.00",
+    "exam": "50.00",
+    "total_score": "38.00",
+    "grade": "F",
+    "remark": "FAIL",
+    "position_in_subject": 1,
+    "class_average": "38.00",
+    "recorded_by": 1,
+    "created_at": "2025-10-18T02:38:03.103Z",
+    "updated_at": "2025-10-18T02:38:03.103Z"
+  }
+},
+{
+  "model": "accounts.subjectgrade",
+  "pk": 3,
+  "fields": {
+    "student": 1,
+    "term": 1,
+    "subject": "YORUBA LANGUAGE",
+    "test_1": "5.00",
+    "test_2": "5.00",
+    "test_3": "7.00",
+    "total_ca": "1.70",
+    "exam": "40.00",
+    "total_score": "29.70",
+    "grade": "F",
+    "remark": "FAIL",
+    "position_in_subject": 1,
+    "class_average": "29.70",
+    "recorded_by": 1,
+    "created_at": "2025-10-18T02:38:03.103Z",
+    "updated_at": "2025-10-18T02:38:03.103Z"
+  }
+},
+{
+  "model": "accounts.subjectgrade",
+  "pk": 4,
+  "fields": {
+    "student": 1,
+    "term": 1,
+    "subject": "BASIC SCIENCE",
+    "test_1": "6.00",
+    "test_2": "9.00",
+    "test_3": "7.00",
+    "total_ca": "2.20",
+    "exam": "54.00",
+    "total_score": "40.00",
+    "grade": "E",
+    "remark": "POOR",
+    "position_in_subject": 1,
+    "class_average": "40.00",
+    "recorded_by": 1,
+    "created_at": "2025-10-18T02:38:03.111Z",
+    "updated_at": "2025-10-18T02:38:03.111Z"
+  }
+},
+{
+  "model": "accounts.resultsummary",
+  "pk": 1,
+  "fields": {
+    "student": 1,
+    "term": 1,
+    "total_subjects": 4,
+    "score_gained": "145.70",
+    "average_score": "36.42",
+    "position_in_class": "1/1",
+    "promotion_status": "REPEAT",
+    "times_school_opened": 0,
+    "times_present": 0,
+    "times_absent": 0,
+    "class_teacher_remark": "",
+    "class_teacher": null,
+    "principal_remark": "",
+    "principal": null,
+    "hos_remark": "",
+    "hos": null,
+    "vacation_date": null,
+    "resumption_date": null,
+    "next_term_begins": null,
+    "next_term_fees": "0.00",
+    "pta_fee": "0.00",
+    "created_at": "2025-10-18T02:38:03.119Z",
+    "updated_at": "2025-10-18T02:38:03.153Z"
+  }
+},
+{
+  "model": "accounts.activitylog",
+  "pk": 1,
+  "fields": {
+    "action": "student_registered",
+    "description": "Student Testing This registered with ID STD028822",
+    "performed_by_type": "admin",
+    "performed_by_name": "Your Name",
+    "timestamp": "2025-10-13T01:35:00.317Z"
+  }
+},
+{
+  "model": "accounts.activitylog",
+  "pk": 2,
+  "fields": {
+    "action": "teacher_registered",
+    "description": "Teacher teacher testing registered with ID TCH889362",
+    "performed_by_type": "admin",
+    "performed_by_name": "Your Name",
+    "timestamp": "2025-10-13T01:36:18.054Z"
+  }
+},
+{
+  "model": "accounts.activitylog",
+  "pk": 3,
+  "fields": {
+    "action": "exam_created",
+    "description": "Exam \"First Term\" created with ID EXM0FSN7N",
+    "performed_by_type": "teacher",
+    "performed_by_name": "teacher testing",
+    "timestamp": "2025-10-13T01:38:07.496Z"
+  }
+},
+{
+  "model": "accounts.activitylog",
+  "pk": 4,
+  "fields": {
+    "action": "exam_created",
+    "description": "Exam \"First Term\" created with ID EXMCTY0YB",
+    "performed_by_type": "teacher",
+    "performed_by_name": "teacher testing",
+    "timestamp": "2025-10-13T01:43:33.493Z"
+  }
+},
+{
+  "model": "accounts.activitylog",
+  "pk": 5,
+  "fields": {
+    "action": "exam_submitted",
+    "description": "Testing This submitted First Term - Score: 0.0%",
+    "performed_by_type": "student",
+    "performed_by_name": "Testing This",
+    "timestamp": "2025-10-13T01:44:34.909Z"
+  }
+},
+{
+  "model": "accounts.activitylog",
+  "pk": 6,
+  "fields": {
+    "action": "grades_entered",
+    "description": "Complete result entered for Testing This - 2024/2025 - First Term",
+    "performed_by_type": "teacher",
+    "performed_by_name": "teacher testing",
+    "timestamp": "2025-10-18T02:38:03.161Z"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add activity log",
+    "content_type": [
+      "accounts",
+      "activitylog"
+    ],
+    "codename": "add_activitylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change activity log",
+    "content_type": [
+      "accounts",
+      "activitylog"
+    ],
+    "codename": "change_activitylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete activity log",
+    "content_type": [
+      "accounts",
+      "activitylog"
+    ],
+    "codename": "delete_activitylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view activity log",
+    "content_type": [
+      "accounts",
+      "activitylog"
+    ],
+    "codename": "view_activitylog"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add book",
+    "content_type": [
+      "accounts",
+      "book"
+    ],
+    "codename": "add_book"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change book",
+    "content_type": [
+      "accounts",
+      "book"
+    ],
+    "codename": "change_book"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete book",
+    "content_type": [
+      "accounts",
+      "book"
+    ],
+    "codename": "delete_book"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view book",
+    "content_type": [
+      "accounts",
+      "book"
+    ],
+    "codename": "view_book"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add exam",
+    "content_type": [
+      "accounts",
+      "exam"
+    ],
+    "codename": "add_exam"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change exam",
+    "content_type": [
+      "accounts",
+      "exam"
+    ],
+    "codename": "change_exam"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete exam",
+    "content_type": [
+      "accounts",
+      "exam"
+    ],
+    "codename": "delete_exam"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view exam",
+    "content_type": [
+      "accounts",
+      "exam"
+    ],
+    "codename": "view_exam"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add admin",
+    "content_type": [
+      "accounts",
+      "admin"
+    ],
+    "codename": "add_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change admin",
+    "content_type": [
+      "accounts",
+      "admin"
+    ],
+    "codename": "change_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete admin",
+    "content_type": [
+      "accounts",
+      "admin"
+    ],
+    "codename": "delete_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view admin",
+    "content_type": [
+      "accounts",
+      "admin"
+    ],
+    "codename": "view_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add question",
+    "content_type": [
+      "accounts",
+      "question"
+    ],
+    "codename": "add_question"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change question",
+    "content_type": [
+      "accounts",
+      "question"
+    ],
+    "codename": "change_question"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete question",
+    "content_type": [
+      "accounts",
+      "question"
+    ],
+    "codename": "delete_question"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view question",
+    "content_type": [
+      "accounts",
+      "question"
+    ],
+    "codename": "view_question"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add student",
+    "content_type": [
+      "accounts",
+      "student"
+    ],
+    "codename": "add_student"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change student",
+    "content_type": [
+      "accounts",
+      "student"
+    ],
+    "codename": "change_student"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete student",
+    "content_type": [
+      "accounts",
+      "student"
+    ],
+    "codename": "delete_student"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view student",
+    "content_type": [
+      "accounts",
+      "student"
+    ],
+    "codename": "view_student"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add fee record",
+    "content_type": [
+      "accounts",
+      "feerecord"
+    ],
+    "codename": "add_feerecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change fee record",
+    "content_type": [
+      "accounts",
+      "feerecord"
+    ],
+    "codename": "change_feerecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete fee record",
+    "content_type": [
+      "accounts",
+      "feerecord"
+    ],
+    "codename": "delete_feerecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view fee record",
+    "content_type": [
+      "accounts",
+      "feerecord"
+    ],
+    "codename": "view_feerecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add exam submission",
+    "content_type": [
+      "accounts",
+      "examsubmission"
+    ],
+    "codename": "add_examsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change exam submission",
+    "content_type": [
+      "accounts",
+      "examsubmission"
+    ],
+    "codename": "change_examsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete exam submission",
+    "content_type": [
+      "accounts",
+      "examsubmission"
+    ],
+    "codename": "delete_examsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view exam submission",
+    "content_type": [
+      "accounts",
+      "examsubmission"
+    ],
+    "codename": "view_examsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add student answer",
+    "content_type": [
+      "accounts",
+      "studentanswer"
+    ],
+    "codename": "add_studentanswer"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change student answer",
+    "content_type": [
+      "accounts",
+      "studentanswer"
+    ],
+    "codename": "change_studentanswer"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete student answer",
+    "content_type": [
+      "accounts",
+      "studentanswer"
+    ],
+    "codename": "delete_studentanswer"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view student answer",
+    "content_type": [
+      "accounts",
+      "studentanswer"
+    ],
+    "codename": "view_studentanswer"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add teacher",
+    "content_type": [
+      "accounts",
+      "teacher"
+    ],
+    "codename": "add_teacher"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change teacher",
+    "content_type": [
+      "accounts",
+      "teacher"
+    ],
+    "codename": "change_teacher"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete teacher",
+    "content_type": [
+      "accounts",
+      "teacher"
+    ],
+    "codename": "delete_teacher"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view teacher",
+    "content_type": [
+      "accounts",
+      "teacher"
+    ],
+    "codename": "view_teacher"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add borrow record",
+    "content_type": [
+      "accounts",
+      "borrowrecord"
+    ],
+    "codename": "add_borrowrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change borrow record",
+    "content_type": [
+      "accounts",
+      "borrowrecord"
+    ],
+    "codename": "change_borrowrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete borrow record",
+    "content_type": [
+      "accounts",
+      "borrowrecord"
+    ],
+    "codename": "delete_borrowrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view borrow record",
+    "content_type": [
+      "accounts",
+      "borrowrecord"
+    ],
+    "codename": "view_borrowrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add attendance",
+    "content_type": [
+      "accounts",
+      "attendance"
+    ],
+    "codename": "add_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change attendance",
+    "content_type": [
+      "accounts",
+      "attendance"
+    ],
+    "codename": "change_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete attendance",
+    "content_type": [
+      "accounts",
+      "attendance"
+    ],
+    "codename": "delete_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view attendance",
+    "content_type": [
+      "accounts",
+      "attendance"
+    ],
+    "codename": "view_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add academic session",
+    "content_type": [
+      "accounts",
+      "academicsession"
+    ],
+    "codename": "add_academicsession"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change academic session",
+    "content_type": [
+      "accounts",
+      "academicsession"
+    ],
+    "codename": "change_academicsession"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete academic session",
+    "content_type": [
+      "accounts",
+      "academicsession"
+    ],
+    "codename": "delete_academicsession"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view academic session",
+    "content_type": [
+      "accounts",
+      "academicsession"
+    ],
+    "codename": "view_academicsession"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add bursar",
+    "content_type": [
+      "accounts",
+      "bursar"
+    ],
+    "codename": "add_bursar"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change bursar",
+    "content_type": [
+      "accounts",
+      "bursar"
+    ],
+    "codename": "change_bursar"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete bursar",
+    "content_type": [
+      "accounts",
+      "bursar"
+    ],
+    "codename": "delete_bursar"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view bursar",
+    "content_type": [
+      "accounts",
+      "bursar"
+    ],
+    "codename": "view_bursar"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add principal",
+    "content_type": [
+      "accounts",
+      "principal"
+    ],
+    "codename": "add_principal"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change principal",
+    "content_type": [
+      "accounts",
+      "principal"
+    ],
+    "codename": "change_principal"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete principal",
+    "content_type": [
+      "accounts",
+      "principal"
+    ],
+    "codename": "delete_principal"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view principal",
+    "content_type": [
+      "accounts",
+      "principal"
+    ],
+    "codename": "view_principal"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add term",
+    "content_type": [
+      "accounts",
+      "term"
+    ],
+    "codename": "add_term"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change term",
+    "content_type": [
+      "accounts",
+      "term"
+    ],
+    "codename": "change_term"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete term",
+    "content_type": [
+      "accounts",
+      "term"
+    ],
+    "codename": "delete_term"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view term",
+    "content_type": [
+      "accounts",
+      "term"
+    ],
+    "codename": "view_term"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add subject grade",
+    "content_type": [
+      "accounts",
+      "subjectgrade"
+    ],
+    "codename": "add_subjectgrade"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change subject grade",
+    "content_type": [
+      "accounts",
+      "subjectgrade"
+    ],
+    "codename": "change_subjectgrade"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete subject grade",
+    "content_type": [
+      "accounts",
+      "subjectgrade"
+    ],
+    "codename": "delete_subjectgrade"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view subject grade",
+    "content_type": [
+      "accounts",
+      "subjectgrade"
+    ],
+    "codename": "view_subjectgrade"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add result summary",
+    "content_type": [
+      "accounts",
+      "resultsummary"
+    ],
+    "codename": "add_resultsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change result summary",
+    "content_type": [
+      "accounts",
+      "resultsummary"
+    ],
+    "codename": "change_resultsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete result summary",
+    "content_type": [
+      "accounts",
+      "resultsummary"
+    ],
+    "codename": "delete_resultsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view result summary",
+    "content_type": [
+      "accounts",
+      "resultsummary"
+    ],
+    "codename": "view_resultsummary"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add alumni",
+    "content_type": [
+      "accounts",
+      "alumni"
+    ],
+    "codename": "add_alumni"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change alumni",
+    "content_type": [
+      "accounts",
+      "alumni"
+    ],
+    "codename": "change_alumni"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete alumni",
+    "content_type": [
+      "accounts",
+      "alumni"
+    ],
+    "codename": "delete_alumni"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view alumni",
+    "content_type": [
+      "accounts",
+      "alumni"
+    ],
+    "codename": "view_alumni"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add School Settings",
+    "content_type": [
+      "accounts",
+      "schoolsettings"
+    ],
+    "codename": "add_schoolsettings"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change School Settings",
+    "content_type": [
+      "accounts",
+      "schoolsettings"
+    ],
+    "codename": "change_schoolsettings"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete School Settings",
+    "content_type": [
+      "accounts",
+      "schoolsettings"
+    ],
+    "codename": "delete_schoolsettings"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view School Settings",
+    "content_type": [
+      "accounts",
+      "schoolsettings"
+    ],
+    "codename": "view_schoolsettings"
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$HOh2PsdgO8E9guAqco2M0s$SWDBwHehtminuNkmFKm2saOuhZQy4NZRj4Y8wcNt7Zo=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "delllatitude5511",
+    "first_name": "",
+    "last_name": "",
+    "email": "elisbeninternational1@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-10-13T01:18:26.426Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$GRbB5CYKwDkKCgM0dJzfFS$YAMdhfuFBFepa8p+pE1HLSIxm0ifJL8y6xJ7hZ0KzD0=",
+    "last_login": "2025-10-13T01:33:55.939Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "elisbeninternational1@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-10-13T01:26:38.173Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "!9T4YUg9Qd0RsMwGKvowRozCfUKVO1sthYijYt2G3",
+    "last_login": "2025-10-13T01:44:14.728Z",
+    "is_superuser": false,
+    "username": "jhnmchjtregSd745",
+    "first_name": "",
+    "last_name": "",
+    "email": "jhnmchjtregSd@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-13T01:35:00.302Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "!fGmlhtl4aQ9ZLzSL4H834rtgvILkr4RFThutUnYf",
+    "last_login": "2025-10-18T02:36:20.669Z",
+    "is_superuser": false,
+    "username": "jhnmchjtregSd137",
+    "first_name": "",
+    "last_name": "",
+    "email": "jhnmchjtregSd@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-13T01:36:18.038Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "!eyVxesKUyDY4tauzzCEdsRVTodS5PlObN6yAztpM",
+    "last_login": "2025-10-14T12:23:03.543Z",
+    "is_superuser": false,
+    "username": "principal",
+    "first_name": "",
+    "last_name": "",
+    "email": "principal@elisben.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-14T12:14:28.989Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "!EYMOLINagXha1YagDYb7WklqWaYW3AhtFJQ04kzU",
+    "last_login": "2025-10-14T12:23:44.695Z",
+    "is_superuser": false,
+    "username": "bursar",
+    "first_name": "",
+    "last_name": "",
+    "email": "bursar@elisben.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2025-10-14T12:17:41.371Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "auth.user",
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$94IgDKJQXMsl0YiVkzXx3n$RBK0WHepRsUG5/R+WWfOwttAIt1KV6UyOtYRYFfpfYw=",
+    "last_login": "2025-10-17T11:14:34.511Z",
+    "is_superuser": true,
+    "username": "admin2",
+    "first_name": "",
+    "last_name": "",
+    "email": "janettesty4@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-10-17T11:13:18.475Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.admin",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "admin"
+    ],
+    "admin_id": "ADM503521",
+    "full_name": "Your Name",
+    "created_at": "2025-10-13T01:27:30.098Z"
+  }
+},
+{
+  "model": "accounts.principal",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "principal"
+    ],
+    "principal_id": "PRI706181",
+    "full_name": "Principal Name",
+    "created_at": "2025-10-14T12:16:19.577Z"
+  }
+},
+{
+  "model": "accounts.bursar",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "bursar"
+    ],
+    "bursar_id": "BUR079418",
+    "full_name": "Bursar Name",
+    "created_at": "2025-10-14T12:18:07.325Z"
+  }
+},
+{
+  "model": "accounts.teacher",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "jhnmchjtregSd137"
+    ],
+    "teacher_id": "TCH889362",
+    "full_name": "teacher testing",
+    "email": "jhnmchjtregSd@gmail.com",
+    "phone": "08039361542",
+    "subject": "Mathematic",
+    "created_at": "2025-10-13T01:36:18.038Z",
+    "registered_by": 1
+  }
+},
+{
+  "model": "accounts.student",
+  "pk": 1,
+  "fields": {
+    "user": [
+      "jhnmchjtregSd745"
+    ],
+    "student_id": "STD028822",
+    "full_name": "Testing This",
+    "email": "jhnmchjtregSd@gmail.com",
+    "phone": "08039361542",
+    "class_name": "SS3",
+    "profile_picture": "student_profiles/Elisben_Logo.png",
+    "created_at": "2025-10-13T01:35:00.302Z",
+    "registered_by": 1
+  }
+}
+]

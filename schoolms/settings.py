@@ -77,6 +77,10 @@ WSGI_APPLICATION = 'schoolms.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # Database Configuration
 
+
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://elisben_user:g2G8b31lsNHjA4T6HffZNGLtm77C5jyQ@dpg-d3pg2a3ipnbc739t0cfg-a.oregon-postgres.render.com:5432/elisben_db')
+
+
 if 'DATABASE_URL' in os.environ:
     DATABASES = {
         'default': dj_database_url.config(
