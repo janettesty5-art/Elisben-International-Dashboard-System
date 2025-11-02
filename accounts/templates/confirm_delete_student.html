@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Delete Student</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .container { max-width: 600px; width: 100%; }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 5px solid #e74c3c; }
+        .icon { font-size: 80px; text-align: center; margin-bottom: 20px; }
+        h1 { color: #e74c3c; text-align: center; margin-bottom: 20px; }
+        .warning-box { background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 20px; margin-bottom: 30px; }
+        .warning-box p { color: #856404; margin: 0; font-weight: 600; }
+        .student-info { background: #f8f9fa; border-radius: 10px; padding: 25px; margin-bottom: 30px; border-left: 5px solid #667eea; }
+        .student-info h3 { color: #333; margin-bottom: 15px; }
+        .info-item { margin: 10px 0; color: #555; }
+        .info-item strong { color: #333; }
+        .consequences { background: #f8d7da; border: 2px solid #f5c6cb; border-radius: 10px; padding: 20px; margin-bottom: 30px; }
+        .consequences h4 { color: #721c24; margin-bottom: 10px; }
+        .consequences ul { margin-left: 20px; color: #721c24; }
+        .consequences li { margin: 8px 0; }
+        .buttons { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        .btn { padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.3s; }
+        .btn-cancel { background: #6c757d; color: white; }
+        .btn-cancel:hover { background: #5a6268; }
+        .btn-delete { background: #e74c3c; color: white; }
+        .btn-delete:hover { background: #c0392b; }
+        
+        @media (max-width: 600px) {
+            .card { padding: 30px 20px; }
+            .buttons { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="icon">⚠️</div>
+            <h1>Confirm Student Deletion</h1>
+            
+            <div class="warning-box">
+                <p>⚠️ WARNING: This action is PERMANENT and CANNOT be undone!</p>
+            </div>
+            
+            <div class="student-info">
+                <h3>Student Details:</h3>
+                <div class="info-item"><strong>Full Name:</strong> {{ student.full_name }}</div>
+                <div class="info-item"><strong>Student ID:</strong> {{ student.student_id }}</div>
+                <div class="info-item"><strong>Class:</strong> {{ student.class_name }}</div>
+                <div class="info-item"><strong>Email:</strong> {{ student.email|default:"N/A" }}</div>
+                <div class="info-item"><strong>Phone:</strong> {{ student.phone|default:"N/A" }}</div>
+                <div class="info-item"><strong>Registered:</strong> {{ student.created_at|date:"F d, Y" }}</div>
+            </div>
+            
+            <div class="consequences">
+                <h4>⚠️ The following will be permanently deleted:</h4>
+                <ul>
+                    <li>Student profile and login account</li>
+                    <li>All exam submissions and scores</li>
+                    <li>All attendance records</li>
+                    <li>All grade records</li>
+                    <li>All fee payment records</li>
+                    <li>Any other associated data</li>
+                </ul>
+            </div>
+            
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">
+                Are you absolutely sure you want to permanently delete <strong>{{ student.full_name }}</strong>?
+            </p>
+            
+            <div class="buttons">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-cancel">
+                    ❌ No, Go Back
+                </a>
+                <form method="POST" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-delete" onclick="return confirm('FINAL CONFIRMATION: Delete {{ student.full_name }} permanently?')">
+                        🗑️ Yes, Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

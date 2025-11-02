@@ -400,13 +400,18 @@ def teacher_dashboard(request):
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
     
-    exams = Exam.objects.filter(created_by=teacher).order_by('-created_at')
+    # Separate published and draft exams (THIS IS THE KEY CHANGE!)
+    published_exams = Exam.objects.filter(created_by=teacher, is_published=True).order_by('-created_at')
+    draft_exams = Exam.objects.filter(created_by=teacher, is_published=False).order_by('-created_at')
+    
     submissions = ExamSubmission.objects.filter(exam__created_by=teacher).order_by('-submitted_at')[:10]
     
     context = {
         'teacher': teacher,
-        'exams': exams,
+        'published_exams': published_exams,
+        'draft_exams': draft_exams,
         'recent_submissions': submissions,
+        'total_exams': published_exams.count() + draft_exams.count(),
     }
     return render(request, 'teacher_dashboard.html', context)
 
@@ -431,17 +436,18 @@ def create_exam(request):
             class_name=class_name,
             duration_minutes=duration,
             created_by=teacher,
-            shuffle_questions=True
+            shuffle_questions=True,
+            is_published=False  # NEW: Start as draft!
         )
         
         ActivityLog.objects.create(
             action='exam_created',
-            description=f'Exam "{title}" created with ID {exam.exam_id}',
+            description=f'Exam "{title}" created as DRAFT with ID {exam.exam_id}',
             performed_by_type='teacher',
             performed_by_name=teacher.full_name
         )
         
-        messages.success(request, f'Exam created! Exam ID: {exam.exam_id}')
+        messages.success(request, f'✅ Exam created as DRAFT! Add questions then publish. Exam ID: {exam.exam_id}')
         return redirect('add_questions', exam_id=exam.id)
     
     return render(request, 'create_exam.html')
@@ -952,7 +958,13 @@ def student_dashboard(request):
         return redirect('unified_login')
     
     submissions = ExamSubmission.objects.filter(student=student).order_by('-submitted_at')
-    available_exams = Exam.objects.filter(class_name=student.class_name, is_active=True)
+    
+    # ONLY SHOW PUBLISHED EXAMS (THIS IS THE CRITICAL CHANGE!)
+    available_exams = Exam.objects.filter(
+        class_name=student.class_name, 
+        is_active=True,
+        is_published=True  # NEW: Only published exams visible to students!
+    )
     
     taken_exam_ids = submissions.values_list('exam_id', flat=True)
     available_exams = available_exams.exclude(id__in=taken_exam_ids)
@@ -963,7 +975,6 @@ def student_dashboard(request):
         'available_exams': available_exams,
     }
     return render(request, 'student_dashboard.html', context)
-
 
 @login_required
 def student_profile(request):
@@ -1065,3 +1076,200 @@ def view_result(request, submission_id):
         'submission': submission,
     }
     return render(request, 'view_result_simple.html', context)
+
+
+    # ============= FEATURE 1: DELETE INDIVIDUAL QUESTION =============
+@login_required
+def delete_single_question(request, exam_id, question_number):
+    """Delete a specific question by its number"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            # Get the specific question to delete
+            question = Question.objects.get(exam=exam, question_number=question_number)
+            question.delete()
+            
+            # Renumber remaining questions
+            remaining_questions = Question.objects.filter(exam=exam).order_by('question_number')
+            for idx, q in enumerate(remaining_questions, 1):
+                q.question_number = idx
+                q.save()
+            
+            ActivityLog.objects.create(
+                action='exam_edited',
+                description=f'Question {question_number} deleted from "{exam.title}"',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Question {question_number} deleted successfully!')
+        except Exception as e:
+            messages.error(request, f'Error deleting question: {str(e)}')
+    
+    return redirect('add_questions', exam_id=exam_id)
+
+
+# ============= FEATURE 2: DELETE STUDENT WITH CONFIRMATION =============
+@login_required
+def delete_student_confirm(request, student_id):
+    """Show confirmation page before permanently deleting student"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        admin_name = admin.full_name
+        is_admin = True
+    except:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            admin_name = principal.full_name
+            is_admin = False
+        except:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    student = get_object_or_404(Student, id=student_id)
+    
+    if request.method == 'POST':
+        student_name = student.full_name
+        student_id_num = student.student_id
+        
+        # Permanently delete student (cascades to all related records)
+        student.user.delete()
+        
+        ActivityLog.objects.create(
+            action='student_deleted',
+            description=f'Student {student_name} ({student_id_num}) permanently deleted',
+            performed_by_type='admin' if is_admin else 'principal',
+            performed_by_name=admin_name
+        )
+        
+        messages.success(request, f'✅ Student {student_name} has been permanently deleted!')
+        return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
+    
+    context = {'student': student}
+    return render(request, 'confirm_delete_student.html', context)
+
+
+# ============= FEATURE 3: SEARCH STUDENTS =============
+@login_required
+def search_students(request):
+    """Search students by name or ID"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+    except:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+        except:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    query = request.GET.get('q', '')
+    students = Student.objects.all()
+    
+    if query:
+        students = students.filter(
+            Q(full_name__icontains=query) | 
+            Q(student_id__icontains=query) |
+            Q(email__icontains=query)
+        ).order_by('-created_at')
+    
+    teachers = Teacher.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
+    
+    context = {
+        'admin': admin if is_admin else None,
+        'principal': principal if not is_admin else None,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+        'search_query': query,
+    }
+    
+    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
+    return render(request, template, context)
+
+
+# ============= FEATURE 3: SEARCH TEACHERS =============
+@login_required
+def search_teachers(request):
+    """Search teachers by name or email"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+    except:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+        except:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    query = request.GET.get('q', '')
+    teachers = Teacher.objects.all()
+    
+    if query:
+        teachers = teachers.filter(
+            Q(full_name__icontains=query) | 
+            Q(email__icontains=query) |
+            Q(teacher_id__icontains=query) |
+            Q(subject__icontains=query)
+        ).order_by('-created_at')
+    
+    students = Student.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
+    
+    context = {
+        'admin': admin if is_admin else None,
+        'principal': principal if not is_admin else None,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+        'search_query': query,
+    }
+    
+    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
+    return render(request, template, context)
+
+
+# ============= FEATURE 4: PUBLISH/UNPUBLISH EXAM =============
+@login_required
+def toggle_exam_publish(request, exam_id):
+    """Toggle exam publish status (Draft <-> Published)"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        exam.is_published = not exam.is_published
+        exam.save()
+        
+        status = "published ✅" if exam.is_published else "unpublished (moved to drafts) 📝"
+        
+        ActivityLog.objects.create(
+            action='exam_edited',
+            description=f'Exam "{exam.title}" {status}',
+            performed_by_type='teacher',
+            performed_by_name=teacher.full_name
+        )
+        
+        messages.success(request, f'Exam "{exam.title}" has been {status}!')
+    
+    return redirect('teacher_dashboard')

@@ -16,6 +16,13 @@ urlpatterns = [
     path('admin/delete-teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
     path('admin/finance/', views.manage_finance, name='manage_finance'),
     
+    # ========== NEW ROUTES - SEARCH FUNCTIONALITY ==========
+    path('search-students/', views.search_students, name='search_students'),
+    path('search-teachers/', views.search_teachers, name='search_teachers'),
+    
+    # ========== NEW ROUTE - DELETE WITH CONFIRMATION ==========
+    path('delete-student-confirm/<int:student_id>/', views.delete_student_confirm, name='delete_student_confirm'),
+    
     # Principal URLs
     path('principal/dashboard/', views.principal_dashboard, name='principal_dashboard'),
     
@@ -35,9 +42,24 @@ urlpatterns = [
     path('teacher/result-preview/<int:student_id>/<int:term_id>/', views.result_preview, name='result_preview'),
     path('teacher/export-results/<int:exam_id>/', views.export_results, name='export_results'),
     
+    # ========== NEW ROUTES - INDIVIDUAL DELETE & PUBLISH ==========
+    path('teacher/exam/<int:exam_id>/delete-question/<int:question_number>/', 
+         views.delete_single_question, name='delete_single_question'),
+    path('teacher/exam/<int:exam_id>/toggle-publish/', 
+         views.toggle_exam_publish, name='toggle_exam_publish'),
+    
     # Student URLs
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
     path('student/profile/', views.student_profile, name='student_profile'),
     path('student/take-exam/<str:exam_id>/', views.take_exam, name='take_exam'),
     path('student/result/<int:submission_id>/', views.view_result, name='view_result'),
 ]
+
+# ========================================
+# THAT'S IT! 5 NEW ROUTES ADDED:
+# 1. search-students/
+# 2. search-teachers/
+# 3. delete-student-confirm/<id>/
+# 4. teacher/exam/<id>/delete-question/<number>/
+# 5. teacher/exam/<id>/toggle-publish/
+# ========================================

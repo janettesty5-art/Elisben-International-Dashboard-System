@@ -140,7 +140,13 @@ class Exam(models.Model):
     created_by = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-    shuffle_questions = models.BooleanField(default=True)  # NEW: Shuffle for each student
+    shuffle_questions = models.BooleanField(default=True)
+    
+    # ===== ADD THESE 3 NEW FIELDS =====
+    is_published = models.BooleanField(default=False)  # NEW: Publishing system
+    updated_at = models.DateTimeField(auto_now=True)  # NEW: Track updates
+    # Note: created_at already exists above
+    # ===================================
 
     def save(self, *args, **kwargs):
         if not self.exam_id:
@@ -149,6 +155,7 @@ class Exam(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.exam_id})"
+
 
 
 # Question Model
