@@ -634,319 +634,6 @@ def view_attendance(request):
     return render(request, 'view_attendance.html', context)
 
 
-# NEW: Complete Result Entry System
-@login_required
-def complete_result_entry(request):
-    try:
-        teacher = Teacher.objects.get(user=request.user)
-    except:
-        messages.error(request, 'Access denied.')
-        return redirect('unified_login')
-    
-    # Standard subjects for all classes
-    STANDARD_SUBJECTS = [
-        'ENGLISH LANGUAGE',
-        'MATHEMATICS',
-        'YORUBA LANGUAGE',
-        'BASIC SCIENCE',
-        'SOCIAL STUDIES',
-        'CIVIC EDUCATION',
-        'CULTURAL & CREATIVE ARTS',
-        'C.R.K / I.R.K',
-        'PHYSICAL & HEALTH EDUCATION',
-        'ICT (COMPUTER STUDIES)',
-        'AGRIC SCIENCE',
-        'HOME ECONOMICS',
-        'BUSINESS STUDIES',
-        'MUSIC',
-        'FRENCH LANGUAGE',
-        'BASIC TECHNOLOGY',
-    ]
-    
-    if request.method == 'POST':
-        try:
-            student_id = request.POST.get('student_id')
-            term_id = request.POST.get('term_id')
-            
-            student = Student.objects.get(id=student_id)
-            term = Term.objects.get(id=term_id)
-            
-            # Save all subject grades
-            for subject in STANDARD_SUBJECTS:
-                test1 = float(request.POST.get(f'test1_{subject}', 0) or 0)
-                test2 = float(request.POST.get(f'test2_{subject}', 0) or 0)
-                test3 = float(request.POST.get(f'test3_{subject}', 0) or 0)
-                exam = float(request.POST.get(f'exam_{subject}', 0) or 0)
-                
-                # Skip if all zeros
-                if test1 == 0 and test2 == 0 and test3 == 0 and exam == 0:
-                    continue
-                
-                SubjectGrade.objects.update_or_create(
-                    student=student,
-                    term=term,
-                    subject=subject,
-                    defaults={
-                        'test_1': test1,
-                        'test_2': test2,
-                        'test_3': test3,
-                        'exam': exam,
-                        'recorded_by': teacher
-                    }
-                )
-            
-            # Calculate positions and class averages
-            calculate_class_positions(student.class_name, term)
-            
-            # Create/Update Result Summary
-            create_result_summary(student, term)
-            
-            ActivityLog.objects.create(
-                action='grades_entered',
-                description=f'Complete result entered for {student.full_name} - {term}',
-                performed_by_type='teacher',
-                performed_by_name=teacher.full_name
-            )
-            
-            messages.success(request, f'✅ Result saved successfully for {student.full_name}!')
-            return redirect('result_preview', student_id=student.id, term_id=term.id)
-            
-        except Exception as e:
-            messages.error(request, f'Error saving result: {str(e)}')
-            return redirect('complete_result_entry')
-    
-    # GET request - show form
-    classes = Student.objects.values_list('class_name', flat=True).distinct()
-    terms = Term.objects.all()
-    selected_class = request.GET.get('class_name')
-    students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
-    
-    context = {
-        'teacher': teacher,
-        'classes': classes,
-        'terms': terms,
-        'students': students,
-        'selected_class': selected_class,
-        'subjects': STANDARD_SUBJECTS,
-    }
-    return render(request, 'complete_result_entry.html', context)
-
-
-# Helper function to calculate positions
-def calculate_class_positions(class_name, term):
-    """Calculate position for each student in the class"""
-    students = Student.objects.filter(class_name=class_name)
-    
-    # Calculate total scores for each student
-    student_totals = []
-    for student in students:
-        grades = SubjectGrade.objects.filter(student=student, term=term)
-        total = sum([g.total_score for g in grades])
-        student_totals.append((student, total, grades.count()))
-    
-    # Sort by total score (descending)
-    student_totals.sort(key=lambda x: x[1], reverse=True)
-    
-    # Assign positions
-    total_students = len(student_totals)
-    for position, (student, total, subject_count) in enumerate(student_totals, 1):
-        # Update or create result summary
-        summary, created = ResultSummary.objects.get_or_create(
-            student=student,
-            term=term
-        )
-        summary.position_in_class = f"{position}/{total_students}"
-        summary.total_subjects = subject_count
-        summary.score_gained = total
-        summary.average_score = total / subject_count if subject_count > 0 else 0
-        summary.promotion_status = "PROMOTED" if summary.average_score >= 50 else "REPEAT"
-        summary.save()
-    
-    # Calculate class average for each subject
-    all_subjects = SubjectGrade.objects.filter(term=term, student__class_name=class_name).values_list('subject', flat=True).distinct()
-    
-    for subject in all_subjects:
-        grades = SubjectGrade.objects.filter(term=term, student__class_name=class_name, subject=subject)
-        if grades.exists():
-            avg = sum([g.total_score for g in grades]) / grades.count()
-            grades.update(class_average=round(avg, 2))
-            
-            # Calculate position in subject
-            subject_scores = [(g.student, g.total_score) for g in grades]
-            subject_scores.sort(key=lambda x: x[1], reverse=True)
-            
-            for pos, (student, score) in enumerate(subject_scores, 1):
-                SubjectGrade.objects.filter(
-                    student=student, 
-                    term=term, 
-                    subject=subject
-                ).update(position_in_subject=pos)
-
-
-# Helper function to create result summary
-def create_result_summary(student, term):
-    """Create or update result summary"""
-    grades = SubjectGrade.objects.filter(student=student, term=term)
-    
-    if not grades.exists():
-        return
-    
-    total_score = sum([g.total_score for g in grades])
-    subject_count = grades.count()
-    average = total_score / subject_count if subject_count > 0 else 0
-    
-    summary, created = ResultSummary.objects.get_or_create(
-        student=student,
-        term=term
-    )
-    
-    summary.total_subjects = subject_count
-    summary.score_gained = round(total_score, 2)
-    summary.average_score = round(average, 2)
-    summary.promotion_status = "PROMOTED" if average >= 50 else "REPEAT"
-    summary.save()
-
-
-# NEW: Result Preview
-@login_required  
-def result_preview(request, student_id, term_id):
-    try:
-        teacher = Teacher.objects.get(user=request.user)
-    except:
-        try:
-            principal = Principal.objects.get(user=request.user)
-        except:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    student = Student.objects.get(id=student_id)
-    term = Term.objects.get(id=term_id)
-    grades = SubjectGrade.objects.filter(student=student, term=term).order_by('subject')
-    summary = ResultSummary.objects.filter(student=student, term=term).first()
-    school_settings = SchoolSettings.objects.first()
-    
-    # Handle remarks submission
-    if request.method == 'POST':
-        if 'class_teacher_remark' in request.POST:
-            summary.class_teacher_remark = request.POST.get('class_teacher_remark')
-            summary.class_teacher = teacher if 'teacher' in request.path else None
-            summary.save()
-            messages.success(request, '✅ Class Teacher remark saved!')
-        
-        if 'principal_remark' in request.POST:
-            summary.principal_remark = request.POST.get('principal_remark')
-            summary.principal = principal if 'principal' in request.path else None
-            summary.save()
-            messages.success(request, '✅ Principal remark saved!')
-        
-        if 'hos_remark' in request.POST:
-            summary.hos_remark = request.POST.get('hos_remark')
-            summary.save()
-            messages.success(request, '✅ HOS remark saved!')
-        
-        return redirect('result_preview', student_id=student_id, term_id=term_id)
-    
-    context = {
-        'student': student,
-        'term': term,
-        'grades': grades,
-        'summary': summary,
-        'school_settings': school_settings,
-    }
-    return render(request, 'result_preview.html', context)
-@login_required
-def enter_grades(request):
-    try:
-        teacher = Teacher.objects.get(user=request.user)
-    except:
-        messages.error(request, 'Access denied.')
-        return redirect('unified_login')
-    
-    if request.method == 'POST':
-        class_name = request.POST.get('class_name')
-        subject = request.POST.get('subject')
-        term_id = request.POST.get('term')
-        
-        try:
-            term = Term.objects.get(id=term_id)
-            students = Student.objects.filter(class_name=class_name)
-            
-            for student in students:
-                test_1 = float(request.POST.get(f'test1_{student.id}', 0))
-                test_2 = float(request.POST.get(f'test2_{student.id}', 0))
-                test_3 = float(request.POST.get(f'test3_{student.id}', 0))
-                exam = float(request.POST.get(f'exam_{student.id}', 0))
-                
-                SubjectGrade.objects.update_or_create(
-                    student=student,
-                    term=term,
-                    subject=subject,
-                    defaults={
-                        'test_1': test_1,
-                        'test_2': test_2,
-                        'test_3': test_3,
-                        'exam': exam,
-                        'recorded_by': teacher
-                    }
-                )
-            
-            ActivityLog.objects.create(
-                action='grades_entered',
-                description=f'Grades entered for {subject} - {class_name}',
-                performed_by_type='teacher',
-                performed_by_name=teacher.full_name
-            )
-            
-            messages.success(request, '✅ Grades saved successfully!')
-            return redirect('enter_grades')
-        except Exception as e:
-            messages.error(request, f'Error saving grades: {str(e)}')
-            return redirect('enter_grades')
-    
-    classes = Student.objects.values_list('class_name', flat=True).distinct()
-    terms = Term.objects.all()
-    selected_class = request.GET.get('class_name')
-    students = Student.objects.filter(class_name=selected_class) if selected_class else []
-    
-    context = {
-        'teacher': teacher,
-        'classes': classes,
-        'terms': terms,
-        'students': students,
-        'selected_class': selected_class,
-    }
-    return render(request, 'enter_grades.html', context)
-
-
-@login_required
-def export_results(request, exam_id):
-    try:
-        teacher = Teacher.objects.get(user=request.user)
-        exam = Exam.objects.get(id=exam_id, created_by=teacher)
-    except:
-        messages.error(request, 'Access denied.')
-        return redirect('teacher_dashboard')
-    
-    submissions = ExamSubmission.objects.filter(exam=exam)
-    
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="{exam.title}_results.csv"'
-    
-    writer = csv.writer(response)
-    writer.writerow(['Student ID', 'Student Name', 'Score (%)', 'Correct Answers', 'Total Questions', 'Submission Date'])
-    
-    for sub in submissions:
-        writer.writerow([
-            sub.student.student_id,
-            sub.student.full_name,
-            sub.score,
-            sub.correct_answers,
-            sub.total_questions,
-            sub.submitted_at.strftime('%Y-%m-%d %H:%M')
-        ])
-    
-    return response
-
 
 # ============= STUDENT VIEWS =============
 @login_required
@@ -1273,3 +960,905 @@ def toggle_exam_publish(request, exam_id):
         messages.success(request, f'Exam "{exam.title}" has been {status}!')
     
     return redirect('teacher_dashboard')
+
+
+
+
+    # ============================================================================
+# ADD THESE VIEWS TO YOUR views.py FILE
+# PART 1: Make Result Portal & Subject Teacher Entry
+# ============================================================================
+
+from django.utils import timezone
+
+# Make Result Portal - Role Selection
+@login_required
+def make_result_portal(request):
+    """Landing page for Make Result - shows role tabs"""
+    return render(request, 'result/make_result_portal.html')
+
+
+# Subject Teacher - Enter Results for Their Subject
+@login_required
+def subject_teacher_entry(request):
+    """Subject teachers enter results for their subject across all classes"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            subject_name = request.POST.get('subject_name')
+            term = request.POST.get('term')
+            academic_year = request.POST.get('academic_year')
+            student_ids = request.POST.getlist('student_id')
+            
+            # Save results for each student
+            for student_id in student_ids:
+                student = Student.objects.get(id=student_id)
+                
+                test_a = float(request.POST.get(f'test_a_{student_id}', 0))
+                test_b = float(request.POST.get(f'test_b_{student_id}', 0))
+                test_c = float(request.POST.get(f'test_c_{student_id}', 0))
+                exam = float(request.POST.get(f'exam_{student_id}', 0))
+                ltcum = float(request.POST.get(f'ltcum_{student_id}', 0))
+                atcum = float(request.POST.get(f'atcum_{student_id}', 0))
+                
+                SubjectResult.objects.update_or_create(
+                    student=student,
+                    subject_name=subject_name,
+                    term=term,
+                    academic_year=academic_year,
+                    defaults={
+                        'test_a': test_a,
+                        'test_b': test_b,
+                        'test_c': test_c,
+                        'exam': exam,
+                        'ltcum': ltcum,
+                        'atcum': atcum,
+                        'entered_by': teacher,
+                    }
+                )
+            
+            ResultActivityLog.objects.create(
+                action='subject_result_entered',
+                description=f'{teacher.full_name} entered {subject_name} results for {term}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Results saved for {subject_name}!')
+            return redirect('subject_teacher_entry')
+            
+        except Exception as e:
+            messages.error(request, f'Error saving results: {str(e)}')
+            return redirect('subject_teacher_entry')
+    
+    # GET request - show form
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
+    selected_class = request.GET.get('class_name')
+    students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
+    
+    # Get existing results if any
+    subject_name = request.GET.get('subject_name')
+    term = request.GET.get('term')
+    existing_results = {}
+    if subject_name and term and selected_class:
+        for student in students:
+            try:
+                result = SubjectResult.objects.get(
+                    student=student,
+                    subject_name=subject_name,
+                    term=term
+                )
+                existing_results[student.id] = result
+            except SubjectResult.DoesNotExist:
+                pass
+    
+    context = {
+        'teacher': teacher,
+        'classes': classes,
+        'selected_class': selected_class,
+        'students': students,
+        'existing_results': existing_results,
+        'subject_name': subject_name,
+        'term': term,
+    }
+    return render(request, 'result/subject_teacher_entry.html', context)
+
+
+# Calculate Class Positions for a Subject
+def calculate_subject_positions(subject_name, term, academic_year, class_name):
+    """Calculate position rankings and class average for a subject"""
+    results = SubjectResult.objects.filter(
+        subject_name=subject_name,
+        term=term,
+        academic_year=academic_year,
+        student__class_name=class_name
+    ).order_by('-avg_2')
+    
+    if not results.exists():
+        return
+    
+    # Calculate class average
+    total_score = sum([r.avg_2 for r in results])
+    class_average = total_score / results.count()
+    
+    # Assign positions
+    for position, result in enumerate(results, 1):
+        result.position_ranking = position
+        result.class_average = round(class_average, 2)
+        result.save()
+
+
+
+
+    # ============================================================================
+# PART 2: Class Teacher Functions
+# ============================================================================
+
+# Class Teacher - Collate Results
+@login_required
+def class_teacher_collate(request):
+    """Class teachers collate subject results for their class"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
+    
+    # Get class teacher's class
+    selected_class = request.GET.get('class_name')
+    term = request.GET.get('term')
+    academic_year = request.GET.get('academic_year')
+    
+    if request.method == 'POST':
+        try:
+            student_id = request.POST.get('student_id')
+            student = Student.objects.get(id=student_id)
+            
+            # Create or update student result
+            result, created = StudentResult.objects.get_or_create(
+                student=student,
+                term=term,
+                academic_year=academic_year,
+                defaults={
+                    'class_name': student.class_name,
+                    'class_teacher': teacher,
+                }
+            )
+            
+            # Update attendance and fees
+            result.times_school_opened = int(request.POST.get('times_opened', 0))
+            result.times_present = int(request.POST.get('times_present', 0))
+            result.times_absent = int(request.POST.get('times_absent', 0))
+            result.vacation_date = request.POST.get('vacation_date')
+            result.resumption_date = request.POST.get('resumption_date')
+            result.next_term_pta_fee = float(request.POST.get('pta_fee', 0))
+            result.next_term_school_fee = float(request.POST.get('school_fee', 0))
+            
+            # Affective domain
+            result.affective_punctuality = request.POST.get('aff_punctuality', '')
+            result.affective_neatness = request.POST.get('aff_neatness', '')
+            result.affective_politeness = request.POST.get('aff_politeness', '')
+            result.affective_honesty = request.POST.get('aff_honesty', '')
+            result.affective_relationship = request.POST.get('aff_relationship', '')
+            result.affective_self_control = request.POST.get('aff_self_control', '')
+            result.affective_attentiveness = request.POST.get('aff_attentiveness', '')
+            
+            # Psychomotor domain
+            result.psycho_handwriting = request.POST.get('psycho_handwriting', '')
+            result.psycho_sports = request.POST.get('psycho_sports', '')
+            result.psycho_handling_tools = request.POST.get('psycho_tools', '')
+            result.psycho_verbal_fluency = request.POST.get('psycho_verbal', '')
+            result.psycho_games = request.POST.get('psycho_games', '')
+            result.psycho_drawing = request.POST.get('psycho_drawing', '')
+            
+            # Class teacher comment
+            result.class_teacher_comment = request.POST.get('class_teacher_comment', '')
+            result.class_teacher = teacher
+            
+            # Calculate totals
+            subject_results = SubjectResult.objects.filter(
+                student=student,
+                term=term,
+                academic_year=academic_year
+            )
+            
+            result.total_subjects = subject_results.count()
+            result.score_gained = sum([sr.avg_2 for sr in subject_results])
+            result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
+            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
+            
+            result.save()
+            
+            ResultActivityLog.objects.create(
+                action='result_collated',
+                description=f'Result collated for {student.full_name}',
+                student_result=result,
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Result collated for {student.full_name}!')
+            return redirect('class_teacher_collate')
+            
+        except Exception as e:
+            messages.error(request, f'Error saving result: {str(e)}')
+            return redirect('class_teacher_collate')
+    
+    # GET request
+    students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
+    
+    # Get existing results
+    results = []
+    if selected_class and term and academic_year:
+        for student in students:
+            try:
+                result = StudentResult.objects.get(
+                    student=student,
+                    term=term,
+                    academic_year=academic_year
+                )
+                # Get subject results count
+                subject_count = SubjectResult.objects.filter(
+                    student=student,
+                    term=term,
+                    academic_year=academic_year
+                ).count()
+                results.append({
+                    'student': student,
+                    'result': result,
+                    'subject_count': subject_count,
+                })
+            except StudentResult.DoesNotExist:
+                # Check if student has any subject results
+                subject_count = SubjectResult.objects.filter(
+                    student=student,
+                    term=term,
+                    academic_year=academic_year
+                ).count()
+                results.append({
+                    'student': student,
+                    'result': None,
+                    'subject_count': subject_count,
+                })
+    
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
+    
+    context = {
+        'teacher': teacher,
+        'classes': classes,
+        'selected_class': selected_class,
+        'term': term,
+        'academic_year': academic_year,
+        'results': results,
+    }
+    return render(request, 'result/class_teacher_collate.html', context)
+
+
+# Class Teacher - Edit Specific Result
+@login_required
+def class_teacher_edit_result(request, result_id):
+    """Edit a specific student's result"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('class_teacher_collate')
+    
+    # Get subject results for this student
+    subject_results = SubjectResult.objects.filter(
+        student=result.student,
+        term=result.term,
+        academic_year=result.academic_year
+    ).order_by('subject_name')
+    
+    if request.method == 'POST':
+        # Update result (same as collate but for editing)
+        # ... (similar code to collate)
+        messages.success(request, 'Result updated!')
+        return redirect('class_teacher_collate')
+    
+    context = {
+        'result': result,
+        'subject_results': subject_results,
+        'teacher': teacher,
+    }
+    return render(request, 'result/edit_result.html', context)
+
+
+# Send Single Result to Principal
+@login_required
+def send_result_to_principal(request, result_id):
+    """Send single result to principal"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+        
+        result.status = 'sent_to_principal'
+        result.sent_to_principal_at = timezone.now()
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='sent_to_principal',
+            description=f'Result for {result.student.full_name} sent to Principal',
+            student_result=result,
+            performed_by_type='teacher',
+            performed_by_name=teacher.full_name
+        )
+        
+        messages.success(request, f'✅ Result sent to Principal!')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('class_teacher_collate')
+
+
+# Send Batch Results to Principal
+@login_required
+def send_batch_to_principal(request):
+    """Send entire class results to principal at once"""
+    if request.method == 'POST':
+        try:
+            teacher = Teacher.objects.get(user=request.user)
+            result_ids = request.POST.getlist('result_ids')
+            
+            count = 0
+            for result_id in result_ids:
+                result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+                result.status = 'sent_to_principal'
+                result.sent_to_principal_at = timezone.now()
+                result.save()
+                count += 1
+            
+            ResultActivityLog.objects.create(
+                action='sent_to_principal',
+                description=f'{count} results sent to Principal by {teacher.full_name}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ {count} results sent to Principal!')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('class_teacher_collate')
+
+
+
+
+
+    # ============================================================================
+# PART 3: Principal & Admin Functions
+# ============================================================================
+
+# Principal - Review Results
+@login_required
+def principal_result_review(request):
+    """Principal reviews incoming results"""
+    try:
+        principal = Principal.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied. Principal only.')
+        return redirect('unified_login')
+    
+    # Get incoming results
+    incoming_results = StudentResult.objects.filter(
+        status='sent_to_principal'
+    ).order_by('class_name', 'student__full_name')
+    
+    context = {
+        'principal': principal,
+        'incoming_results': incoming_results,
+    }
+    return render(request, 'result/principal_review.html', context)
+
+
+# Principal - Add Comment
+@login_required
+def principal_add_comment(request, result_id):
+    """Principal adds comment to result"""
+    try:
+        principal = Principal.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, status='sent_to_principal')
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('principal_result_review')
+    
+    if request.method == 'POST':
+        result.principal_comment = request.POST.get('principal_comment')
+        result.principal = principal
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='principal_commented',
+            description=f'Principal commented on {result.student.full_name} result',
+            student_result=result,
+            performed_by_type='principal',
+            performed_by_name=principal.full_name
+        )
+        
+        messages.success(request, 'Comment saved!')
+        return redirect('principal_result_review')
+    
+    # Get subject results
+    subject_results = SubjectResult.objects.filter(
+        student=result.student,
+        term=result.term,
+        academic_year=result.academic_year
+    ).order_by('subject_name')
+    
+    context = {
+        'result': result,
+        'subject_results': subject_results,
+        'principal': principal,
+    }
+    return render(request, 'result/principal_add_comment.html', context)
+
+
+# Principal - Send to Admin
+@login_required
+def send_result_to_admin(request, result_id):
+    """Send single result to admin"""
+    try:
+        principal = Principal.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+        
+        result.status = 'sent_to_admin'
+        result.sent_to_admin_at = timezone.now()
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='sent_to_admin',
+            description=f'Result for {result.student.full_name} sent to Admin',
+            student_result=result,
+            performed_by_type='principal',
+            performed_by_name=principal.full_name
+        )
+        
+        messages.success(request, 'Result sent to Admin!')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('principal_result_review')
+
+
+# Principal - Send Batch to Admin
+@login_required
+def send_batch_to_admin(request):
+    """Send multiple results to admin at once"""
+    if request.method == 'POST':
+        try:
+            principal = Principal.objects.get(user=request.user)
+            result_ids = request.POST.getlist('result_ids')
+            
+            count = 0
+            for result_id in result_ids:
+                result = StudentResult.objects.get(id=result_id)
+                result.status = 'sent_to_admin'
+                result.sent_to_admin_at = timezone.now()
+                result.save()
+                count += 1
+            
+            ResultActivityLog.objects.create(
+                action='sent_to_admin',
+                description=f'{count} results sent to Admin by {principal.full_name}',
+                performed_by_type='principal',
+                performed_by_name=principal.full_name
+            )
+            
+            messages.success(request, f'✅ {count} results sent to Admin!')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('principal_result_review')
+
+
+# Admin - Result Management
+@login_required
+def admin_result_management(request):
+    """Admin views all incoming results by class"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('unified_login')
+    
+    # Get results grouped by class
+    incoming_results = StudentResult.objects.filter(
+        status='sent_to_admin'
+    ).order_by('class_name', 'student__full_name')
+    
+    # Group by class
+    results_by_class = {}
+    for result in incoming_results:
+        if result.class_name not in results_by_class:
+            results_by_class[result.class_name] = []
+        results_by_class[result.class_name].append(result)
+    
+    context = {
+        'admin': admin,
+        'results_by_class': results_by_class,
+    }
+    return render(request, 'result/admin_management.html', context)
+
+
+# Admin - Edit Result (Full Permission)
+@login_required
+def admin_edit_result(request, result_id):
+    """Admin can edit everything in the result"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('admin_result_management')
+    
+    # Get subject results
+    subject_results = SubjectResult.objects.filter(
+        student=result.student,
+        term=result.term,
+        academic_year=result.academic_year
+    ).order_by('subject_name')
+    
+    if request.method == 'POST':
+        # Admin can edit EVERYTHING
+        # Update student info if changed
+        result.student.full_name = request.POST.get('student_name', result.student.full_name)
+        result.student.save()
+        
+        # Update all fields
+        result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
+        result.times_present = int(request.POST.get('times_present', result.times_present))
+        result.times_absent = int(request.POST.get('times_absent', result.times_absent))
+        result.vacation_date = request.POST.get('vacation_date', result.vacation_date)
+        result.resumption_date = request.POST.get('resumption_date', result.resumption_date)
+        result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
+        result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
+        
+        # Update comments
+        result.class_teacher_comment = request.POST.get('class_teacher_comment', result.class_teacher_comment)
+        result.principal_comment = request.POST.get('principal_comment', result.principal_comment)
+        
+        result.save()
+        
+        # Update subject results if provided
+        for subject_result in subject_results:
+            sr_id = subject_result.id
+            if f'test_a_{sr_id}' in request.POST:
+                subject_result.test_a = float(request.POST.get(f'test_a_{sr_id}', subject_result.test_a))
+                subject_result.test_b = float(request.POST.get(f'test_b_{sr_id}', subject_result.test_b))
+                subject_result.test_c = float(request.POST.get(f'test_c_{sr_id}', subject_result.test_c))
+                subject_result.exam = float(request.POST.get(f'exam_{sr_id}', subject_result.exam))
+                subject_result.save()
+        
+        ResultActivityLog.objects.create(
+            action='admin_edited',
+            description=f'Admin edited result for {result.student.full_name}',
+            student_result=result,
+            performed_by_type='admin',
+            performed_by_name=admin.full_name
+        )
+        
+        messages.success(request, 'Result updated successfully!')
+        return redirect('admin_result_management')
+    
+    context = {
+        'result': result,
+        'subject_results': subject_results,
+        'admin': admin,
+    }
+    return render(request, 'result/admin_edit_result.html', context)
+
+
+# Admin - Add Stamp
+@login_required
+def admin_add_stamp(request, result_id):
+    """Admin adds stamp to result"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+        
+        result.has_stamp = True
+        result.stamped_at = timezone.now()
+        result.stamped_by = admin
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='stamp_added',
+            description=f'Stamp added to {result.student.full_name} result',
+            student_result=result,
+            performed_by_type='admin',
+            performed_by_name=admin.full_name
+        )
+        
+        messages.success(request, '✅ Stamp added!')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('admin_result_management')
+
+
+# Admin - Publish Result
+@login_required
+def admin_publish_result(request, result_id):
+    """Admin publishes result and generates PIN"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, has_stamp=True)
+        
+        # Generate PIN
+        pin = PublishedResult.generate_pin()
+        
+        PublishedResult.objects.create(
+            result=result,
+            pin=pin,
+            published_by=admin,
+            academic_year=result.academic_year,
+            term=result.term,
+            class_name=result.class_name
+        )
+        
+        result.status = 'published'
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='result_published',
+            description=f'Result published for {result.student.full_name} - PIN: {pin}',
+            student_result=result,
+            performed_by_type='admin',
+            performed_by_name=admin.full_name
+        )
+        
+        messages.success(request, f'✅ Result published! PIN: {pin}')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('admin_result_management')
+
+
+# Admin - Publish Batch
+@login_required
+def admin_publish_batch(request):
+    """Publish multiple results at once"""
+    if request.method == 'POST':
+        try:
+            admin = Admin.objects.get(user=request.user)
+            result_ids = request.POST.getlist('result_ids')
+            
+            published_count = 0
+            for result_id in result_ids:
+                result = StudentResult.objects.get(id=result_id, has_stamp=True)
+                
+                pin = PublishedResult.generate_pin()
+                PublishedResult.objects.create(
+                    result=result,
+                    pin=pin,
+                    published_by=admin,
+                    academic_year=result.academic_year,
+                    term=result.term,
+                    class_name=result.class_name
+                )
+                
+                result.status = 'published'
+                result.save()
+                published_count += 1
+            
+            messages.success(request, f'✅ {published_count} results published!')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('admin_result_management')
+
+
+# Admin - View Published Results
+@login_required
+def admin_view_published(request):
+    """View all published results with PINs"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    # Filter options
+    academic_year = request.GET.get('academic_year')
+    term = request.GET.get('term')
+    class_name = request.GET.get('class_name')
+    
+    published = PublishedResult.objects.all().order_by('-published_at')
+    
+    if academic_year:
+        published = published.filter(academic_year=academic_year)
+    if term:
+        published = published.filter(term=term)
+    if class_name:
+        published = published.filter(class_name=class_name)
+    
+    # Get unique values for filters
+    years = PublishedResult.objects.values_list('academic_year', flat=True).distinct()
+    terms = PublishedResult.objects.values_list('term', flat=True).distinct()
+    classes = PublishedResult.objects.values_list('class_name', flat=True).distinct()
+    
+    context = {
+        'admin': admin,
+        'published_results': published,
+        'years': years,
+        'terms': terms,
+        'classes': classes,
+    }
+    return render(request, 'result/admin_published.html', context)
+
+
+
+
+
+    # ============================================================================
+# PART 4: Check Result (Student) & Print
+# ============================================================================
+
+# Check Result Portal
+def check_result_portal(request):
+    """Student enters PIN to check their result"""
+    return render(request, 'result/check_result_portal.html')
+
+
+# View Student Result with PIN
+def view_student_result(request):
+    """Display result after PIN verification"""
+    if request.method == 'POST':
+        pin = request.POST.get('result_pin')
+        
+        try:
+            published_result = PublishedResult.objects.get(pin=pin)
+            result = published_result.result
+            
+            # Get subject results
+            subject_results = SubjectResult.objects.filter(
+                student=result.student,
+                term=result.term,
+                academic_year=result.academic_year
+            ).order_by('subject_name')
+            
+            context = {
+                'result': result,
+                'subject_results': subject_results,
+                'published': published_result,
+            }
+            return render(request, 'result/student_result_view.html', context)
+            
+        except PublishedResult.DoesNotExist:
+            messages.error(request, 'Invalid PIN. Please check and try again.')
+            return redirect('check_result_portal')
+    
+    return redirect('check_result_portal')
+
+
+# Print Result
+@login_required
+def print_result(request, result_id):
+    """Generate printable result sheet"""
+    try:
+        result = StudentResult.objects.get(id=result_id)
+        
+        # Get subject results
+        subject_results = SubjectResult.objects.filter(
+            student=result.student,
+            term=result.term,
+            academic_year=result.academic_year
+        ).order_by('subject_name')
+        
+        # Check if published (has PIN)
+        try:
+            published = PublishedResult.objects.get(result=result)
+        except PublishedResult.DoesNotExist:
+            published = None
+        
+        context = {
+            'result': result,
+            'subject_results': subject_results,
+            'published': published,
+            'school_settings': SchoolSettings.objects.first(),
+        }
+        return render(request, 'result/print_result.html', context)
+        
+    except StudentResult.DoesNotExist:
+        messages.error(request, 'Result not found.')
+        return redirect('admin_result_management')
+
+
+# UPDATE UNIFIED LOGIN to handle new roles
+def unified_login(request):
+    if request.method == 'POST':
+        role = request.POST.get('role')
+        user_id = request.POST.get('user_id')
+        result_pin = request.POST.get('result_pin')
+        
+        try:
+            if role == 'admin':
+                admin = Admin.objects.get(admin_id=user_id)
+                user = admin.user
+                login(request, user)
+                return redirect('admin_dashboard')
+            
+            elif role == 'teacher':
+                teacher = Teacher.objects.get(teacher_id=user_id)
+                user = teacher.user
+                login(request, user)
+                return redirect('teacher_dashboard')
+            
+            elif role == 'student':
+                student = Student.objects.get(student_id=user_id)
+                user = student.user
+                login(request, user)
+                return redirect('student_dashboard')
+            
+            elif role == 'principal':
+                principal = Principal.objects.get(principal_id=user_id)
+                user = principal.user
+                login(request, user)
+                return redirect('principal_dashboard')
+            
+            elif role == 'bursar':
+                bursar = Bursar.objects.get(bursar_id=user_id)
+                user = bursar.user
+                login(request, user)
+                return redirect('bursar_dashboard')
+            
+            elif role == 'make_result':
+                # Verify user_id belongs to teacher, principal, or admin
+                try:
+                    teacher = Teacher.objects.get(teacher_id=user_id)
+                    user = teacher.user
+                    login(request, user)
+                    return redirect('make_result_portal')
+                except Teacher.DoesNotExist:
+                    try:
+                        principal = Principal.objects.get(principal_id=user_id)
+                        user = principal.user
+                        login(request, user)
+                        return redirect('make_result_portal')
+                    except Principal.DoesNotExist:
+                        admin = Admin.objects.get(admin_id=user_id)
+                        user = admin.user
+                        login(request, user)
+                        return redirect('make_result_portal')
+            
+            elif role == 'check_result':
+                # Verify PIN and redirect directly to result
+                if result_pin:
+                    try:
+                        published_result = PublishedResult.objects.get(pin=result_pin)
+                        result = published_result.result
+                        
+                        # Get subject results
+                        subject_results = SubjectResult.objects.filter(
+                            student=result.student,
+                            term=result.term,
+                            academic_year=result.academic_year
+                        ).order_by('subject_name')
+                        
+                        # Render result directly without login
+                        context = {
+                            'result': result,
+                            'subject_results': subject_results,
+                            'published': published_result,
+                        }
+                        return render(request, 'result/student_result_view.html', context)
+                    except PublishedResult.DoesNotExist:
+                        messages.error(request, 'Invalid PIN. Please try again.')
+                        return redirect('unified_login')
+                else:
+                    messages.error(request, 'Please enter your PIN.')
+                    return redirect('unified_login')
+        
+        except Exception as e:
+            messages.error(request, 'Invalid ID/PIN or Role. Please try again.')
+            return redirect('unified_login')
+    
+    return render(request, 'login.html')
