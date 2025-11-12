@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Check Result - Elisben International College</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #3498db;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .form-group {
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 10px;
+            color: #333;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        input {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 20px;
+            text-align: center;
+            letter-spacing: 3px;
+            font-weight: 600;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info-box {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #3498db;
+        }
+        .info-box h3 {
+            color: #3498db;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .info-box ul {
+            text-align: left;
+            color: #555;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🎓</div>
+        <h1>Check Your Result</h1>
+        <p>Enter your 12-digit PIN to view your academic result</p>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="POST" action="{% url 'view_student_result' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>📌 Enter Your PIN:</label>
+                <input type="text" name="result_pin" placeholder="000000000000" maxlength="12" pattern="[0-9]{12}" required autofocus>
+            </div>
+            <button type="submit" class="btn">🔍 View My Result</button>
+        </form>
+        
+        <div class="info-box">
+            <h3>ℹ️ Important Information:</h3>
+            <ul>
+                <li>✓ Your PIN is 12 digits long</li>
+                <li>✓ PINs are case-sensitive</li>
+                <li>✓ Contact your school if you've lost your PIN</li>
+                <li>✓ Results are only available for published terms</li>
+            </ul>
+        </div>
+        
+        <a href="{% url 'unified_login' %}" class="back-btn">← Back to Login</a>
+    </div>
+</body>
+</html>

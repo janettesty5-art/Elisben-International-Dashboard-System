@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principal - Review Results</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .navbar { background: #8e44ad; color: white; padding: 20px 40px; }
+        .navbar h1 { font-size: 24px; }
+        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .btn { padding: 12px 30px; background: #8e44ad; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; margin-right: 10px; }
+        .btn:hover { background: #663399; }
+        .btn-back { background: #95a5a6; }
+        .btn-send { background: #27ae60; }
+        .btn-send-all { background: #3498db; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-info { background: #d1ecf1; color: #0c5460; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table th, table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        table th { background: #8e44ad; color: white; }
+        .status-badge { padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>👔 Principal - Review Incoming Results</h1>
+    </div>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="alert alert-info">
+            <strong>ℹ️ Your Task:</strong> Review results sent by class teachers. Add your principal's comment and forward to admin for final approval.
+        </div>
+        
+        <div class="card">
+            <h2>📥 Incoming Results</h2>
+            
+            {% if incoming_results %}
+                <form method="POST" action="{% url 'send_batch_to_admin' %}">
+                    {% csrf_token %}
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all"></th>
+                                <th>#</th>
+                                <th>Student Name</th>
+                                <th>Class</th>
+                                <th>Term</th>
+                                <th>Average Score</th>
+                                <th>Class Teacher</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in incoming_results %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="result_ids" value="{{ result.id }}" class="result-checkbox">
+                                </td>
+                                <td>{{ forloop.counter }}</td>
+                                <td><strong>{{ result.student.full_name }}</strong></td>
+                                <td>{{ result.class_name }}</td>
+                                <td>{{ result.term }}</td>
+                                <td><strong>{{ result.average_score|floatformat:2 }}%</strong></td>
+                                <td>{{ result.class_teacher.full_name }}</td>
+                                <td>
+                                    <span class="status-badge">📝 PENDING</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'principal_add_comment' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px;">
+                                        💬 Add Comment
+                                    </a>
+                                    {% if result.principal_comment %}
+                                    <a href="{% url 'send_result_to_admin' result.id %}" class="btn btn-send" style="font-size: 13px; padding: 8px 15px;">
+                                        📤 Send to Admin
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                    <div style="margin-top: 30px; text-align: center;">
+                        <button type="submit" class="btn btn-send-all">📤 Send Selected to Admin</button>
+                        <a href="{% url 'make_result_portal' %}" class="btn btn-back">← Back</a>
+                    </div>
+                </form>
+            {% else %}
+                <p style="text-align: center; color: #999; padding: 40px;">No incoming results at the moment. Check back later!</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // Select all checkbox functionality
+        document.getElementById('select-all')?.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.result-checkbox');
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    </script>
+</body>
+</html>

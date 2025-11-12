@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Academic Result</title>
+    <style>
+        @media print {
+            @page { margin: 0.5cm; }
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .result-sheet {
+            background: white;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        /* Header */
+        .header {
+            border: 3px solid #000;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .student-photo {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #000;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .student-info {
+            flex: 1;
+            margin-left: 20px;
+        }
+        .student-info p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        .school-logo {
+            width: 100px;
+            height: 100px;
+        }
+        .school-name {
+            text-align: center;
+            flex: 1;
+        }
+        .school-name h2 {
+            color: #000080;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .school-name p {
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        
+        .report-title {
+            background: #000080;
+            color: white;
+            padding: 8px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        /* Results Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-bottom: 15px;
+        }
+        table th, table td {
+            border: 1px solid #000;
+            padding: 6px 4px;
+            text-align: center;
+        }
+        table th {
+            background: #e8e8e8;
+            font-weight: bold;
+        }
+        .subject-col {
+            text-align: left !important;
+            padding-left: 8px;
+        }
+        .grade-col {
+            font-weight: bold;
+        }
+        
+        /* Bottom Section */
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            font-size: 11px;
+        }
+        .info-box {
+            border: 1px solid #000;
+            padding: 8px;
+        }
+        .info-box p {
+            margin: 5px 0;
+        }
+        
+        .remarks-section {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-top: 15px;
+        }
+        .remarks-section h4 {
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .remarks-section p {
+            font-size: 11px;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        
+        .grading-scale {
+            font-size: 10px;
+            margin: 10px 0;
+            padding: 8px;
+            background: #f5f5f5;
+            border: 1px solid #ccc;
+        }
+        
+        /* Stamp */
+        .stamp {
+            position: absolute;
+            bottom: 150px;
+            right: 100px;
+            opacity: 0.3;
+            width: 250px;
+            height: auto;
+            transform: rotate(-15deg);
+            pointer-events: none;
+        }
+        
+        .no-print {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: #000080;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 0 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #000060;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-sheet">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                {% if result.student.profile_picture %}
+                <img src="{{ result.student.profile_picture.url }}" class="student-photo" alt="Student Photo">
+                {% else %}
+                <div class="student-photo" style="background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 40px;">
+                    {{ result.student.full_name.0 }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="student-info">
+                <p><strong>{{ result.academic_year|default:"2024/ST/EIC259" }}</strong></p>
+                <p><strong>{{ result.student.full_name|upper }}</strong></p>
+                <p><strong>GENDER:</strong> {{ result.student.gender|default:"N/A" }}</p>
+                <p><strong>AGE:</strong> {{ result.student.age|default:"N/A" }}</p>
+                <p><strong>CLASS:</strong> {{ result.class_name }}</p>
+                <p><strong>RANK:</strong> {{ result.position_in_class|default:"STUDENT" }}</p>
+                <p><strong>TERM:</strong> {{ result.term }}</p>
+                <p><strong>ACADEMIC SESSION:</strong> {{ result.academic_year }}</p>
+            </div>
+            
+            <div class="school-name">
+                <h2>Elisben International College</h2>
+                <p><strong>CRECHE, NURSERY, PRIMARY, SECONDARY</strong></p>
+                <p>Surulere Quarters, Oke Osum Ikere Ekiti, Nigeria.</p>
+                <p>Email: info@elisbencollege.com | Web: elisbencollege.com</p>
+                <p>(Call or Whatsapp: +234 803 634 3681)</p>
+            </div>
+        </div>
+        
+        <div class="report-title">📚 TERMLY ACADEMIC REPORT - {{ result.student.full_name|upper }}</div>
+        
+        <!-- Results Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th rowspan="2">#</th>
+                    <th rowspan="2">SUBJECTS</th>
+                    <th colspan="3">CONTINUOUS ASSESSMENT</th>
+                    <th rowspan="2">AVG-1</th>
+                    <th rowspan="2">EXAM<br>100%</th>
+                    <th rowspan="2">AVG-2<br>100%</th>
+                    <th rowspan="2">LTCUM</th>
+                    <th rowspan="2">ATCUM</th>
+                    <th rowspan="2">GRADE</th>
+                    <th rowspan="2">POSITION</th>
+                    <th rowspan="2">CLASS AVG</th>
+                    <th rowspan="2">REMARK</th>
+                </tr>
+                <tr>
+                    <th>TEST A</th>
+                    <th>TEST B</th>
+                    <th>TEST C</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for subject in subject_results %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="subject-col">{{ subject.subject_name|upper }}</td>
+                    <td>{{ subject.test_a|floatformat:0 }}</td>
+                    <td>{{ subject.test_b|floatformat:0 }}</td>
+                    <td>{{ subject.test_c|floatformat:0 }}</td>
+                    <td>{{ subject.avg_1|floatformat:0 }}</td>
+                    <td>{{ subject.exam|floatformat:0 }}</td>
+                    <td>{{ subject.avg_2|floatformat:2 }}</td>
+                    <td>{{ subject.ltcum|floatformat:2 }}</td>
+                    <td>{{ subject.atcum|floatformat:2 }}</td>
+                    <td class="grade-col">{{ subject.grade }}</td>
+                    <td>{{ subject.position_ranking|default:"-" }}</td>
+                    <td>{{ subject.class_average|floatformat:2 }}</td>
+                    <td>{{ subject.grade_remark }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Bottom Info -->
+        <div class="bottom-section">
+            <div>
+                <div class="info-box">
+                    <p><strong>Vacation:</strong> {{ result.vacation_date|date:"jS F Y" }}</p>
+                    <p><strong>Resumption:</strong> {{ result.resumption_date|date:"jS F Y" }}</p>
+                    <p><strong>Next Term PTA:</strong> ₦{{ result.next_term_pta_fee|floatformat:2 }}</p>
+                    <p><strong>Next Term Fees:</strong> ₦{{ result.next_term_school_fee|floatformat:2 }}</p>
+                </div>
+                
+                <div class="info-box" style="margin-top: 10px;">
+                    <p><strong>Subjects Offered:</strong> {{ result.total_subjects }}</p>
+                    <p><strong>Score Gained:</strong> {{ result.score_gained|floatformat:1 }}</p>
+                    <p><strong>Avg. Score:</strong> {{ result.average_score|floatformat:1 }}</p>
+                    <p><strong>Status:</strong> <strong style="font-size: 14px;">{{ result.position_in_class }}</strong> - <strong>{{ result.status_promotion }}</strong></p>
+                </div>
+            </div>
+            
+            <div>
+                <div class="info-box">
+                    <p style="text-align: center;"><strong>CRITERIA FOR PASSING</strong></p>
+                    <p>✓ Compulsory Subjects: <strong>Maths and English</strong></p>
+                    <p>✓ Promotion Score: <strong>PASS (50%)</strong></p>
+                </div>
+                
+                <div class="grading-scale">
+                    <strong>GRADING:</strong><br>
+                    (70 - 100 = A - Excellent) | (60 - 69 = B - Very Good)<br>
+                    (50 - 59 = C - Good) | (45 - 49 = D - Pass)<br>
+                    (40 - 44 = E - Poor) | (0 - 39 = F - Fail)
+                </div>
+                
+                <div class="info-box">
+                    <p><strong>AFFECTIVE & PSYCHOMOTOR DOMAINS</strong></p>
+                    <table style="font-size: 10px; margin-top: 5px;">
+                        <tr>
+                            <td style="text-align: left;">Punctuality</td>
+                            <td>{{ result.affective_punctuality|default:"✓" }}</td>
+                            <td style="text-align: left;">Handwriting</td>
+                            <td>{{ result.psycho_handwriting|default:"✓" }}</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">Neatness</td>
+                            <td>{{ result.affective_neatness|default:"✓" }}</td>
+                            <td style="text-align: left;">Sports</td>
+                            <td>{{ result.psycho_sports|default:"✓" }}</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">Honesty</td>
+                            <td>{{ result.affective_honesty|default:"✓" }}</td>
+                            <td style="text-align: left;">Tools</td>
+                            <td>{{ result.psycho_handling_tools|default:"✓" }}</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">Relationship</td>
+                            <td>{{ result.affective_relationship|default:"✓" }}</td>
+                            <td style="text-align: left;">Fluency</td>
+                            <td>{{ result.psycho_verbal_fluency|default:"✓" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Remarks -->
+        <div class="remarks-section">
+            <h4>📝 Class Teacher's Remarks:</h4>
+            <p>{{ result.class_teacher_comment|default:"Keep trying! You have shown effort in various activities this term." }}</p>
+        </div>
+        
+        <div class="remarks-section">
+            <h4>👔 Principal's Comment:</h4>
+            <p>{{ result.principal_comment|default:"Very good result! Keep it up." }}</p>
+        </div>
+        
+        <!-- Stamp (if published) -->
+        {% if result.has_stamp %}
+        <img src="/media/student_profiles/school_stamp.jpg" class="stamp" alt="School Stamp">
+        {% endif %}
+        
+        <p style="text-align: center; font-size: 10px; margin-top: 20px;">
+            🎓 Elisben International College. All rights reserved ©2025
+        </p>
+    </div>
+    
+    <!-- Print/Back Buttons -->
+    <div class="no-print">
+        <button onclick="window.print()" class="btn">🖨️ Print Result</button>
+        <a href="{% url 'check_result_portal' %}" class="btn" style="background: #666;">← Check Another Result</a>
+    </div>
+</body>
+</html>

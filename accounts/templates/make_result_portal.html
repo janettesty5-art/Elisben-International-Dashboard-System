@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Make Result Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        .header h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .role-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+        }
+        .role-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        }
+        .role-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .role-card h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        .role-card p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .logout-btn {
+            display: block;
+            width: 200px;
+            margin: 0 auto;
+            padding: 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-align: center;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Make Result Portal</h1>
+            <p>Select your role to continue</p>
+        </div>
+        
+        <div class="role-grid">
+            <a href="{% url 'subject_teacher_entry' %}" class="role-card">
+                <div class="role-icon">📚</div>
+                <h2>Subject Teacher</h2>
+                <p>Enter results for your subject across all classes. Input test scores, exam scores, and cumulative marks for students offering your subject.</p>
+            </a>
+            
+            <a href="{% url 'class_teacher_collate' %}" class="role-card">
+                <div class="role-icon">📝</div>
+                <h2>Class Teacher</h2>
+                <p>Collate all subject results for your class. Add attendance, fees, affective & psychomotor domains, and class teacher comments.</p>
+            </a>
+            
+            <a href="{% url 'principal_result_review' %}" class="role-card">
+                <div class="role-icon">👔</div>
+                <h2>Principal</h2>
+                <p>Review incoming results from class teachers. Add principal's comments and forward results to admin for final approval.</p>
+            </a>
+            
+            <a href="{% url 'admin_result_management' %}" class="role-card">
+                <div class="role-icon">🔑</div>
+                <h2>Admin</h2>
+                <p>Final review and approval. Edit any part of results, add school stamp, publish results, and generate PINs for students.</p>
+            </a>
+        </div>
+        
+        <a href="{% url 'logout' %}" class="logout-btn">← Logout</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Result Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; }
+        .navbar h1 { font-size: 24px; }
+        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .class-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 20px; border-left: 5px solid #667eea; transition: transform 0.2s; cursor: pointer; }
+        .class-card:hover { transform: translateX(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .class-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .class-name { font-size: 20px; font-weight: 600; color: #667eea; }
+        .class-count { background: #667eea; color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+        .btn { padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; margin-right: 10px; }
+        .btn:hover { background: #764ba2; }
+        .btn-back { background: #95a5a6; }
+        .btn-publish { background: #27ae60; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-info { background: #d1ecf1; color: #0c5460; }
+        .student-list { display: none; margin-top: 20px; }
+        .student-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
+        .student-name { font-weight: 600; }
+        .student-score { color: #667eea; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>🔒 Admin - Result Management</h1>
+    </div>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="alert alert-info">
+            <strong>ℹ️ Admin Panel:</strong> You can edit ANY part of results, add stamps, and publish results with PINs. Click on any class to expand and view students.
+        </div>
+        
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>📥 Incoming Results by Class</h2>
+                <a href="{% url 'admin_view_published' %}" class="btn">📋 View Published Results</a>
+            </div>
+            
+            {% if results_by_class %}
+                {% for class_name, results in results_by_class.items %}
+                <div class="class-card" onclick="toggleClass('class-{{ forloop.counter }}')">
+                    <div class="class-header">
+                        <div class="class-name">📚 {{ class_name }}</div>
+                        <div class="class-count">{{ results|length }} students</div>
+                    </div>
+                    
+                    <div id="class-{{ forloop.counter }}" class="student-list">
+                        <form method="POST" action="{% url 'admin_publish_batch' %}">
+                            {% csrf_token %}
+                            
+                            {% for result in results %}
+                            <div class="student-item">
+                                <div>
+                                    <input type="checkbox" name="result_ids" value="{{ result.id }}" style="margin-right: 10px;">
+                                    <span class="student-name">{{ result.student.full_name }}</span>
+                                    <span class="student-score">(Avg: {{ result.average_score|floatformat:2 }}%)</span>
+                                </div>
+                                <div>
+                                    <a href="{% url 'admin_edit_result' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px;">
+                                        ✏️ Edit
+                                    </a>
+                                    {% if not result.has_stamp %}
+                                    <a href="{% url 'admin_add_stamp' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px; background: #f39c12;">
+                                        🖨️ Add Stamp
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'admin_publish_result' result.id %}" class="btn btn-publish" style="font-size: 13px; padding: 8px 15px;">
+                                        ✅ Publish
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'print_result' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px; background: #34495e;" target="_blank">
+                                        👁️ Preview
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            
+                            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd;">
+                                <button type="submit" class="btn btn-publish">✅ Publish Selected Results</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: #999; padding: 40px;">No incoming results at the moment.</p>
+            {% endif %}
+        </div>
+        
+        <div style="text-align: center;">
+            <a href="{% url 'make_result_portal' %}" class="btn btn-back">← Back</a>
+        </div>
+    </div>
+    
+    <script>
+        function toggleClass(classId) {
+            const element = document.getElementById(classId);
+            if (element.style.display === 'none' || element.style.display === '') {
+                element.style.display = 'block';
+            } else {
+                element.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

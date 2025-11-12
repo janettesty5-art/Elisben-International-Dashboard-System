@@ -5,6 +5,7 @@ from .models import (
     FeeRecord, ActivityLog, AcademicSession, Term, SubjectGrade, ResultSummary,
     SchoolSettings
 )
+from .models import SubjectResult, StudentResult, PublishedResult, ResultActivityLog
 
 @admin.register(Admin)
 class AdminModelAdmin(admin.ModelAdmin):
@@ -129,3 +130,34 @@ class ResultSummaryAdmin(admin.ModelAdmin):
     list_filter = ['term']
     search_fields = ['student__full_name']
     readonly_fields = ['created_at', 'updated_at']
+
+
+
+@admin.register(SubjectResult)
+class SubjectResultAdmin(admin.ModelAdmin):
+    list_display = ['student', 'subject_name', 'term', 'avg_2', 'grade', 'entered_by']
+    list_filter = ['subject_name', 'term', 'grade']
+    search_fields = ['student__full_name', 'subject_name']
+
+@admin.register(StudentResult)
+class StudentResultAdmin(admin.ModelAdmin):
+    list_display = ['student', 'term', 'class_name', 'average_score', 'status', 'has_stamp']
+    list_filter = ['status', 'term', 'class_name', 'has_stamp']
+    search_fields = ['student__full_name']
+
+@admin.register(PublishedResult)
+class PublishedResultAdmin(admin.ModelAdmin):
+    list_display = ['result', 'pin', 'term', 'class_name', 'published_at']
+    list_filter = ['term', 'class_name', 'published_at']
+    search_fields = ['pin', 'result__student__full_name']
+    readonly_fields = ['pin', 'published_at']
+
+@admin.register(ResultActivityLog)
+class ResultActivityLogAdmin(admin.ModelAdmin):
+    list_display = ['action', 'performed_by_name', 'student_result', 'timestamp']
+    list_filter = ['action', 'performed_by_type', 'timestamp']
+    readonly_fields = ['timestamp']
+
+@admin.register(SchoolSettings)
+class SchoolSettingsAdmin(admin.ModelAdmin):
+    list_display = ['school_name', 'school_motto', 'email', 'phone', 'address', 'website']
