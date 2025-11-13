@@ -12,57 +12,6 @@ import random
 from django.core.management import call_command
 from django.utils import timezone
 
-# ============= DECORATORS =============
-def admin_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        try:
-            Admin.objects.get(user=request.user)
-            return view_func(request, *args, **kwargs)
-        except Admin.DoesNotExist:
-            messages.error(request, 'Access denied. Admin only.')
-            return redirect('unified_login')
-    return wrapper
-
-def teacher_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        try:
-            Teacher.objects.get(user=request.user)
-            return view_func(request, *args, **kwargs)
-        except Teacher.DoesNotExist:
-            messages.error(request, 'Access denied. Teachers only.')
-            return redirect('unified_login')
-    return wrapper
-
-def principal_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        try:
-            Principal.objects.get(user=request.user)
-            return view_func(request, *args, **kwargs)
-        except Principal.DoesNotExist:
-            messages.error(request, 'Access denied. Principal only.')
-            return redirect('unified_login')
-    return wrapper
-
-def bursar_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        try:
-            Bursar.objects.get(user=request.user)
-            return view_func(request, *args, **kwargs)
-        except Bursar.DoesNotExist:
-            messages.error(request, 'Access denied. Bursar only.')
-            return redirect('unified_login')
-    return wrapper
-
-def student_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        try:
-            Student.objects.get(user=request.user)
-            return view_func(request, *args, **kwargs)
-        except Student.DoesNotExist:
-            messages.error(request, 'Access denied. Students only.')
-            return redirect('unified_login')
-    return wrapper
-
 # ============= UNIFIED LOGIN =============
 def unified_login(request):
     if request.user.is_authenticated:
@@ -118,10 +67,8 @@ def unified_login(request):
                 return redirect('bursar_dashboard')
             
             elif role == 'make_result':
-                # Try to find user in Teacher, Principal, or Admin
                 user_found = False
                 
-                # Try Teacher first
                 try:
                     teacher = Teacher.objects.get(teacher_id=user_id)
                     user = teacher.user
@@ -130,7 +77,6 @@ def unified_login(request):
                 except Teacher.DoesNotExist:
                     pass
                 
-                # Try Principal if not teacher
                 try:
                     principal = Principal.objects.get(principal_id=user_id)
                     user = principal.user
@@ -139,7 +85,6 @@ def unified_login(request):
                 except Principal.DoesNotExist:
                     pass
                 
-                # Try Admin if not teacher or principal
                 try:
                     admin = Admin.objects.get(admin_id=user_id)
                     user = admin.user
@@ -150,20 +95,17 @@ def unified_login(request):
                     return redirect('unified_login')
             
             elif role == 'check_result':
-                # Verify PIN and redirect directly to result
                 if result_pin:
                     try:
                         published_result = PublishedResult.objects.get(pin=result_pin)
                         result = published_result.result
                         
-                        # Get subject results
                         subject_results = SubjectResult.objects.filter(
                             student=result.student,
                             term=result.term,
                             academic_year=result.academic_year
                         ).order_by('subject_name')
                         
-                        # Render result directly without login
                         context = {
                             'result': result,
                             'subject_results': subject_results,
@@ -189,659 +131,13 @@ def user_logout(request):
 
 # ============= ADMIN VIEWS =============
 @login_required
-@admin_required
-def admin_dashboard(request):
-    admin = Admin.objects.get(user=request.user)
-    
-    students = Student.objects.all().order_by('-created_at')
-    teachers = Teacher.objects.all().order_by('-created_at')
-    recent_activities = ActivityLog.objects.all()[:20]
-    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
-    
-    context = {
-        'admin': admin,
-        'students': students,
-        'teachers': teachers,
-        'activities': recent_activities,
-        'total_fees': total_fees,
-        'student_count': students.count(),
-        'teacher_count': teachers.count(),
-    }
-    return render(request, 'admin_dashboard.html', context)
-
-@login_required
-def register_student(request):
-    # Check if user has permission (admin or principal)
-    try:
-        admin = Admin.objects.get(user=request.user)
-        is_admin = True
-        user_obj = admin
-    except Admin.DoesNotExist:
-        try:
-            principal = Principal.objects.get(user=request.user)
-            is_admin = False
-            user_obj = principal
-        except Principal.DoesNotExist:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    if request.method == 'POST':
-        try:
-            full_name = request.POST.get('full_name')
-            email = request.POST.get('email')
-            phone = request.POST.get('phone')
-            class_name = request.POST.get('class_name')
-            
-            username = full_name.replace(' ', '').lower() + str(random.randint(100, 999))
-            user = User.objects.create_user(
-                username=username, 
-                email=email if email else '',
-                password='default123'  # Set a default password
-            )
-            
-            student = Student.objects.create(
-                user=user,
-                full_name=full_name,
-                email=email if email else None,
-                phone=phone if phone else None,
-                class_name=class_name,
-                registered_by=admin if is_admin else None
-            )
-            
-            ActivityLog.objects.create(
-                action='student_registered',
-                description=f'Student {full_name} registered with ID {student.student_id}',
-                performed_by_type='admin' if is_admin else 'principal',
-                performed_by_name=user_obj.full_name
-            )
-            
-            messages.success(request, f'Student registered successfully! Student ID: {student.student_id}')
-            return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
-            
-        except Exception as e:
-            messages.error(request, f'Error registering student: {str(e)}')
-            return redirect('register_student')
-    
-    return render(request, 'register_student.html')
-
-@login_required
-@admin_required
-def move_to_alumni(request, student_id):
-    admin = Admin.objects.get(user=request.user)
-    
-    if request.method == 'POST':
-        try:
-            student = Student.objects.get(id=student_id)
-            reason = request.POST.get('reason')
-            year_left = request.POST.get('year_left')
-            current_institution = request.POST.get('current_institution')
-            notes = request.POST.get('notes')
-            
-            Alumni.objects.create(
-                student_id=student.student_id,
-                full_name=student.full_name,
-                email=student.email,
-                phone=student.phone,
-                last_class=student.class_name,
-                profile_picture=student.profile_picture,
-                reason=reason,
-                year_left=year_left,
-                current_institution=current_institution,
-                notes=notes,
-                original_registration_date=student.created_at,
-                moved_by=admin
-            )
-            
-            student_name = student.full_name
-            student.user.delete()
-            
-            ActivityLog.objects.create(
-                action='student_deleted',
-                description=f'Student {student_name} moved to Alumni - {reason}',
-                performed_by_type='admin',
-                performed_by_name=admin.full_name
-            )
-            
-            messages.success(request, f'{student_name} successfully moved to Alumni!')
-            return redirect('admin_dashboard')
-            
-        except Student.DoesNotExist:
-            messages.error(request, 'Student not found.')
-            return redirect('admin_dashboard')
-        except Exception as e:
-            messages.error(request, f'Error moving student to alumni: {str(e)}')
-            return redirect('admin_dashboard')
-    
-    student = get_object_or_404(Student, id=student_id)
-    context = {'student': student}
-    return render(request, 'move_to_alumni.html', context)
-
-@login_required
-def view_alumni(request):
-    # Check if user has permission (admin or principal)
-    try:
-        Admin.objects.get(user=request.user)
-    except Admin.DoesNotExist:
-        try:
-            Principal.objects.get(user=request.user)
-        except Principal.DoesNotExist:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    alumni_list = Alumni.objects.all().order_by('-moved_on')
-    context = {'alumni_list': alumni_list}
-    return render(request, 'view_alumni.html', context)
-
-@login_required
-def register_teacher(request):
-    # Check if user has permission (admin or principal)
-    try:
-        admin = Admin.objects.get(user=request.user)
-        is_admin = True
-        user_obj = admin
-    except Admin.DoesNotExist:
-        try:
-            principal = Principal.objects.get(user=request.user)
-            is_admin = False
-            user_obj = principal
-        except Principal.DoesNotExist:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    if request.method == 'POST':
-        try:
-            full_name = request.POST.get('full_name')
-            email = request.POST.get('email')
-            phone = request.POST.get('phone')
-            subject = request.POST.get('subject')
-            
-            username = email.split('@')[0] + str(random.randint(100, 999))
-            user = User.objects.create_user(username=username, email=email, password='default123')
-            
-            teacher = Teacher.objects.create(
-                user=user,
-                full_name=full_name,
-                email=email,
-                phone=phone,
-                subject=subject,
-                registered_by=admin if is_admin else None
-            )
-            
-            ActivityLog.objects.create(
-                action='teacher_registered',
-                description=f'Teacher {full_name} registered with ID {teacher.teacher_id}',
-                performed_by_type='admin' if is_admin else 'principal',
-                performed_by_name=user_obj.full_name
-            )
-            
-            messages.success(request, f'Teacher registered successfully! Teacher ID: {teacher.teacher_id}')
-            return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
-            
-        except Exception as e:
-            messages.error(request, f'Error registering teacher: {str(e)}')
-            return redirect('register_teacher')
-    
-    return render(request, 'register_teacher.html')
-
-@login_required
-@admin_required
-def delete_student_confirm(request, student_id):
-    admin = Admin.objects.get(user=request.user)
-    student = get_object_or_404(Student, id=student_id)
-    
-    if request.method == 'POST':
-        try:
-            student_name = student.full_name
-            student_id_num = student.student_id
-            
-            student.user.delete()
-            
-            ActivityLog.objects.create(
-                action='student_deleted',
-                description=f'Student {student_name} ({student_id_num}) permanently deleted',
-                performed_by_type='admin',
-                performed_by_name=admin.full_name
-            )
-            
-            messages.success(request, f'✅ Student {student_name} has been permanently deleted!')
-            return redirect('admin_dashboard')
-        except Exception as e:
-            messages.error(request, f'Error deleting student: {str(e)}')
-            return redirect('admin_dashboard')
-    
-    context = {'student': student}
-    return render(request, 'confirm_delete_student.html', context)
-
-@login_required
-@admin_required
-def delete_teacher_confirm(request, teacher_id):
-    admin = Admin.objects.get(user=request.user)
-    teacher = get_object_or_404(Teacher, id=teacher_id)
-    
-    if request.method == 'POST':
-        try:
-            teacher_name = teacher.full_name
-            teacher_id_num = teacher.teacher_id
-            
-            teacher.user.delete()
-            
-            ActivityLog.objects.create(
-                action='teacher_deleted',
-                description=f'Teacher {teacher_name} ({teacher_id_num}) permanently deleted',
-                performed_by_type='admin',
-                performed_by_name=admin.full_name
-            )
-            
-            messages.success(request, f'✅ Teacher {teacher_name} has been permanently deleted!')
-            return redirect('admin_dashboard')
-        except Exception as e:
-            messages.error(request, f'Error deleting teacher: {str(e)}')
-            return redirect('admin_dashboard')
-    
-    context = {'teacher': teacher}
-    return render(request, 'confirm_delete_teacher.html', context)
-
-@login_required
-def search_students(request):
-    # Check if user has permission (admin or principal)
-    try:
-        admin = Admin.objects.get(user=request.user)
-        is_admin = True
-        user_obj = admin
-    except Admin.DoesNotExist:
-        try:
-            principal = Principal.objects.get(user=request.user)
-            is_admin = False
-            user_obj = principal
-        except Principal.DoesNotExist:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    query = request.GET.get('q', '')
-    students = Student.objects.all()
-    
-    if query:
-        students = students.filter(
-            Q(full_name__icontains=query) | 
-            Q(student_id__icontains=query) |
-            Q(email__icontains=query)
-        ).order_by('-created_at')
-    
-    teachers = Teacher.objects.all().order_by('-created_at')
-    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
-    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
-    
-    context = {
-        'admin': admin if is_admin else None,
-        'principal': principal if not is_admin else None,
-        'students': students,
-        'teachers': teachers,
-        'activities': recent_activities,
-        'total_fees': total_fees,
-        'student_count': students.count(),
-        'teacher_count': teachers.count(),
-        'search_query': query,
-    }
-    
-    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
-    return render(request, template, context)
-
-@login_required
-def search_teachers(request):
-    # Check if user has permission (admin or principal)
-    try:
-        admin = Admin.objects.get(user=request.user)
-        is_admin = True
-        user_obj = admin
-    except Admin.DoesNotExist:
-        try:
-            principal = Principal.objects.get(user=request.user)
-            is_admin = False
-            user_obj = principal
-        except Principal.DoesNotExist:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    query = request.GET.get('q', '')
-    teachers = Teacher.objects.all()
-    
-    if query:
-        teachers = teachers.filter(
-            Q(full_name__icontains=query) | 
-            Q(email__icontains=query) |
-            Q(teacher_id__icontains=query) |
-            Q(subject__icontains=query)
-        ).order_by('-created_at')
-    
-    students = Student.objects.all().order_by('-created_at')
-    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
-    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
-    
-    context = {
-        'admin': admin if is_admin else None,
-        'principal': principal if not is_admin else None,
-        'students': students,
-        'teachers': teachers,
-        'activities': recent_activities,
-        'total_fees': total_fees,
-        'student_count': students.count(),
-        'teacher_count': teachers.count(),
-        'search_query': query,
-    }
-    
-    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
-    return render(request, template, context)
-
-# ============= FINANCE MANAGEMENT =============
-@login_required
-def manage_finance(request):
-    # Check if user has permission (admin or bursar)
-    try:
-        admin = Admin.objects.get(user=request.user)
-        is_admin = True
-        user_name = admin.full_name
-    except Admin.DoesNotExist:
-        try:
-            bursar = Bursar.objects.get(user=request.user)
-            is_admin = False
-            user_name = bursar.full_name
-        except Bursar.DoesNotExist:
-            messages.error(request, 'Access denied.')
-            return redirect('unified_login')
-    
-    if request.method == 'POST':
-        try:
-            student_id = request.POST.get('student_id')
-            total_fee = float(request.POST.get('total_fee', 0))
-            amount_paid = float(request.POST.get('amount_paid', 0))
-            fee_type = request.POST.get('fee_type')
-            payment_method = request.POST.get('payment_method')
-            payment_date = request.POST.get('payment_date') or timezone.now().date()
-            
-            student = Student.objects.get(student_id=student_id)
-            current_term = Term.objects.filter(is_current=True).first()
-            
-            fee_record = FeeRecord.objects.create(
-                student=student,
-                term=current_term,
-                total_fee=total_fee,
-                amount_paid=amount_paid,
-                balance=total_fee - amount_paid,
-                fee_type=fee_type,
-                payment_method=payment_method,
-                payment_date=payment_date,
-                recorded_by=None if is_admin else bursar,
-                recorded_by_admin=admin if is_admin else None
-            )
-            
-            ActivityLog.objects.create(
-                action='fee_recorded',
-                description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name}',
-                performed_by_type='admin' if is_admin else 'bursar',
-                performed_by_name=user_name
-            )
-            
-            messages.success(request, '✅ PAYMENT RECORDED SUCCESSFULLY!')
-            return redirect('bursar_dashboard' if not is_admin else 'manage_finance')
-        except Student.DoesNotExist:
-            messages.error(request, 'Student not found.')
-        except Exception as e:
-            messages.error(request, f'Error recording payment: {str(e)}')
-    
-    fee_records = FeeRecord.objects.all().order_by('-payment_date')
-    students = Student.objects.all()
-    
-    context = {
-        'fee_records': fee_records,
-        'students': students,
-        'is_admin': is_admin,
-    }
-    return render(request, 'manage_finance.html', context)
-
-# ============= PRINCIPAL VIEWS =============
-@login_required
-@principal_required
-def principal_dashboard(request):
-    principal = Principal.objects.get(user=request.user)
-    
-    students = Student.objects.all().order_by('-created_at')
-    teachers = Teacher.objects.all().order_by('-created_at')
-    
-    context = {
-        'principal': principal,
-        'students': students,
-        'teachers': teachers,
-        'student_count': students.count(),
-        'teacher_count': teachers.count(),
-    }
-    return render(request, 'principal_dashboard.html', context)
-
-# ============= BURSAR VIEWS =============
-@login_required
-@bursar_required
-def bursar_dashboard(request):
-    bursar = Bursar.objects.get(user=request.user)
-    
-    # Get search query
-    search_query = request.GET.get('search', '')
-    
-    # Base queryset
-    fee_records = FeeRecord.objects.all().order_by('-payment_date')
-    
-    # Apply search filter
-    if search_query:
-        fee_records = fee_records.filter(
-            Q(student__full_name__icontains=search_query) |
-            Q(student__student_id__icontains=search_query) |
-            Q(fee_type__icontains=search_query) |
-            Q(payment_method__icontains=search_query)
-        )
-    
-    students = Student.objects.all()
-    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
-    total_balance = FeeRecord.objects.aggregate(Sum('balance'))['balance__sum'] or 0
-    recent_activities = ActivityLog.objects.filter(performed_by_type='bursar')[:20]
-    
-    context = {
-        'bursar': bursar,
-        'fee_records': fee_records,
-        'students': students,
-        'total_fees': total_fees,
-        'total_balance': total_balance,
-        'activities': recent_activities,
-        'search_query': search_query,
-    }
-    return render(request, 'bursar_dashboard.html', context)
-
-# ============= TEACHER VIEWS =============
-@login_required
-@teacher_required
-def teacher_dashboard(request):
-    teacher = Teacher.objects.get(user=request.user)
-    
-    published_exams = Exam.objects.filter(created_by=teacher, is_published=True).order_by('-created_at')
-    draft_exams = Exam.objects.filter(created_by=teacher, is_published=False).order_by('-created_at')
-    
-    submissions = ExamSubmission.objects.filter(exam__created_by=teacher).order_by('-submitted_at')[:10]
-    
-    context = {
-        'teacher': teacher,
-        'published_exams': published_exams,
-        'draft_exams': draft_exams,
-        'recent_submissions': submissions,
-        'total_exams': published_exams.count() + draft_exams.count(),
-    }
-    return render(request, 'teacher_dashboard.html', context)
-
-@login_required
-@teacher_required
-def create_exam(request):
-    teacher = Teacher.objects.get(user=request.user)
-    
-    if request.method == 'POST':
-        try:
-            title = request.POST.get('title')
-            subject = request.POST.get('subject')
-            class_name = request.POST.get('class_name')
-            duration = request.POST.get('duration')
-            
-            exam = Exam.objects.create(
-                title=title,
-                subject=subject,
-                class_name=class_name,
-                duration_minutes=duration,
-                created_by=teacher,
-                shuffle_questions=True,
-                is_published=False
-            )
-            
-            ActivityLog.objects.create(
-                action='exam_created',
-                description=f'Exam "{title}" created as DRAFT with ID {exam.exam_id}',
-                performed_by_type='teacher',
-                performed_by_name=teacher.full_name
-            )
-            
-            messages.success(request, f'✅ Exam created as DRAFT! Add questions then publish. Exam ID: {exam.exam_id}')
-            return redirect('add_questions', exam_id=exam.id)
-        except Exception as e:
-            messages.error(request, f'Error creating exam: {str(e)}')
-            return redirect('create_exam')
-    
-    return render(request, 'create_exam.html')
-
-@login_required
-@teacher_required
-def add_questions(request, exam_id):
-    teacher = Teacher.objects.get(user=request.user)
-    exam = get_object_or_404(Exam, id=exam_id, created_by=teacher)
-    
-    if request.method == 'POST':
-        try:
-            question_text = request.POST.get('question_text')
-            option_a = request.POST.get('option_a')
-            option_b = request.POST.get('option_b')
-            option_c = request.POST.get('option_c')
-            option_d = request.POST.get('option_d')
-            correct_answer = request.POST.get('correct_answer')
-            
-            question_number = exam.questions.count() + 1
-            
-            Question.objects.create(
-                exam=exam,
-                question_text=question_text,
-                option_a=option_a,
-                option_b=option_b,
-                option_c=option_c,
-                option_d=option_d,
-                correct_answer=correct_answer,
-                question_number=question_number
-            )
-            
-            if 'add_another' in request.POST:
-                messages.success(request, 'Question added! Add another.')
-                return redirect('add_questions', exam_id=exam_id)
-            else:
-                messages.success(request, 'Exam completed successfully!')
-                return redirect('teacher_dashboard')
-        except Exception as e:
-            messages.error(request, f'Error adding question: {str(e)}')
-            return redirect('add_questions', exam_id=exam_id)
-    
-    questions = exam.questions.all()
-    context = {
-        'exam': exam,
-        'questions': questions,
-    }
-    return render(request, 'add_questions.html', context)
-
-@login_required
-@teacher_required
-def edit_question(request, question_id):
-    teacher = Teacher.objects.get(user=request.user)
-    question = get_object_or_404(Question, id=question_id, exam__created_by=teacher)
-    
-    if request.method == 'POST':
-        try:
-            question.question_text = request.POST.get('question_text')
-            question.option_a = request.POST.get('option_a')
-            question.option_b = request.POST.get('option_b')
-            question.option_c = request.POST.get('option_c')
-            question.option_d = request.POST.get('option_d')
-            question.correct_answer = request.POST.get('correct_answer')
-            question.save()
-            
-            messages.success(request, 'Question updated successfully!')
-            return redirect('add_questions', exam_id=question.exam.id)
-        except Exception as e:
-            messages.error(request, f'Error updating question: {str(e)}')
-            return redirect('add_questions', exam_id=question.exam.id)
-    
-    context = {'question': question}
-    return render(request, 'edit_question.html', context)
-
-@login_required
-@teacher_required
-def delete_single_question(request, exam_id, question_number):
-    teacher = Teacher.objects.get(user=request.user)
-    exam = get_object_or_404(Exam, id=exam_id, created_by=teacher)
-    
-    if request.method == 'POST':
-        try:
-            question = Question.objects.get(exam=exam, question_number=question_number)
-            question_text = question.question_text
-            question.delete()
-            
-            # Renumber remaining questions
-            remaining_questions = Question.objects.filter(exam=exam).order_by('id')
-            for idx, q in enumerate(remaining_questions, 1):
-                q.question_number = idx
-                q.save()
-            
-            ActivityLog.objects.create(
-                action='question_deleted',
-                description=f'Question deleted from {exam.title}',
-                performed_by_type='teacher',
-                performed_by_name=teacher.full_name
-            )
-            
-            messages.success(request, f'Question deleted successfully!')
-            return redirect('add_questions', exam_id=exam_id)
-        except Question.DoesNotExist:
-            messages.error(request, 'Question not found.')
-        except Exception as e:
-            messages.error(request, f'Error deleting question: {str(e)}')
-    
-    return redirect('add_questions', exam_id=exam_id)
-
-@login_required
-@teacher_required
-def delete_exam(request, exam_id):
-    teacher = Teacher.objects.get(user=request.user)
-    exam = get_object_or_404(Exam, id=exam_id, created_by=teacher)
-    
-    try:
-        exam_title = exam.title
-        exam.delete()
-        
-        ActivityLog.objects.create(
-            action='exam_deleted',
-            description=f'Exam "{exam_title}" deleted',
-            performed_by_type='teacher',
-            performed_by_name=teacher.full_name
-        )
-        
-        messages.success(request, 'Exam deleted successfully!')
-    except Exception as e:
-        messages.error(request, f'Error deleting exam: {str(e)}')
-    
-    return redirect('teacher_dashboard')
-
-@login_required
-@teacher_required
 def toggle_exam_publish(request, exam_id):
-    teacher = Teacher.objects.get(user=request.user)
-    exam = get_object_or_404(Exam, id=exam_id, created_by=teacher)
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
     
     if request.method == 'POST':
         try:
@@ -864,9 +160,12 @@ def toggle_exam_publish(request, exam_id):
     return redirect('teacher_dashboard')
 
 @login_required
-@teacher_required
 def mark_attendance(request):
-    teacher = Teacher.objects.get(user=request.user)
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
     
     if request.method == 'POST':
         try:
@@ -913,9 +212,12 @@ def mark_attendance(request):
     return render(request, 'mark_attendance.html', context)
 
 @login_required
-@teacher_required
 def view_attendance(request):
-    teacher = Teacher.objects.get(user=request.user)
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
     
     filter_class = request.GET.get('class_name')
     filter_date = request.GET.get('date')
@@ -941,9 +243,12 @@ def view_attendance(request):
 
 # ============= STUDENT VIEWS =============
 @login_required
-@student_required
 def student_dashboard(request):
-    student = Student.objects.get(user=request.user)
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
     
     submissions = ExamSubmission.objects.filter(student=student).order_by('-submitted_at')
     
@@ -964,9 +269,12 @@ def student_dashboard(request):
     return render(request, 'student_dashboard.html', context)
 
 @login_required
-@student_required
 def student_profile(request):
-    student = Student.objects.get(user=request.user)
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
     
     if request.method == 'POST':
         if request.FILES.get('profile_picture'):
@@ -984,10 +292,13 @@ def student_profile(request):
     return render(request, 'student_profile.html', context)
 
 @login_required
-@student_required
 def take_exam(request, exam_id):
-    student = Student.objects.get(user=request.user)
-    exam = get_object_or_404(Exam, exam_id=exam_id, class_name=student.class_name, is_active=True)
+    try:
+        student = Student.objects.get(user=request.user)
+        exam = Exam.objects.get(exam_id=exam_id, class_name=student.class_name, is_active=True)
+    except:
+        messages.error(request, 'Invalid exam or access denied.')
+        return redirect('student_dashboard')
     
     if ExamSubmission.objects.filter(student=student, exam=exam).exists():
         messages.error(request, 'You have already taken this exam.')
@@ -1048,10 +359,13 @@ def take_exam(request, exam_id):
     return render(request, 'take_exam.html', context)
 
 @login_required
-@student_required
 def view_result(request, submission_id):
-    student = Student.objects.get(user=request.user)
-    submission = get_object_or_404(ExamSubmission, id=submission_id, student=student)
+    try:
+        student = Student.objects.get(user=request.user)
+        submission = ExamSubmission.objects.get(id=submission_id, student=student)
+    except:
+        messages.error(request, 'Result not found.')
+        return redirect('student_dashboard')
     
     context = {
         'submission': submission,
@@ -1061,7 +375,6 @@ def view_result(request, submission_id):
 # ============= RESULT SYSTEM VIEWS =============
 @login_required
 def make_result_portal(request):
-    # Check if user has permission (teacher, principal, or admin)
     try:
         Teacher.objects.get(user=request.user)
     except Teacher.DoesNotExist:
@@ -1077,9 +390,12 @@ def make_result_portal(request):
     return render(request, 'result/make_result_portal.html')
 
 @login_required
-@teacher_required
 def subject_teacher_entry(request):
-    teacher = Teacher.objects.get(user=request.user)
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
     
     if request.method == 'POST':
         try:
@@ -1159,9 +475,12 @@ def subject_teacher_entry(request):
     return render(request, 'result/subject_teacher_entry.html', context)
 
 @login_required
-@teacher_required
 def class_teacher_collate(request):
-    teacher = Teacher.objects.get(user=request.user)
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
     
     selected_class = request.GET.get('class_name')
     term = request.GET.get('term')
@@ -1282,10 +601,13 @@ def class_teacher_collate(request):
     return render(request, 'result/class_teacher_collate.html', context)
 
 @login_required
-@teacher_required
 def class_teacher_edit_result(request, result_id):
-    teacher = Teacher.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id, class_teacher=teacher)
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('class_teacher_collate')
     
     subject_results = SubjectResult.objects.filter(
         student=result.student,
@@ -1305,12 +627,11 @@ def class_teacher_edit_result(request, result_id):
     return render(request, 'result/edit_result.html', context)
 
 @login_required
-@teacher_required
 def send_result_to_principal(request, result_id):
-    teacher = Teacher.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id, class_teacher=teacher)
-    
     try:
+        teacher = Teacher.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+        
         result.status = 'sent_to_principal'
         result.sent_to_principal_at = timezone.now()
         result.save()
@@ -1330,7 +651,6 @@ def send_result_to_principal(request, result_id):
     return redirect('class_teacher_collate')
 
 @login_required
-@teacher_required
 def send_batch_to_principal(request):
     if request.method == 'POST':
         try:
@@ -1359,9 +679,12 @@ def send_batch_to_principal(request):
     return redirect('class_teacher_collate')
 
 @login_required
-@principal_required
 def principal_result_review(request):
-    principal = Principal.objects.get(user=request.user)
+    try:
+        principal = Principal.objects.get(user=request.user)
+    except Principal.DoesNotExist:
+        messages.error(request, 'Access denied. Principal only.')
+        return redirect('unified_login')
     
     incoming_results = StudentResult.objects.filter(
         status='sent_to_principal'
@@ -1374,10 +697,13 @@ def principal_result_review(request):
     return render(request, 'result/principal_review.html', context)
 
 @login_required
-@principal_required
 def principal_add_comment(request, result_id):
-    principal = Principal.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id, status='sent_to_principal')
+    try:
+        principal = Principal.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, status='sent_to_principal')
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('principal_result_review')
     
     if request.method == 'POST':
         result.principal_comment = request.POST.get('principal_comment')
@@ -1409,12 +735,11 @@ def principal_add_comment(request, result_id):
     return render(request, 'result/principal_add_comment.html', context)
 
 @login_required
-@principal_required
 def send_result_to_admin(request, result_id):
-    principal = Principal.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id)
-    
     try:
+        principal = Principal.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+        
         result.status = 'sent_to_admin'
         result.sent_to_admin_at = timezone.now()
         result.save()
@@ -1434,7 +759,6 @@ def send_result_to_admin(request, result_id):
     return redirect('principal_result_review')
 
 @login_required
-@principal_required
 def send_batch_to_admin(request):
     if request.method == 'POST':
         try:
@@ -1463,9 +787,12 @@ def send_batch_to_admin(request):
     return redirect('principal_result_review')
 
 @login_required
-@admin_required
 def admin_result_management(request):
-    admin = Admin.objects.get(user=request.user)
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('unified_login')
     
     incoming_results = StudentResult.objects.filter(
         status='sent_to_admin'
@@ -1484,10 +811,13 @@ def admin_result_management(request):
     return render(request, 'result/admin_management.html', context)
 
 @login_required
-@admin_required
 def admin_edit_result(request, result_id):
-    admin = Admin.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id)
+    try:
+        admin = Admin.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('admin_result_management')
     
     subject_results = SubjectResult.objects.filter(
         student=result.student,
@@ -1544,12 +874,11 @@ def admin_edit_result(request, result_id):
     return render(request, 'result/admin_edit_result.html', context)
 
 @login_required
-@admin_required
 def admin_add_stamp(request, result_id):
-    admin = Admin.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id)
-    
     try:
+        admin = Admin.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+        
         result.has_stamp = True
         result.stamped_at = timezone.now()
         result.stamped_by = admin
@@ -1570,12 +899,11 @@ def admin_add_stamp(request, result_id):
     return redirect('admin_result_management')
 
 @login_required
-@admin_required
 def admin_publish_result(request, result_id):
-    admin = Admin.objects.get(user=request.user)
-    result = get_object_or_404(StudentResult, id=result_id, has_stamp=True)
-    
     try:
+        admin = Admin.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, has_stamp=True)
+        
         pin = PublishedResult.generate_pin()
         
         PublishedResult.objects.create(
@@ -1605,7 +933,6 @@ def admin_publish_result(request, result_id):
     return redirect('admin_result_management')
 
 @login_required
-@admin_required
 def admin_publish_batch(request):
     if request.method == 'POST':
         try:
@@ -1637,9 +964,12 @@ def admin_publish_batch(request):
     return redirect('admin_result_management')
 
 @login_required
-@admin_required
 def admin_view_published(request):
-    admin = Admin.objects.get(user=request.user)
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
     
     academic_year = request.GET.get('academic_year')
     term = request.GET.get('term')
@@ -1756,3 +1086,1314 @@ def export_results(request, exam_id):
 def delete_teacher(request, teacher_id):
     """Simple delete teacher function (redirects to confirm version)"""
     return redirect('delete_teacher_confirm', teacher_id=teacher_id)
+def admin_dashboard(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    students = Student.objects.all().order_by('-created_at')
+    teachers = Teacher.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20]
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    
+    context = {
+        'admin': admin,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+    }
+    return render(request, 'admin_dashboard.html', context)
+
+@login_required
+def register_student(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        user_obj = admin
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            user_obj = principal
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            full_name = request.POST.get('full_name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            class_name = request.POST.get('class_name')
+            
+            username = full_name.replace(' ', '').lower() + str(random.randint(100, 999))
+            user = User.objects.create_user(
+                username=username, 
+                email=email if email else '',
+                password='default123'
+            )
+            
+            student = Student.objects.create(
+                user=user,
+                full_name=full_name,
+                email=email if email else None,
+                phone=phone if phone else None,
+                class_name=class_name,
+                registered_by=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='student_registered',
+                description=f'Student {full_name} registered with ID {student.student_id}',
+                performed_by_type='admin' if is_admin else 'principal',
+                performed_by_name=user_obj.full_name
+            )
+            
+            messages.success(request, f'Student registered successfully! Student ID: {student.student_id}')
+            return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error registering student: {str(e)}')
+            return redirect('register_student')
+    
+    return render(request, 'register_student.html')
+
+@login_required
+def move_to_alumni(request, student_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            student = Student.objects.get(id=student_id)
+            reason = request.POST.get('reason')
+            year_left = request.POST.get('year_left')
+            current_institution = request.POST.get('current_institution')
+            notes = request.POST.get('notes')
+            
+            Alumni.objects.create(
+                student_id=student.student_id,
+                full_name=student.full_name,
+                email=student.email,
+                phone=student.phone,
+                last_class=student.class_name,
+                profile_picture=student.profile_picture,
+                reason=reason,
+                year_left=year_left,
+                current_institution=current_institution,
+                notes=notes,
+                original_registration_date=student.created_at,
+                moved_by=admin
+            )
+            
+            student_name = student.full_name
+            student.user.delete()
+            
+            ActivityLog.objects.create(
+                action='student_deleted',
+                description=f'Student {student_name} moved to Alumni - {reason}',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'{student_name} successfully moved to Alumni!')
+            return redirect('admin_dashboard')
+            
+        except Student.DoesNotExist:
+            messages.error(request, 'Student not found.')
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error moving student to alumni: {str(e)}')
+            return redirect('admin_dashboard')
+    
+    student = get_object_or_404(Student, id=student_id)
+    context = {'student': student}
+    return render(request, 'move_to_alumni.html', context)
+
+@login_required
+def view_alumni(request):
+    try:
+        Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        try:
+            Principal.objects.get(user=request.user)
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    alumni_list = Alumni.objects.all().order_by('-moved_on')
+    context = {'alumni_list': alumni_list}
+    return render(request, 'view_alumni.html', context)
+
+@login_required
+def register_teacher(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        user_obj = admin
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            user_obj = principal
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            full_name = request.POST.get('full_name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            subject = request.POST.get('subject')
+            
+            username = email.split('@')[0] + str(random.randint(100, 999))
+            user = User.objects.create_user(username=username, email=email, password='default123')
+            
+            teacher = Teacher.objects.create(
+                user=user,
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                subject=subject,
+                registered_by=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='teacher_registered',
+                description=f'Teacher {full_name} registered with ID {teacher.teacher_id}',
+                performed_by_type='admin' if is_admin else 'principal',
+                performed_by_name=user_obj.full_name
+            )
+            
+            messages.success(request, f'Teacher registered successfully! Teacher ID: {teacher.teacher_id}')
+            return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error registering teacher: {str(e)}')
+            return redirect('register_teacher')
+    
+    return render(request, 'register_teacher.html')
+
+@login_required
+def delete_student_confirm(request, student_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    student = get_object_or_404(Student, id=student_id)
+    
+    if request.method == 'POST':
+        try:
+            student_name = student.full_name
+            student_id_num = student.student_id
+            
+            student.user.delete()
+            
+            ActivityLog.objects.create(
+                action='student_deleted',
+                description=f'Student {student_name} ({student_id_num}) permanently deleted',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'✅ Student {student_name} has been permanently deleted!')
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error deleting student: {str(e)}')
+            return redirect('admin_dashboard')
+    
+    context = {'student': student}
+    return render(request, 'confirm_delete_student.html', context)
+
+@login_required
+def delete_teacher_confirm(request, teacher_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if request.method == 'POST':
+        try:
+            teacher_name = teacher.full_name
+            teacher_id_num = teacher.teacher_id
+            
+            teacher.user.delete()
+            
+            ActivityLog.objects.create(
+                action='teacher_deleted',
+                description=f'Teacher {teacher_name} ({teacher_id_num}) permanently deleted',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'✅ Teacher {teacher_name} has been permanently deleted!')
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error deleting teacher: {str(e)}')
+            return redirect('admin_dashboard')
+    
+    context = {'teacher': teacher}
+    return render(request, 'confirm_delete_teacher.html', context)
+
+@login_required
+def search_students(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    query = request.GET.get('q', '')
+    students = Student.objects.all()
+    
+    if query:
+        students = students.filter(
+            Q(full_name__icontains=query) | 
+            Q(student_id__icontains=query) |
+            Q(email__icontains=query)
+        ).order_by('-created_at')
+    
+    teachers = Teacher.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
+    
+    context = {
+        'admin': admin if is_admin else None,
+        'principal': principal if not is_admin else None,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+        'search_query': query,
+    }
+    
+    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
+    return render(request, template, context)
+
+@login_required
+def search_teachers(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    query = request.GET.get('q', '')
+    teachers = Teacher.objects.all()
+    
+    if query:
+        teachers = teachers.filter(
+            Q(full_name__icontains=query) | 
+            Q(email__icontains=query) |
+            Q(teacher_id__icontains=query) |
+            Q(subject__icontains=query)
+        ).order_by('-created_at')
+    
+    students = Student.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
+    
+    context = {
+        'admin': admin if is_admin else None,
+        'principal': principal if not is_admin else None,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+        'search_query': query,
+    }
+    
+    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
+    return render(request, template, context)
+
+# ============= FINANCE MANAGEMENT =============
+@login_required
+def manage_finance(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        user_name = admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            bursar = Bursar.objects.get(user=request.user)
+            is_admin = False
+            user_name = bursar.full_name
+        except Bursar.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            student_id = request.POST.get('student_id')
+            total_fee = float(request.POST.get('total_fee', 0))
+            amount_paid = float(request.POST.get('amount_paid', 0))
+            fee_type = request.POST.get('fee_type')
+            payment_method = request.POST.get('payment_method')
+            payment_date = request.POST.get('payment_date') or timezone.now().date()
+            
+            student = Student.objects.get(student_id=student_id)
+            current_term = Term.objects.filter(is_current=True).first()
+            
+            fee_record = FeeRecord.objects.create(
+                student=student,
+                term=current_term,
+                total_fee=total_fee,
+                amount_paid=amount_paid,
+                balance=total_fee - amount_paid,
+                fee_type=fee_type,
+                payment_method=payment_method,
+                payment_date=payment_date,
+                recorded_by=None if is_admin else bursar,
+                recorded_by_admin=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='fee_recorded',
+                description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name}',
+                performed_by_type='admin' if is_admin else 'bursar',
+                performed_by_name=user_name
+            )
+            
+            messages.success(request, '✅ PAYMENT RECORDED SUCCESSFULLY!')
+            return redirect('bursar_dashboard' if not is_admin else 'manage_finance')
+        except Student.DoesNotExist:
+            messages.error(request, 'Student not found.')
+        except Exception as e:
+            messages.error(request, f'Error recording payment: {str(e)}')
+    
+    fee_records = FeeRecord.objects.all().order_by('-payment_date')
+    students = Student.objects.all()
+    
+    context = {
+        'fee_records': fee_records,
+        'students': students,
+        'is_admin': is_admin,
+    }
+    return render(request, 'manage_finance.html', context)
+
+# ============= PRINCIPAL VIEWS =============
+@login_required
+def principal_dashboard(request):
+    try:
+        principal = Principal.objects.get(user=request.user)
+    except Principal.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    students = Student.objects.all().order_by('-created_at')
+    teachers = Teacher.objects.all().order_by('-created_at')
+    
+    context = {
+        'principal': principal,
+        'students': students,
+        'teachers': teachers,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+    }
+    return render(request, 'principal_dashboard.html', context)
+
+# ============= BURSAR VIEWS =============
+@login_required
+def bursar_dashboard(request):
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+    except Bursar.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    search_query = request.GET.get('search', '')
+    
+    fee_records = FeeRecord.objects.all().order_by('-payment_date')
+    
+    if search_query:
+        fee_records = fee_records.filter(
+            Q(student__full_name__icontains=search_query) |
+            Q(student__student_id__icontains=search_query) |
+            Q(fee_type__icontains=search_query) |
+            Q(payment_method__icontains=search_query)
+        )
+    
+    students = Student.objects.all()
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    total_balance = FeeRecord.objects.aggregate(Sum('balance'))['balance__sum'] or 0
+    recent_activities = ActivityLog.objects.filter(performed_by_type='bursar')[:20]
+    
+    context = {
+        'bursar': bursar,
+        'fee_records': fee_records,
+        'students': students,
+        'total_fees': total_fees,
+        'total_balance': total_balance,
+        'activities': recent_activities,
+        'search_query': search_query,
+    }
+    return render(request, 'bursar_dashboard.html', context)
+
+# ============= TEACHER VIEWS =============
+@login_required
+def teacher_dashboard(request):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    published_exams = Exam.objects.filter(created_by=teacher, is_published=True).order_by('-created_at')
+    draft_exams = Exam.objects.filter(created_by=teacher, is_published=False).order_by('-created_at')
+    
+    submissions = ExamSubmission.objects.filter(exam__created_by=teacher).order_by('-submitted_at')[:10]
+    
+    context = {
+        'teacher': teacher,
+        'published_exams': published_exams,
+        'draft_exams': draft_exams,
+        'recent_submissions': submissions,
+        'total_exams': published_exams.count() + draft_exams.count(),
+    }
+    return render(request, 'teacher_dashboard.html', context)
+
+@login_required
+def create_exam(request):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            title = request.POST.get('title')
+            subject = request.POST.get('subject')
+            class_name = request.POST.get('class_name')
+            duration = request.POST.get('duration')
+            
+            exam = Exam.objects.create(
+                title=title,
+                subject=subject,
+                class_name=class_name,
+                duration_minutes=duration,
+                created_by=teacher,
+                shuffle_questions=True,
+                is_published=False
+            )
+            
+            ActivityLog.objects.create(
+                action='exam_created',
+                description=f'Exam "{title}" created as DRAFT with ID {exam.exam_id}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Exam created as DRAFT! Add questions then publish. Exam ID: {exam.exam_id}')
+            return redirect('add_questions', exam_id=exam.id)
+        except Exception as e:
+            messages.error(request, f'Error creating exam: {str(e)}')
+            return redirect('create_exam')
+    
+    return render(request, 'create_exam.html')
+
+@login_required
+def add_questions(request, exam_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            question_text = request.POST.get('question_text')
+            option_a = request.POST.get('option_a')
+            option_b = request.POST.get('option_b')
+            option_c = request.POST.get('option_c')
+            option_d = request.POST.get('option_d')
+            correct_answer = request.POST.get('correct_answer')
+            
+            question_number = exam.questions.count() + 1
+            
+            Question.objects.create(
+                exam=exam,
+                question_text=question_text,
+                option_a=option_a,
+                option_b=option_b,
+                option_c=option_c,
+                option_d=option_d,
+                correct_answer=correct_answer,
+                question_number=question_number
+            )
+            
+            if 'add_another' in request.POST:
+                messages.success(request, 'Question added! Add another.')
+                return redirect('add_questions', exam_id=exam_id)
+            else:
+                messages.success(request, 'Exam completed successfully!')
+                return redirect('teacher_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error adding question: {str(e)}')
+            return redirect('add_questions', exam_id=exam_id)
+    
+    questions = exam.questions.all()
+    context = {
+        'exam': exam,
+        'questions': questions,
+    }
+    return render(request, 'add_questions.html', context)
+
+@login_required
+def edit_question(request, question_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        question = Question.objects.get(id=question_id, exam__created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            question.question_text = request.POST.get('question_text')
+            question.option_a = request.POST.get('option_a')
+            question.option_b = request.POST.get('option_b')
+            question.option_c = request.POST.get('option_c')
+            question.option_d = request.POST.get('option_d')
+            question.correct_answer = request.POST.get('correct_answer')
+            question.save()
+            
+            messages.success(request, 'Question updated successfully!')
+            return redirect('add_questions', exam_id=question.exam.id)
+        except Exception as e:
+            messages.error(request, f'Error updating question: {str(e)}')
+            return redirect('add_questions', exam_id=question.exam.id)
+    
+    context = {'question': question}
+    return render(request, 'edit_question.html', context)
+
+@login_required
+def delete_single_question(request, exam_id, question_number):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            question = Question.objects.get(exam=exam, question_number=question_number)
+            question_text = question.question_text
+            question.delete()
+            
+            remaining_questions = Question.objects.filter(exam=exam).order_by('id')
+            for idx, q in enumerate(remaining_questions, 1):
+                q.question_number = idx
+                q.save()
+            
+            ActivityLog.objects.create(
+                action='question_deleted',
+                description=f'Question deleted from {exam.title}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'Question deleted successfully!')
+            return redirect('add_questions', exam_id=exam_id)
+        except Question.DoesNotExist:
+            messages.error(request, 'Question not found.')
+        except Exception as e:
+            messages.error(request, f'Error deleting question: {str(e)}')
+    
+    return redirect('add_questions', exam_id=exam_id)
+
+@login_required
+def delete_exam(request, exam_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+        
+        exam_title = exam.title
+        exam.delete()
+        
+        ActivityLog.objects.create(
+            action='exam_deleted',
+            description=f'Exam "{exam_title}" deleted',
+            performed_by_type='teacher',
+            performed_by_name=teacher.full_name
+        )
+        
+        messages.success(request, 'Exam deleted successfully!')
+    except Exception as e:
+        messages.error(request, f'Error deleting exam: {str(e)}')
+    
+    return redirect('teacher_dashboard')
+
+@login_required
+def admin_dashboard(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    students = Student.objects.all().order_by('-created_at')
+    teachers = Teacher.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20]
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    
+    context = {
+        'admin': admin,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+    }
+    return render(request, 'admin_dashboard.html', context)
+
+@login_required
+def register_student(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        user_obj = admin
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            user_obj = principal
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            full_name = request.POST.get('full_name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            class_name = request.POST.get('class_name')
+            
+            username = full_name.replace(' ', '').lower() + str(random.randint(100, 999))
+            user = User.objects.create_user(
+                username=username, 
+                email=email if email else '',
+                password='default123'
+            )
+            
+            student = Student.objects.create(
+                user=user,
+                full_name=full_name,
+                email=email if email else None,
+                phone=phone if phone else None,
+                class_name=class_name,
+                registered_by=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='student_registered',
+                description=f'Student {full_name} registered with ID {student.student_id}',
+                performed_by_type='admin' if is_admin else 'principal',
+                performed_by_name=user_obj.full_name
+            )
+            
+            messages.success(request, f'Student registered successfully! Student ID: {student.student_id}')
+            return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error registering student: {str(e)}')
+            return redirect('register_student')
+    
+    return render(request, 'register_student.html')
+
+@login_required
+def move_to_alumni(request, student_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            student = Student.objects.get(id=student_id)
+            reason = request.POST.get('reason')
+            year_left = request.POST.get('year_left')
+            current_institution = request.POST.get('current_institution')
+            notes = request.POST.get('notes')
+            
+            Alumni.objects.create(
+                student_id=student.student_id,
+                full_name=student.full_name,
+                email=student.email,
+                phone=student.phone,
+                last_class=student.class_name,
+                profile_picture=student.profile_picture,
+                reason=reason,
+                year_left=year_left,
+                current_institution=current_institution,
+                notes=notes,
+                original_registration_date=student.created_at,
+                moved_by=admin
+            )
+            
+            student_name = student.full_name
+            student.user.delete()
+            
+            ActivityLog.objects.create(
+                action='student_deleted',
+                description=f'Student {student_name} moved to Alumni - {reason}',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'{student_name} successfully moved to Alumni!')
+            return redirect('admin_dashboard')
+            
+        except Student.DoesNotExist:
+            messages.error(request, 'Student not found.')
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error moving student to alumni: {str(e)}')
+            return redirect('admin_dashboard')
+    
+    student = get_object_or_404(Student, id=student_id)
+    context = {'student': student}
+    return render(request, 'move_to_alumni.html', context)
+
+@login_required
+def view_alumni(request):
+    try:
+        Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        try:
+            Principal.objects.get(user=request.user)
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    alumni_list = Alumni.objects.all().order_by('-moved_on')
+    context = {'alumni_list': alumni_list}
+    return render(request, 'view_alumni.html', context)
+
+@login_required
+def register_teacher(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        user_obj = admin
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            user_obj = principal
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            full_name = request.POST.get('full_name')
+            email = request.POST.get('email')
+            phone = request.POST.get('phone')
+            subject = request.POST.get('subject')
+            
+            username = email.split('@')[0] + str(random.randint(100, 999))
+            user = User.objects.create_user(username=username, email=email, password='default123')
+            
+            teacher = Teacher.objects.create(
+                user=user,
+                full_name=full_name,
+                email=email,
+                phone=phone,
+                subject=subject,
+                registered_by=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='teacher_registered',
+                description=f'Teacher {full_name} registered with ID {teacher.teacher_id}',
+                performed_by_type='admin' if is_admin else 'principal',
+                performed_by_name=user_obj.full_name
+            )
+            
+            messages.success(request, f'Teacher registered successfully! Teacher ID: {teacher.teacher_id}')
+            return redirect('admin_dashboard' if is_admin else 'principal_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error registering teacher: {str(e)}')
+            return redirect('register_teacher')
+    
+    return render(request, 'register_teacher.html')
+
+@login_required
+def delete_student_confirm(request, student_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    student = get_object_or_404(Student, id=student_id)
+    
+    if request.method == 'POST':
+        try:
+            student_name = student.full_name
+            student_id_num = student.student_id
+            
+            student.user.delete()
+            
+            ActivityLog.objects.create(
+                action='student_deleted',
+                description=f'Student {student_name} ({student_id_num}) permanently deleted',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'✅ Student {student_name} has been permanently deleted!')
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error deleting student: {str(e)}')
+            return redirect('admin_dashboard')
+    
+    context = {'student': student}
+    return render(request, 'confirm_delete_student.html', context)
+
+@login_required
+def delete_teacher_confirm(request, teacher_id):
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if request.method == 'POST':
+        try:
+            teacher_name = teacher.full_name
+            teacher_id_num = teacher.teacher_id
+            
+            teacher.user.delete()
+            
+            ActivityLog.objects.create(
+                action='teacher_deleted',
+                description=f'Teacher {teacher_name} ({teacher_id_num}) permanently deleted',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'✅ Teacher {teacher_name} has been permanently deleted!')
+            return redirect('admin_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error deleting teacher: {str(e)}')
+            return redirect('admin_dashboard')
+    
+    context = {'teacher': teacher}
+    return render(request, 'confirm_delete_teacher.html', context)
+
+@login_required
+def search_students(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    query = request.GET.get('q', '')
+    students = Student.objects.all()
+    
+    if query:
+        students = students.filter(
+            Q(full_name__icontains=query) | 
+            Q(student_id__icontains=query) |
+            Q(email__icontains=query)
+        ).order_by('-created_at')
+    
+    teachers = Teacher.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
+    
+    context = {
+        'admin': admin if is_admin else None,
+        'principal': principal if not is_admin else None,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+        'search_query': query,
+    }
+    
+    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
+    return render(request, template, context)
+
+@login_required
+def search_teachers(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    query = request.GET.get('q', '')
+    teachers = Teacher.objects.all()
+    
+    if query:
+        teachers = teachers.filter(
+            Q(full_name__icontains=query) | 
+            Q(email__icontains=query) |
+            Q(teacher_id__icontains=query) |
+            Q(subject__icontains=query)
+        ).order_by('-created_at')
+    
+    students = Student.objects.all().order_by('-created_at')
+    recent_activities = ActivityLog.objects.all()[:20] if is_admin else []
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0 if is_admin else 0
+    
+    context = {
+        'admin': admin if is_admin else None,
+        'principal': principal if not is_admin else None,
+        'students': students,
+        'teachers': teachers,
+        'activities': recent_activities,
+        'total_fees': total_fees,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+        'search_query': query,
+    }
+    
+    template = 'admin_dashboard.html' if is_admin else 'principal_dashboard.html'
+    return render(request, template, context)
+
+# ============= FINANCE MANAGEMENT =============
+@login_required
+def manage_finance(request):
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        user_name = admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            bursar = Bursar.objects.get(user=request.user)
+            is_admin = False
+            user_name = bursar.full_name
+        except Bursar.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            student_id = request.POST.get('student_id')
+            total_fee = float(request.POST.get('total_fee', 0))
+            amount_paid = float(request.POST.get('amount_paid', 0))
+            fee_type = request.POST.get('fee_type')
+            payment_method = request.POST.get('payment_method')
+            payment_date = request.POST.get('payment_date') or timezone.now().date()
+            
+            student = Student.objects.get(student_id=student_id)
+            current_term = Term.objects.filter(is_current=True).first()
+            
+            fee_record = FeeRecord.objects.create(
+                student=student,
+                term=current_term,
+                total_fee=total_fee,
+                amount_paid=amount_paid,
+                balance=total_fee - amount_paid,
+                fee_type=fee_type,
+                payment_method=payment_method,
+                payment_date=payment_date,
+                recorded_by=None if is_admin else bursar,
+                recorded_by_admin=admin if is_admin else None
+            )
+            
+            ActivityLog.objects.create(
+                action='fee_recorded',
+                description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name}',
+                performed_by_type='admin' if is_admin else 'bursar',
+                performed_by_name=user_name
+            )
+            
+            messages.success(request, '✅ PAYMENT RECORDED SUCCESSFULLY!')
+            return redirect('bursar_dashboard' if not is_admin else 'manage_finance')
+        except Student.DoesNotExist:
+            messages.error(request, 'Student not found.')
+        except Exception as e:
+            messages.error(request, f'Error recording payment: {str(e)}')
+    
+    fee_records = FeeRecord.objects.all().order_by('-payment_date')
+    students = Student.objects.all()
+    
+    context = {
+        'fee_records': fee_records,
+        'students': students,
+        'is_admin': is_admin,
+    }
+    return render(request, 'manage_finance.html', context)
+
+# ============= PRINCIPAL VIEWS =============
+@login_required
+def principal_dashboard(request):
+    try:
+        principal = Principal.objects.get(user=request.user)
+    except Principal.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    students = Student.objects.all().order_by('-created_at')
+    teachers = Teacher.objects.all().order_by('-created_at')
+    
+    context = {
+        'principal': principal,
+        'students': students,
+        'teachers': teachers,
+        'student_count': students.count(),
+        'teacher_count': teachers.count(),
+    }
+    return render(request, 'principal_dashboard.html', context)
+
+# ============= BURSAR VIEWS =============
+@login_required
+def bursar_dashboard(request):
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+    except Bursar.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    search_query = request.GET.get('search', '')
+    
+    fee_records = FeeRecord.objects.all().order_by('-payment_date')
+    
+    if search_query:
+        fee_records = fee_records.filter(
+            Q(student__full_name__icontains=search_query) |
+            Q(student__student_id__icontains=search_query) |
+            Q(fee_type__icontains=search_query) |
+            Q(payment_method__icontains=search_query)
+        )
+    
+    students = Student.objects.all()
+    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    total_balance = FeeRecord.objects.aggregate(Sum('balance'))['balance__sum'] or 0
+    recent_activities = ActivityLog.objects.filter(performed_by_type='bursar')[:20]
+    
+    context = {
+        'bursar': bursar,
+        'fee_records': fee_records,
+        'students': students,
+        'total_fees': total_fees,
+        'total_balance': total_balance,
+        'activities': recent_activities,
+        'search_query': search_query,
+    }
+    return render(request, 'bursar_dashboard.html', context)
+
+# ============= TEACHER VIEWS =============
+@login_required
+def teacher_dashboard(request):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    published_exams = Exam.objects.filter(created_by=teacher, is_published=True).order_by('-created_at')
+    draft_exams = Exam.objects.filter(created_by=teacher, is_published=False).order_by('-created_at')
+    
+    submissions = ExamSubmission.objects.filter(exam__created_by=teacher).order_by('-submitted_at')[:10]
+    
+    context = {
+        'teacher': teacher,
+        'published_exams': published_exams,
+        'draft_exams': draft_exams,
+        'recent_submissions': submissions,
+        'total_exams': published_exams.count() + draft_exams.count(),
+    }
+    return render(request, 'teacher_dashboard.html', context)
+
+@login_required
+def create_exam(request):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            title = request.POST.get('title')
+            subject = request.POST.get('subject')
+            class_name = request.POST.get('class_name')
+            duration = request.POST.get('duration')
+            
+            exam = Exam.objects.create(
+                title=title,
+                subject=subject,
+                class_name=class_name,
+                duration_minutes=duration,
+                created_by=teacher,
+                shuffle_questions=True,
+                is_published=False
+            )
+            
+            ActivityLog.objects.create(
+                action='exam_created',
+                description=f'Exam "{title}" created as DRAFT with ID {exam.exam_id}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Exam created as DRAFT! Add questions then publish. Exam ID: {exam.exam_id}')
+            return redirect('add_questions', exam_id=exam.id)
+        except Exception as e:
+            messages.error(request, f'Error creating exam: {str(e)}')
+            return redirect('create_exam')
+    
+    return render(request, 'create_exam.html')
+
+@login_required
+def add_questions(request, exam_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            question_text = request.POST.get('question_text')
+            option_a = request.POST.get('option_a')
+            option_b = request.POST.get('option_b')
+            option_c = request.POST.get('option_c')
+            option_d = request.POST.get('option_d')
+            correct_answer = request.POST.get('correct_answer')
+            
+            question_number = exam.questions.count() + 1
+            
+            Question.objects.create(
+                exam=exam,
+                question_text=question_text,
+                option_a=option_a,
+                option_b=option_b,
+                option_c=option_c,
+                option_d=option_d,
+                correct_answer=correct_answer,
+                question_number=question_number
+            )
+            
+            if 'add_another' in request.POST:
+                messages.success(request, 'Question added! Add another.')
+                return redirect('add_questions', exam_id=exam_id)
+            else:
+                messages.success(request, 'Exam completed successfully!')
+                return redirect('teacher_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error adding question: {str(e)}')
+            return redirect('add_questions', exam_id=exam_id)
+    
+    questions = exam.questions.all()
+    context = {
+        'exam': exam,
+        'questions': questions,
+    }
+    return render(request, 'add_questions.html', context)
+
+@login_required
+def edit_question(request, question_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        question = Question.objects.get(id=question_id, exam__created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+    
+    if request.method == 'POST':
+        try:
+            question.question_text = request.POST.get('question_text')
+            question.option_a = request.POST.get('option_a')
+            question.option_b = request.POST.get('option_b')
+            question.option_c = request.POST.get('option_c')
+            question.option_d = request.POST.get('option_d')
+            question.correct_answer = request.POST.get('correct_answer')
+            question.save()
+            
+            messages.success(request, 'Question updated successfully!')
+            return redirect('add_questions', exam_id=question.exam.id)
+        except Exception as e:
+            messages.error(request, f'Error updating question: {str(e)}')
+            return redirect('add_questions', exam_id=question.exam.id)
+    
+    context = {'question': question}
+    return render(request, 'edit_question.html', context)
+
+@login_required
+def delete_exam(request, exam_id):
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+        
+        exam_title = exam.title
+        exam.delete()
+        
+        ActivityLog.objects.create(
+            action='exam_deleted',
+            description=f'Exam "{exam_title}" deleted',
+            performed_by_type='teacher',
+            performed_by_name=teacher.full_name
+        )
+        
+        messages.success(request, 'Exam deleted successfully!')
+    except Exception as e:
+        messages.error(request, f'Error deleting exam: {str(e)}')
+    
+    return redirect('teacher_dashboard')
+
+
+def delete_student(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+
+    if request.method == "POST":
+        student.delete()
+        messages.success(request, f"{student.full_name} has been permanently deleted.")
+        return redirect('admin_dashboard')  # Go back to admin page after deletion
+
+    return render(request, 'admin/delete_student_confirm.html', {'student': student})
