@@ -12,16 +12,13 @@ urlpatterns = [
     path('admin/register-teacher/', views.register_teacher, name='register_teacher'),
     path('admin/move-to-alumni/<int:student_id>/', views.move_to_alumni, name='move_to_alumni'),
     path('admin/view-alumni/', views.view_alumni, name='view_alumni'),
-    path('admin/delete-student/<int:student_id>/', views.delete_student, name='delete_student'),
-    path('admin/delete-teacher/<int:teacher_id>/', views.delete_teacher, name='delete_teacher'),
+    path('admin/delete-student/<int:student_id>/', views.delete_student_confirm, name='delete_student'),
+    path('admin/delete-teacher/<int:teacher_id>/', views.delete_teacher_confirm, name='delete_teacher'),
     path('admin/finance/', views.manage_finance, name='manage_finance'),
     
-    # ========== NEW ROUTES - SEARCH FUNCTIONALITY ==========
+    # Search Functionality
     path('search-students/', views.search_students, name='search_students'),
     path('search-teachers/', views.search_teachers, name='search_teachers'),
-    
-    # ========== NEW ROUTE - DELETE WITH CONFIRMATION ==========
-    path('delete-student-confirm/<int:student_id>/', views.delete_student_confirm, name='delete_student_confirm'),
     
     # Principal URLs
     path('principal/dashboard/', views.principal_dashboard, name='principal_dashboard'),
@@ -38,8 +35,6 @@ urlpatterns = [
     path('teacher/delete-exam/<int:exam_id>/', views.delete_exam, name='delete_exam'),
     path('teacher/mark-attendance/', views.mark_attendance, name='mark_attendance'),
     path('teacher/view-attendance/', views.view_attendance, name='view_attendance'),
-    
-    # ========== NEW ROUTES - INDIVIDUAL DELETE & PUBLISH ==========
     path('teacher/exam/<int:exam_id>/delete-question/<int:question_number>/', 
          views.delete_single_question, name='delete_single_question'),
     path('teacher/exam/<int:exam_id>/toggle-publish/', 
@@ -50,48 +45,30 @@ urlpatterns = [
     path('student/profile/', views.student_profile, name='student_profile'),
     path('student/take-exam/<str:exam_id>/', views.take_exam, name='take_exam'),
     path('student/result/<int:submission_id>/', views.view_result, name='view_result'),
+    
+    # ============= RESULT SYSTEM URLS =============
+    path('make-result/', views.make_result_portal, name='make_result_portal'),
+    path('make-result/subject-teacher/', views.subject_teacher_entry, name='subject_teacher_entry'),
+    path('make-result/class-teacher/', views.class_teacher_collate, name='class_teacher_collate'),
+    path('make-result/class-teacher/edit/<int:result_id>/', views.class_teacher_edit_result, name='class_teacher_edit_result'),
+    path('make-result/class-teacher/send/<int:result_id>/', views.send_result_to_principal, name='send_result_to_principal'),
+    path('make-result/class-teacher/send-batch/', views.send_batch_to_principal, name='send_batch_to_principal'),
+    path('make-result/principal/', views.principal_result_review, name='principal_result_review'),
+    path('make-result/principal/comment/<int:result_id>/', views.principal_add_comment, name='principal_add_comment'),
+    path('make-result/principal/send/<int:result_id>/', views.send_result_to_admin, name='send_result_to_admin'),
+    path('make-result/principal/send-batch/', views.send_batch_to_admin, name='send_batch_to_admin'),
+    path('make-result/admin/', views.admin_result_management, name='admin_result_management'),
+    path('make-result/admin/edit/<int:result_id>/', views.admin_edit_result, name='admin_edit_result'),
+    path('make-result/admin/stamp/<int:result_id>/', views.admin_add_stamp, name='admin_add_stamp'),
+    path('make-result/admin/publish/<int:result_id>/', views.admin_publish_result, name='admin_publish_result'),
+    path('make-result/admin/publish-batch/', views.admin_publish_batch, name='admin_publish_batch'),
+    path('make-result/admin/published/', views.admin_view_published, name='admin_view_published'),
+    
+    # Check Result URLs
+    path('check-result/', views.check_result_portal, name='check_result_portal'),
+    path('check-result/view/', views.view_student_result, name='view_student_result'),
+    
+    # Result PDF/Print
+    path('result/print/<int:result_id>/', views.print_result, name='print_result'),
+    path('export-results/<int:exam_id>/', views.export_results, name='export_results'),
 ]
-
-# ========================================
-# THAT'S IT! 5 NEW ROUTES ADDED:
-# 1. search-students/
-# 2. search-teachers/
-# 3. delete-student-confirm/<id>/
-# 4. teacher/exam/<id>/delete-question/<number>/
-# 5. teacher/exam/<id>/toggle-publish/
-# ========================================
-
-
-
-
-
-
-
-
-
-# ADD THESE NEW URL PATTERNS TO YOUR urls.py
-
-# Result System URLs
-path('make-result/', views.make_result_portal, name='make_result_portal'),
-path('make-result/subject-teacher/', views.subject_teacher_entry, name='subject_teacher_entry'),
-path('make-result/class-teacher/', views.class_teacher_collate, name='class_teacher_collate'),
-path('make-result/class-teacher/edit/<int:result_id>/', views.class_teacher_edit_result, name='class_teacher_edit_result'),
-path('make-result/class-teacher/send/<int:result_id>/', views.send_result_to_principal, name='send_result_to_principal'),
-path('make-result/class-teacher/send-batch/', views.send_batch_to_principal, name='send_batch_to_principal'),
-path('make-result/principal/', views.principal_result_review, name='principal_result_review'),
-path('make-result/principal/comment/<int:result_id>/', views.principal_add_comment, name='principal_add_comment'),
-path('make-result/principal/send/<int:result_id>/', views.send_result_to_admin, name='send_result_to_admin'),
-path('make-result/principal/send-batch/', views.send_batch_to_admin, name='send_batch_to_admin'),
-path('make-result/admin/', views.admin_result_management, name='admin_result_management'),
-path('make-result/admin/edit/<int:result_id>/', views.admin_edit_result, name='admin_edit_result'),
-path('make-result/admin/stamp/<int:result_id>/', views.admin_add_stamp, name='admin_add_stamp'),
-path('make-result/admin/publish/<int:result_id>/', views.admin_publish_result, name='admin_publish_result'),
-path('make-result/admin/publish-batch/', views.admin_publish_batch, name='admin_publish_batch'),
-path('make-result/admin/published/', views.admin_view_published, name='admin_view_published'),
-
-# Check Result URLs
-path('check-result/', views.check_result_portal, name='check_result_portal'),
-path('check-result/view/', views.view_student_result, name='view_student_result'),
-
-# Result PDF/Print
-path('result/print/<int:result_id>/', views.print_result, name='print_result'),
