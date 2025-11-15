@@ -82,8 +82,10 @@ WSGI_APPLICATION = 'schoolms.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
+    # Parse the database URL manually
     db_config = dj_database_url.parse(DATABASE_URL)
     
+    # Direct database configuration with explicit schema and SSL
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -94,11 +96,11 @@ if DATABASE_URL:
             'PORT': db_config['PORT'],
             'OPTIONS': {
                 'options': '-c search_path=public',
-                'sslmode': 'require',
+                'sslmode': 'require',  # Required for Supabase
             },
         }
     }
-    print("✓ Using Supabase PostgreSQL with SSL")
+    print("✓ Using Supabase PostgreSQL with SSL and schema configuration")
 else:
     DATABASES = {
         'default': {
@@ -106,6 +108,17 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("Using SQLite database")
+
+# Debug database configuration
+print("=== DATABASE DEBUG INFO ===")
+print(f"DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
+print(f"Database engine: {DATABASES['default']['ENGINE']}")
+if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+    print(f"Database name: {DATABASES['default']['NAME']}")
+    print(f"Database options: {DATABASES['default'].get('OPTIONS', 'No options')}")
+print("===========================")
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -151,7 +164,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Add these lines at the very end
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'\
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files configuration
 STATIC_ROOT = BASE_DIR / 'staticfiles'
