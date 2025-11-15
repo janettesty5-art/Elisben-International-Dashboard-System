@@ -82,10 +82,8 @@ WSGI_APPLICATION = 'schoolms.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
-    # Parse the database URL manually
     db_config = dj_database_url.parse(DATABASE_URL)
     
-    # Direct database configuration with explicit schema
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -95,11 +93,12 @@ if DATABASE_URL:
             'HOST': db_config['HOST'],
             'PORT': db_config['PORT'],
             'OPTIONS': {
-                'options': '-c search_path=public'
+                'options': '-c search_path=public',
+                'sslmode': 'require',
             },
         }
     }
-    print("Using PostgreSQL database with explicit schema configuration")
+    print("✓ Using Supabase PostgreSQL with SSL")
 else:
     DATABASES = {
         'default': {
@@ -107,19 +106,6 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    print("Using SQLite database")
-
-
-
-# Debug database configuration
-print("=== DATABASE DEBUG INFO ===")
-print(f"DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
-print(f"Database engine: {DATABASES['default']['ENGINE']}")
-if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
-    print(f"Database name: {DATABASES['default']['NAME']}")
-    print(f"Database options: {DATABASES['default'].get('OPTIONS', 'No options')}")
-print("===========================")
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
