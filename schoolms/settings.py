@@ -78,17 +78,19 @@ WSGI_APPLICATION = 'schoolms.wsgi.application'
 # Database Configuration
 
 
+# Database Configuration
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://elisben_user:g2G8b31lsNHjA4T6HffZNGLtm77C5jyQ@dpg-d3pg2a3ipnbc739t0cfg-a.oregon-postgres.render.com:5432/elisben_db')
 
-if 'DATABASE_URL' in os.environ:
+if DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
     DATABASES = {
         'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
+            default=DATABASE_URL,
             conn_max_age=600,
-            ssl_require=True
+            ssl_require=True,
+            engine='django.db.backends.postgresql'
         )
     }
-    # Always add schema configuration for any PostgreSQL connection
+    # Force schema configuration
     DATABASES['default']['OPTIONS'] = {
         'options': '-c search_path=public'
     }
