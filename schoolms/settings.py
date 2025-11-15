@@ -81,7 +81,6 @@ WSGI_APPLICATION = 'schoolms.wsgi.application'
 DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://elisben_user:g2G8b31lsNHjA4T6HffZNGLtm77C5jyQ@dpg-d3pg2a3ipnbc739t0cfg-a.oregon-postgres.render.com:5432/elisben_db')
 
 if 'DATABASE_URL' in os.environ:
-    # Parse the database URL
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ.get('DATABASE_URL'),
@@ -89,12 +88,10 @@ if 'DATABASE_URL' in os.environ:
             ssl_require=True
         )
     }
-    
-    # Add OPTIONS for Supabase pooler - set schema to public
-    if 'supabase' in DATABASE_URL.lower():
-        DATABASES['default']['OPTIONS'] = {
-            'options': '-c search_path=public,public'
-        }
+    # Always add schema configuration for any PostgreSQL connection
+    DATABASES['default']['OPTIONS'] = {
+        'options': '-c search_path=public'
+    }
 else:
     DATABASES = {
         'default': {
