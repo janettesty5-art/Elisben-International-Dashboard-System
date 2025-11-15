@@ -79,21 +79,27 @@ WSGI_APPLICATION = 'schoolms.wsgi.application'
 
 
 # Database Configuration
-DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://elisben_user:g2G8b31lsNHjA4T6HffZNGLtm77C5jyQ@dpg-d3pg2a3ipnbc739t0cfg-a.oregon-postgres.render.com:5432/elisben_db')
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL and DATABASE_URL.startswith('postgresql://'):
+if DATABASE_URL:
+    # Parse the database URL manually
+    db_config = dj_database_url.parse(DATABASE_URL)
+    
+    # Direct database configuration with explicit schema
     DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=True,
-            engine='django.db.backends.postgresql'
-        )
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': db_config['NAME'],
+            'USER': db_config['USER'],
+            'PASSWORD': db_config['PASSWORD'],
+            'HOST': db_config['HOST'],
+            'PORT': db_config['PORT'],
+            'OPTIONS': {
+                'options': '-c search_path=public'
+            },
+        }
     }
-    # Force schema configuration
-    DATABASES['default']['OPTIONS'] = {
-        'options': '-c search_path=public'
-    }
+    print("Using PostgreSQL database with explicit schema configuration")
 else:
     DATABASES = {
         'default': {
@@ -101,6 +107,19 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    print("Using SQLite database")
+
+
+
+# Debug database configuration
+print("=== DATABASE DEBUG INFO ===")
+print(f"DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
+print(f"Database engine: {DATABASES['default']['ENGINE']}")
+if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+    print(f"Database name: {DATABASES['default']['NAME']}")
+    print(f"Database options: {DATABASES['default'].get('OPTIONS', 'No options')}")
+print("===========================")
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
