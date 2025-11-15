@@ -89,6 +89,10 @@ if 'DATABASE_URL' in os.environ:
             ssl_require=True
         )
     }
+    # Add schema for Supabase pooler connection
+    DATABASES['default']['OPTIONS'] = {
+        'options': '-c search_path=public'
+    }
 else:
     DATABASES = {
         'default': {
@@ -96,7 +100,6 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
