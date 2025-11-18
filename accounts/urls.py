@@ -92,6 +92,7 @@ path('make-result/admin/published/', views.admin_view_published, name='admin_vie
 # Check Result URLs
 path('check-result/', views.check_result_portal, name='check_result_portal'),
 path('check-result/view/', views.view_student_result, name='view_student_result'),
+path('make-result/teacher-role-selection/', views.teacher_role_selection, name='teacher_role_selection'),
 
 # Result PDF/Print
 path('result/print/<int:result_id>/', views.print_result, name='print_result'),

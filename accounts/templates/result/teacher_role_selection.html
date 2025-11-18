@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Your Role</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .role-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .role-btn {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            color: #333;
+        }
+        .role-btn:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+            transform: translateY(-2px);
+        }
+        .role-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        .role-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .role-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        .logout-btn {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👨‍🏫 Welcome, {{ teacher.full_name }}</h1>
+        <p>Please select your role for result processing:</p>
+        
+        <div class="role-buttons">
+            <a href="{% url 'subject_teacher_entry' %}" class="role-btn">
+                <div class="role-icon">📚</div>
+                <div class="role-title">Subject Teacher</div>
+                <div class="role-desc">Enter results for your subject across all classes</div>
+            </a>
+            
+            <a href="{% url 'class_teacher_collate' %}" class="role-btn">
+                <div class="role-icon">📝</div>
+                <div class="role-title">Class Teacher</div>
+                <div class="role-desc">Collate all subject results for your class</div>
+            </a>
+        </div>
+        
+        <a href="{% url 'logout' %}" class="logout-btn">← Logout</a>
+    </div>
+</body>
+</html>

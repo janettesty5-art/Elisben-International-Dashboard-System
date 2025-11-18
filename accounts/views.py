@@ -105,7 +105,9 @@ def unified_login(request):
                 # Redirect based on role
                 if user_found:
                     if user_role == 'teacher':
-                        return redirect('subject_teacher_entry')
+                        # Store teacher info in session and redirect to role selection
+                        request.session['make_result_teacher_id'] = user_id
+                        return redirect('teacher_role_selection')
                     elif user_role == 'principal':
                         return redirect('principal_result_review')
                     elif user_role == 'admin':
@@ -148,6 +150,18 @@ def unified_login(request):
 def user_logout(request):
     logout(request)
     return redirect('unified_login')
+
+# ============== SELECTION VIEW ===============
+@login_required
+def teacher_role_selection(request):
+    """Allow teachers to choose between subject teacher and class teacher roles"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    return render(request, 'result/teacher_role_selection.html', {'teacher': teacher})
 
 # ============= ADMIN VIEWS =============
 @login_required
