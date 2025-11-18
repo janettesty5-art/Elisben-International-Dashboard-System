@@ -14,8 +14,27 @@ from django.utils import timezone
 
 # ============= UNIFIED LOGIN =============
 def unified_login(request):
+    # Clear any previous session data
+    if 'login_intent' in request.session:
+        del request.session['login_intent']
+    
     if request.user.is_authenticated:
-        # Redirect based on user role
+        # Check if user has a specific login intent
+        login_intent = request.session.get('login_intent')
+        
+        if login_intent == 'make_result':
+            # Redirect based on user role for result system
+            try:
+                if hasattr(request.user, 'teacher'):
+                    return redirect('teacher_role_selection')
+                elif hasattr(request.user, 'principal'):
+                    return redirect('principal_result_review')
+                elif hasattr(request.user, 'admin'):
+                    return redirect('admin_result_management')
+            except:
+                pass
+        
+        # Default redirect for regular login
         try:
             if hasattr(request.user, 'admin'):
                 return redirect('admin_dashboard')
@@ -74,6 +93,8 @@ def unified_login(request):
                 try:
                     teacher = Teacher.objects.get(teacher_id=user_id)
                     user = teacher.user
+                    # Store login intent in session before logging in
+                    request.session['login_intent'] = 'make_result'
                     login(request, user)
                     user_found = True
                     user_role = 'teacher'
@@ -85,6 +106,7 @@ def unified_login(request):
                     try:
                         principal = Principal.objects.get(principal_id=user_id)
                         user = principal.user
+                        request.session['login_intent'] = 'make_result'
                         login(request, user)
                         user_found = True
                         user_role = 'principal'
@@ -96,6 +118,7 @@ def unified_login(request):
                     try:
                         admin = Admin.objects.get(admin_id=user_id)
                         user = admin.user
+                        request.session['login_intent'] = 'make_result'
                         login(request, user)
                         user_found = True
                         user_role = 'admin'
@@ -105,8 +128,6 @@ def unified_login(request):
                 # Redirect based on role
                 if user_found:
                     if user_role == 'teacher':
-                        # Store teacher info in session and redirect to role selection
-                        request.session['make_result_teacher_id'] = user_id
                         return redirect('teacher_role_selection')
                     elif user_role == 'principal':
                         return redirect('principal_result_review')
@@ -147,7 +168,10 @@ def unified_login(request):
     
     return render(request, 'login.html')
 
+# ======== LOG-OUT HANDLE =======
 def user_logout(request):
+    # Clear session data
+    request.session.flush()
     logout(request)
     return redirect('unified_login')
 
