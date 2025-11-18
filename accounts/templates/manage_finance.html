@@ -140,12 +140,42 @@
             background: #d4edda;
             color: #155724;
         }
+        
+        /* NEW: Search Box Styles */
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .student-option {
+            padding: 8px;
+        }
+        
+        .student-option:hover {
+            background: #f0f0f0;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <h1>💰 Manage Finance</h1>
-        <a href="{% url 'admin_dashboard' %}">← Back to Dashboard</a>
+        <a href="{% if is_admin %}{% url 'admin_dashboard' %}{% else %}{% url 'bursar_dashboard' %}{% endif %}">← Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -167,10 +197,23 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="student_id">Student ID *</label>
-                        <select name="student_id" id="student_id" required>
+                        
+                        <!-- NEW: Search Box -->
+                        <div class="search-box">
+                            <input type="text" 
+                                   id="student_search" 
+                                   class="search-input" 
+                                   placeholder="🔍 Search by name or ID..." 
+                                   onkeyup="filterStudents()">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                        
+                        <select name="student_id" id="student_id" required size="8" style="height: 200px;">
                             <option value="">-- Select Student --</option>
                             {% for student in students %}
-                            <option value="{{ student.student_id }}">
+                            <option value="{{ student.student_id }}" class="student-option" 
+                                    data-name="{{ student.full_name|lower }}" 
+                                    data-id="{{ student.student_id|lower }}">
                                 {{ student.student_id }} - {{ student.full_name }}
                             </option>
                             {% endfor %}
@@ -217,7 +260,7 @@
                 </div>
                 
                 <button type="submit" class="btn-submit">
-                    Record Payment
+                    💰 Record Payment
                 </button>
             </form>
         </div>
@@ -243,7 +286,7 @@
                         <td>{{ record.student.student_id }}</td>
                         <td>{{ record.student.full_name }}</td>
                         <td>{{ record.fee_type }}</td>
-                        <td><strong>₦{{ record.amount|floatformat:2 }}</strong></td>
+                        <td><strong>₦{{ record.amount_paid|floatformat:2 }}</strong></td>
                         <td>{{ record.payment_method }}</td>
                     </tr>
                     {% empty %}
@@ -259,6 +302,32 @@
     <script>
         // Set today's date as default
         document.getElementById('payment_date').valueAsDate = new Date();
+        
+        // NEW: Filter Students Function
+        function filterStudents() {
+            const searchInput = document.getElementById('student_search').value.toLowerCase();
+            const select = document.getElementById('student_id');
+            const options = select.getElementsByTagName('option');
+            
+            for (let i = 1; i < options.length; i++) {  // Skip first "Select Student" option
+                const option = options[i];
+                const name = option.getAttribute('data-name');
+                const id = option.getAttribute('data-id');
+                
+                if (name.includes(searchInput) || id.includes(searchInput)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        }
+        
+        // Auto-resize select box based on visible options
+        document.getElementById('student_search').addEventListener('input', function() {
+            const select = document.getElementById('student_id');
+            const visibleOptions = Array.from(select.options).filter(opt => opt.style.display !== 'none');
+            select.size = Math.min(Math.max(visibleOptions.length, 5), 10);
+        });
     </script>
 </body>
 </html>
