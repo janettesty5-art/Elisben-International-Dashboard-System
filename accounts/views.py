@@ -14,12 +14,9 @@ from django.utils import timezone
 
 # ============= UNIFIED LOGIN =============
 def unified_login(request):
-    # Clear any previous session data
-    if 'login_intent' in request.session:
-        del request.session['login_intent']
-    
+    # Check if user is authenticated BEFORE clearing session
     if request.user.is_authenticated:
-        # Check if user has a specific login intent
+        # Check if user has a specific login intent from the session
         login_intent = request.session.get('login_intent')
         
         if login_intent == 'make_result':
@@ -48,6 +45,10 @@ def unified_login(request):
                 return redirect('bursar_dashboard')
         except:
             pass
+    
+    # Only NOW clear session data for new login attempts
+    if 'login_intent' in request.session and request.method != 'POST':
+        del request.session['login_intent']
     
     if request.method == 'POST':
         role = request.POST.get('role')
@@ -93,9 +94,6 @@ def unified_login(request):
                 try:
                     teacher = Teacher.objects.get(teacher_id=user_id)
                     user = teacher.user
-                    # Store login intent in session before logging in
-                    request.session['login_intent'] = 'make_result'
-                    login(request, user)
                     user_found = True
                     user_role = 'teacher'
                 except Teacher.DoesNotExist:
@@ -106,8 +104,6 @@ def unified_login(request):
                     try:
                         principal = Principal.objects.get(principal_id=user_id)
                         user = principal.user
-                        request.session['login_intent'] = 'make_result'
-                        login(request, user)
                         user_found = True
                         user_role = 'principal'
                     except Principal.DoesNotExist:
@@ -118,15 +114,17 @@ def unified_login(request):
                     try:
                         admin = Admin.objects.get(admin_id=user_id)
                         user = admin.user
-                        request.session['login_intent'] = 'make_result'
-                        login(request, user)
                         user_found = True
                         user_role = 'admin'
                     except Admin.DoesNotExist:
                         pass
 
-                # Redirect based on role
+                # Login and set intent BEFORE redirecting
                 if user_found:
+                    login(request, user)
+                    request.session['login_intent'] = 'make_result'
+                    request.session.save()  # Explicitly save session
+                    
                     if user_role == 'teacher':
                         return redirect('teacher_role_selection')
                     elif user_role == 'principal':
