@@ -14,79 +14,110 @@ from django.utils import timezone
 
 # ============= UNIFIED LOGIN =============
 def unified_login(request):
-    # Check if user is authenticated BEFORE clearing session
+    # ===== DEBUG: Check authenticated user =====
     if request.user.is_authenticated:
-        # Check if user has a specific login intent from the session
         login_intent = request.session.get('login_intent')
         
+        print("=" * 60)
+        print(f"🔍 DEBUG: User authenticated: {request.user.username}")
+        print(f"🔍 DEBUG: login_intent = '{login_intent}'")
+        print(f"🔍 DEBUG: All session data: {dict(request.session)}")
+        print("=" * 60)
+        
         if login_intent == 'make_result':
-            # Redirect based on user role for result system
+            print("✅ DEBUG: login_intent is 'make_result' - checking user role...")
             try:
                 if hasattr(request.user, 'teacher'):
+                    print("✅ DEBUG: User is TEACHER -> Redirecting to teacher_role_selection")
                     return redirect('teacher_role_selection')
                 elif hasattr(request.user, 'principal'):
+                    print("✅ DEBUG: User is PRINCIPAL -> Redirecting to principal_result_review")
                     return redirect('principal_result_review')
                 elif hasattr(request.user, 'admin'):
+                    print("✅ DEBUG: User is ADMIN -> Redirecting to admin_result_management")
                     return redirect('admin_result_management')
-            except:
-                pass
+            except Exception as e:
+                print(f"❌ DEBUG ERROR: {e}")
+        else:
+            print(f"⚠️ DEBUG: login_intent is NOT 'make_result' (it's: '{login_intent}')")
+            print("⚠️ DEBUG: Using default dashboard redirects...")
         
         # Default redirect for regular login
         try:
             if hasattr(request.user, 'admin'):
+                print("📍 DEBUG: Redirecting to admin_dashboard")
                 return redirect('admin_dashboard')
             elif hasattr(request.user, 'teacher'):
+                print("📍 DEBUG: Redirecting to teacher_dashboard")
                 return redirect('teacher_dashboard')
             elif hasattr(request.user, 'student'):
+                print("📍 DEBUG: Redirecting to student_dashboard")
                 return redirect('student_dashboard')
             elif hasattr(request.user, 'principal'):
+                print("📍 DEBUG: Redirecting to principal_dashboard")
                 return redirect('principal_dashboard')
             elif hasattr(request.user, 'bursar'):
+                print("📍 DEBUG: Redirecting to bursar_dashboard")
                 return redirect('bursar_dashboard')
-        except:
-            pass
+        except Exception as e:
+            print(f"❌ DEBUG: Error in default redirects: {e}")
     
-    # Only NOW clear session data for new login attempts
+    # Clear session for new logins (GET requests only)
     if 'login_intent' in request.session and request.method != 'POST':
+        print("🧹 DEBUG: Clearing old login_intent")
         del request.session['login_intent']
     
+    # ===== Handle POST (form submission) =====
     if request.method == 'POST':
         role = request.POST.get('role')
         user_id = request.POST.get('user_id')
         result_pin = request.POST.get('result_pin')
+        
+        print("\n" + "=" * 60)
+        print(f"📮 DEBUG POST REQUEST:")
+        print(f"   Role selected: '{role}'")
+        print(f"   User ID: '{user_id}'")
+        print("=" * 60)
 
         try:
             if role == 'admin':
                 admin = Admin.objects.get(admin_id=user_id)
                 user = admin.user
                 login(request, user)
+                print("✅ DEBUG: Admin logged in -> admin_dashboard")
                 return redirect('admin_dashboard')
 
             elif role == 'teacher':
                 teacher = Teacher.objects.get(teacher_id=user_id)
                 user = teacher.user
                 login(request, user)
+                print("✅ DEBUG: Teacher logged in -> teacher_dashboard")
                 return redirect('teacher_dashboard')
 
             elif role == 'student':
                 student = Student.objects.get(student_id=user_id)
                 user = student.user
                 login(request, user)
+                print("✅ DEBUG: Student logged in -> student_dashboard")
                 return redirect('student_dashboard')
 
             elif role == 'principal':
                 principal = Principal.objects.get(principal_id=user_id)
                 user = principal.user
                 login(request, user)
+                print("✅ DEBUG: Principal logged in -> principal_dashboard")
                 return redirect('principal_dashboard')
 
             elif role == 'bursar':
                 bursar = Bursar.objects.get(bursar_id=user_id)
                 user = bursar.user
                 login(request, user)
+                print("✅ DEBUG: Bursar logged in -> bursar_dashboard")
                 return redirect('bursar_dashboard')
 
             elif role == 'make_result':
+                print("\n🎯 DEBUG: 'make_result' selected - searching for user...")
+                
                 user_found = False
                 user_role = None
 
@@ -96,8 +127,9 @@ def unified_login(request):
                     user = teacher.user
                     user_found = True
                     user_role = 'teacher'
+                    print(f"   ✅ Found TEACHER: {teacher.full_name}")
                 except Teacher.DoesNotExist:
-                    pass
+                    print(f"   ❌ Not a teacher")
 
                 # Try Principal
                 if not user_found:
@@ -106,8 +138,9 @@ def unified_login(request):
                         user = principal.user
                         user_found = True
                         user_role = 'principal'
+                        print(f"   ✅ Found PRINCIPAL: {principal.full_name}")
                     except Principal.DoesNotExist:
-                        pass
+                        print(f"   ❌ Not a principal")
 
                 # Try Admin
                 if not user_found:
@@ -116,22 +149,36 @@ def unified_login(request):
                         user = admin.user
                         user_found = True
                         user_role = 'admin'
+                        print(f"   ✅ Found ADMIN: {admin.full_name}")
                     except Admin.DoesNotExist:
-                        pass
+                        print(f"   ❌ Not an admin")
 
-                # Login and set intent BEFORE redirecting
+                # Login and set session
                 if user_found:
+                    print(f"\n🔐 DEBUG: Logging in as {user_role}...")
                     login(request, user)
-                    request.session['login_intent'] = 'make_result'
-                    request.session.save()  # Explicitly save session
                     
+                    print(f"💾 DEBUG: Setting session login_intent = 'make_result'")
+                    request.session['login_intent'] = 'make_result'
+                    request.session.modified = True
+                    request.session.save()
+                    
+                    print(f"📋 DEBUG: Session after save:")
+                    for key, value in request.session.items():
+                        print(f"      {key}: {value}")
+                    
+                    print(f"\n🚀 DEBUG: Redirecting based on role...")
                     if user_role == 'teacher':
+                        print(f"   → Going to: teacher_role_selection")
                         return redirect('teacher_role_selection')
                     elif user_role == 'principal':
+                        print(f"   → Going to: principal_result_review")
                         return redirect('principal_result_review')
                     elif user_role == 'admin':
+                        print(f"   → Going to: admin_result_management")
                         return redirect('admin_result_management')
                 else:
+                    print("❌ DEBUG: No valid user found!")
                     messages.error(request, 'Invalid ID. Only Teachers, Principals, and Admins can access Make Result.')
                     return redirect('unified_login')
                 
@@ -161,6 +208,9 @@ def unified_login(request):
                     return redirect('unified_login')
 
         except Exception as e:
+            print(f"\n❌❌❌ DEBUG EXCEPTION: {str(e)}")
+            import traceback
+            traceback.print_exc()
             messages.error(request, 'Invalid ID or Role. Please try again.')
             return redirect('unified_login')
     
