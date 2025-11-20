@@ -497,11 +497,23 @@ def make_result_portal(request):
 
 @login_required
 def subject_teacher_entry(request):
+    # ===== DEBUG CODE START =====
+    print("=" * 60)
+    print("🔍 DEBUG subject_teacher_entry:")
+    print(f"   User: {request.user.username}")
+    print(f"   Method: {request.method}")
+    print(f"   GET params: {dict(request.GET)}")
+    # ===== DEBUG CODE END =====
+    
     try:
         teacher = Teacher.objects.get(user=request.user)
+        print(f"   ✅ Teacher found: {teacher.full_name}")
     except Teacher.DoesNotExist:
+        print("   ❌ ERROR: Teacher not found!")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('unified_login')
+    
+    print("=" * 60)
     
     if request.method == 'POST':
         try:
@@ -547,10 +559,21 @@ def subject_teacher_entry(request):
             return redirect('subject_teacher_entry')
             
         except Exception as e:
+            print(f"❌ ERROR in POST: {str(e)}")
+            import traceback
+            traceback.print_exc()
             messages.error(request, f'Error saving results: {str(e)}')
             return redirect('subject_teacher_entry')
     
-    classes = Student.objects.values_list('class_name', flat=True).distinct()
+    # ===== DEBUG: Check database queries =====
+    try:
+        classes = Student.objects.values_list('class_name', flat=True).distinct()
+        print(f"   📚 Classes found: {list(classes)}")
+    except Exception as e:
+        print(f"   ❌ ERROR getting classes: {e}")
+        classes = []
+    # ===== DEBUG END =====
+    
     selected_class = request.GET.get('class_name')
     students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
     
@@ -578,15 +601,39 @@ def subject_teacher_entry(request):
         'subject_name': subject_name,
         'term': term,
     }
-    return render(request, 'result/subject_teacher_entry.html', context)
+    
+    # ===== DEBUG: Check template =====
+    print(f"   📄 Rendering template with context:")
+    print(f"      - teacher: {teacher.full_name}")
+    print(f"      - classes count: {len(classes) if classes else 0}")
+    print(f"      - selected_class: {selected_class}")
+    print(f"      - students count: {len(students)}")
+    # ===== DEBUG END =====
+
+    return render(request, 'result/subject_teacher_entry.html', context)  
+
 
 @login_required
 def class_teacher_collate(request):
+    # ===== DEBUG CODE START =====
+    print("=" * 60)
+    print("🔍 DEBUG class_teacher_collate:")
+    print(f"   User: {request.user.username}")
+    print(f"   Method: {request.method}")
+    print(f"   GET params: {dict(request.GET)}")
+    if request.method == 'POST':
+        print(f"   POST params: {dict(request.POST)}")
+    # ===== DEBUG CODE END =====
+    
     try:
         teacher = Teacher.objects.get(user=request.user)
+        print(f"   ✅ Teacher found: {teacher.full_name}")
     except Teacher.DoesNotExist:
+        print("   ❌ ERROR: Teacher not found!")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('unified_login')
+    
+    print("=" * 60)
     
     selected_class = request.GET.get('class_name')
     term = request.GET.get('term')
@@ -595,7 +642,11 @@ def class_teacher_collate(request):
     if request.method == 'POST':
         try:
             student_id = request.POST.get('student_id')
+            print(f"   📝 Processing student_id: {student_id}")
+            print(f"   📝 Term: {term}, Academic Year: {academic_year}")
+            
             student = Student.objects.get(id=student_id)
+            print(f"   ✅ Student found: {student.full_name}")
             
             result, created = StudentResult.objects.get_or_create(
                 student=student,
@@ -606,6 +657,7 @@ def class_teacher_collate(request):
                     'class_teacher': teacher,
                 }
             )
+            print(f"   {'🆕 Created new' if created else '✏️ Updating existing'} result")
             
             result.times_school_opened = int(request.POST.get('times_opened', 0))
             result.times_present = int(request.POST.get('times_present', 0))
@@ -639,12 +691,15 @@ def class_teacher_collate(request):
                 academic_year=academic_year
             )
             
+            print(f"   📊 Found {subject_results.count()} subject results")
+            
             result.total_subjects = subject_results.count()
             result.score_gained = sum([sr.avg_2 for sr in subject_results])
             result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
             result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
             
             result.save()
+            print(f"   ✅ Result saved successfully!")
             
             ResultActivityLog.objects.create(
                 action='result_collated',
@@ -658,10 +713,14 @@ def class_teacher_collate(request):
             return redirect('class_teacher_collate')
             
         except Exception as e:
+            print(f"❌ ERROR in POST: {str(e)}")
+            import traceback
+            traceback.print_exc()
             messages.error(request, f'Error saving result: {str(e)}')
             return redirect('class_teacher_collate')
     
     students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
+    print(f"   👥 Students in {selected_class}: {len(students)}")
     
     results = []
     if selected_class and term and academic_year:
@@ -694,6 +753,8 @@ def class_teacher_collate(request):
                     'subject_count': subject_count,
                 })
     
+    print(f"   📋 Results list prepared: {len(results)} entries")
+    
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     
     context = {
@@ -704,15 +765,130 @@ def class_teacher_collate(request):
         'academic_year': academic_year,
         'results': results,
     }
+    
+    print(f"   📄 Rendering template: result/class_teacher_collate.html")
     return render(request, 'result/class_teacher_collate.html', context)
+    
 
+
+# ADD THIS NEW VIEW - for creating new results
+@login_required
+def class_teacher_start_result(request):
+    """Start a new result for a student"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
+    
+    # Get parameters from URL
+    student_id = request.GET.get('student_id')
+    term = request.GET.get('term')
+    academic_year = request.GET.get('year')
+    
+    if not all([student_id, term, academic_year]):
+        messages.error(request, 'Missing required parameters.')
+        return redirect('class_teacher_collate')
+    
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        messages.error(request, 'Student not found.')
+        return redirect('class_teacher_collate')
+    
+    # Get subject results for this student
+    subject_results = SubjectResult.objects.filter(
+        student=student,
+        term=term,
+        academic_year=academic_year
+    ).order_by('subject_name')
+    
+    if request.method == 'POST':
+        try:
+            result, created = StudentResult.objects.get_or_create(
+                student=student,
+                term=term,
+                academic_year=academic_year,
+                defaults={
+                    'class_name': student.class_name,
+                    'class_teacher': teacher,
+                }
+            )
+            
+            # Save all the form data
+            result.times_school_opened = int(request.POST.get('times_opened', 0))
+            result.times_present = int(request.POST.get('times_present', 0))
+            result.times_absent = int(request.POST.get('times_absent', 0))
+            result.vacation_date = request.POST.get('vacation_date') or None
+            result.resumption_date = request.POST.get('resumption_date') or None
+            result.next_term_pta_fee = float(request.POST.get('pta_fee', 0))
+            result.next_term_school_fee = float(request.POST.get('school_fee', 0))
+            
+            # Affective domain
+            result.affective_punctuality = request.POST.get('aff_punctuality', '')
+            result.affective_neatness = request.POST.get('aff_neatness', '')
+            result.affective_politeness = request.POST.get('aff_politeness', '')
+            result.affective_honesty = request.POST.get('aff_honesty', '')
+            result.affective_relationship = request.POST.get('aff_relationship', '')
+            result.affective_self_control = request.POST.get('aff_self_control', '')
+            result.affective_attentiveness = request.POST.get('aff_attentiveness', '')
+            
+            # Psychomotor domain
+            result.psycho_handwriting = request.POST.get('psycho_handwriting', '')
+            result.psycho_sports = request.POST.get('psycho_sports', '')
+            result.psycho_handling_tools = request.POST.get('psycho_tools', '')
+            result.psycho_verbal_fluency = request.POST.get('psycho_verbal', '')
+            result.psycho_games = request.POST.get('psycho_games', '')
+            result.psycho_drawing = request.POST.get('psycho_drawing', '')
+            
+            # Teacher comment
+            result.class_teacher_comment = request.POST.get('class_teacher_comment', '')
+            result.class_teacher = teacher
+            
+            # Calculate totals
+            result.total_subjects = subject_results.count()
+            result.score_gained = sum([sr.avg_2 for sr in subject_results])
+            result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
+            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
+            
+            result.save()
+            
+            ResultActivityLog.objects.create(
+                action='result_collated',
+                description=f'Result collated for {student.full_name}',
+                student_result=result,
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Result saved for {student.full_name}!')
+            return redirect('class_teacher_collate')
+            
+        except Exception as e:
+            messages.error(request, f'Error saving result: {str(e)}')
+    
+    context = {
+        'teacher': teacher,
+        'student': student,
+        'subject_results': subject_results,
+        'term': term,
+        'academic_year': academic_year,
+        'result': None,  # No existing result
+    }
+    return render(request, 'result/class_teacher_start_result.html', context)
+
+
+# UPDATED VERSION of class_teacher_edit_result
 @login_required
 def class_teacher_edit_result(request, result_id):
     try:
         teacher = Teacher.objects.get(user=request.user)
         result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
-    except:
-        messages.error(request, 'Access denied.')
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
+    except StudentResult.DoesNotExist:
+        messages.error(request, 'Result not found or you do not have permission to edit it.')
         return redirect('class_teacher_collate')
     
     subject_results = SubjectResult.objects.filter(
@@ -722,8 +898,47 @@ def class_teacher_edit_result(request, result_id):
     ).order_by('subject_name')
     
     if request.method == 'POST':
-        messages.success(request, 'Result updated!')
-        return redirect('class_teacher_collate')
+        try:
+            # Update all fields
+            result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
+            result.times_present = int(request.POST.get('times_present', result.times_present))
+            result.times_absent = int(request.POST.get('times_absent', result.times_absent))
+            result.vacation_date = request.POST.get('vacation_date') or result.vacation_date
+            result.resumption_date = request.POST.get('resumption_date') or result.resumption_date
+            result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
+            result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
+            
+            # Affective domain
+            result.affective_punctuality = request.POST.get('aff_punctuality', result.affective_punctuality)
+            result.affective_neatness = request.POST.get('aff_neatness', result.affective_neatness)
+            result.affective_politeness = request.POST.get('aff_politeness', result.affective_politeness)
+            result.affective_honesty = request.POST.get('aff_honesty', result.affective_honesty)
+            result.affective_relationship = request.POST.get('aff_relationship', result.affective_relationship)
+            result.affective_self_control = request.POST.get('aff_self_control', result.affective_self_control)
+            result.affective_attentiveness = request.POST.get('aff_attentiveness', result.affective_attentiveness)
+            
+            # Psychomotor domain
+            result.psycho_handwriting = request.POST.get('psycho_handwriting', result.psycho_handwriting)
+            result.psycho_sports = request.POST.get('psycho_sports', result.psycho_sports)
+            result.psycho_handling_tools = request.POST.get('psycho_tools', result.psycho_handling_tools)
+            result.psycho_verbal_fluency = request.POST.get('psycho_verbal', result.psycho_verbal_fluency)
+            result.psycho_games = request.POST.get('psycho_games', result.psycho_games)
+            result.psycho_drawing = request.POST.get('psycho_drawing', result.psycho_drawing)
+            
+            result.class_teacher_comment = request.POST.get('class_teacher_comment', result.class_teacher_comment)
+            
+            # Recalculate totals
+            result.total_subjects = subject_results.count()
+            result.score_gained = sum([sr.avg_2 for sr in subject_results])
+            result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
+            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
+            
+            result.save()
+            
+            messages.success(request, 'Result updated successfully!')
+            return redirect('class_teacher_collate')
+        except Exception as e:
+            messages.error(request, f'Error updating result: {str(e)}')
     
     context = {
         'result': result,

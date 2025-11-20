@@ -65,6 +65,8 @@ urlpatterns = [
     path('make-result/class-teacher/edit/<int:result_id>/', views.class_teacher_edit_result, name='class_teacher_edit_result'),
     path('make-result/class-teacher/send/<int:result_id>/', views.send_result_to_principal, name='send_result_to_principal'),
     path('make-result/class-teacher/send-batch/', views.send_batch_to_principal, name='send_batch_to_principal'),
+    # In the Result System URLs section, add this line:
+    path('make-result/class-teacher/start/', views.class_teacher_start_result, name='class_teacher_start_result'),
     
     # Principal Result Review
     path('make-result/principal/', views.principal_result_review, name='principal_result_review'),
