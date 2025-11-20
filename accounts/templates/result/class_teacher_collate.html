@@ -120,9 +120,10 @@
                                         </a>
                                     {% endif %}
                                 {% else %}
-                                   <a href="{% url 'class_teacher_start_result' %}?student_id={{ item.student.id }}&term={{ term }}&year={{ academic_year }}" class="btn" style="font-size: 13px; padding: 8px 15px;">
-                                         ➕ Start Result
-                                    </a>
+                                   <a href="{% url 'class_teacher_start_result' %}?student_id={{ item.student.id }}&term={{ term }}&academic_year={{ academic_year }}" 
+   class="btn" style="font-size: 13px; padding: 8px 15px;">
+    ➕ Start Result
+        </a>
                                 {% endif %}
                             </td>
                         </tr>

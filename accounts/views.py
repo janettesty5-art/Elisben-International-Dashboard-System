@@ -497,23 +497,15 @@ def make_result_portal(request):
 
 @login_required
 def subject_teacher_entry(request):
-    # ===== DEBUG CODE START =====
-    print("=" * 60)
-    print("🔍 DEBUG subject_teacher_entry:")
-    print(f"   User: {request.user.username}")
-    print(f"   Method: {request.method}")
-    print(f"   GET params: {dict(request.GET)}")
-    # ===== DEBUG CODE END =====
+    print("🔍 DEBUG subject_teacher_entry: START")
     
     try:
         teacher = Teacher.objects.get(user=request.user)
-        print(f"   ✅ Teacher found: {teacher.full_name}")
+        print(f"✅ Teacher found: {teacher.full_name}")
     except Teacher.DoesNotExist:
-        print("   ❌ ERROR: Teacher not found!")
+        print("❌ ERROR: Teacher not found!")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('unified_login')
-    
-    print("=" * 60)
     
     if request.method == 'POST':
         try:
@@ -522,15 +514,22 @@ def subject_teacher_entry(request):
             academic_year = request.POST.get('academic_year')
             student_ids = request.POST.getlist('student_id')
             
+            print(f"📝 Processing {len(student_ids)} students for {subject_name}")
+            
             for student_id in student_ids:
                 student = Student.objects.get(id=student_id)
                 
-                test_a = float(request.POST.get(f'test_a_{student_id}', 0))
-                test_b = float(request.POST.get(f'test_b_{student_id}', 0))
-                test_c = float(request.POST.get(f'test_c_{student_id}', 0))
-                exam = float(request.POST.get(f'exam_{student_id}', 0))
-                ltcum = float(request.POST.get(f'ltcum_{student_id}', 0))
-                atcum = float(request.POST.get(f'atcum_{student_id}', 0))
+                # Safe conversion with error handling
+                try:
+                    test_a = float(request.POST.get(f'test_a_{student_id}', 0) or 0)
+                    test_b = float(request.POST.get(f'test_b_{student_id}', 0) or 0)
+                    test_c = float(request.POST.get(f'test_c_{student_id}', 0) or 0)
+                    exam = float(request.POST.get(f'exam_{student_id}', 0) or 0)
+                    ltcum = float(request.POST.get(f'ltcum_{student_id}', 0) or 0)
+                    atcum = float(request.POST.get(f'atcum_{student_id}', 0) or 0)
+                except ValueError as e:
+                    print(f"❌ ValueError for student {student_id}: {e}")
+                    continue  # Skip this student or use default values
                 
                 SubjectResult.objects.update_or_create(
                     student=student,
@@ -565,15 +564,8 @@ def subject_teacher_entry(request):
             messages.error(request, f'Error saving results: {str(e)}')
             return redirect('subject_teacher_entry')
     
-    # ===== DEBUG: Check database queries =====
-    try:
-        classes = Student.objects.values_list('class_name', flat=True).distinct()
-        print(f"   📚 Classes found: {list(classes)}")
-    except Exception as e:
-        print(f"   ❌ ERROR getting classes: {e}")
-        classes = []
-    # ===== DEBUG END =====
-    
+    # GET request handling remains the same...
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
     selected_class = request.GET.get('class_name')
     students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
     
@@ -602,15 +594,12 @@ def subject_teacher_entry(request):
         'term': term,
     }
     
-    # ===== DEBUG: Check template =====
-    print(f"   📄 Rendering template with context:")
-    print(f"      - teacher: {teacher.full_name}")
-    print(f"      - classes count: {len(classes) if classes else 0}")
-    print(f"      - selected_class: {selected_class}")
-    print(f"      - students count: {len(students)}")
-    # ===== DEBUG END =====
+    return render(request, 'result/subject_teacher_entry.html', context)
 
-    return render(request, 'result/subject_teacher_entry.html', context)  
+def test_subject_teacher(request):
+    print("🎯 TEST VIEW CALLED!")
+    return HttpResponse("Test view working!")
+
 
 
 @login_required
@@ -784,7 +773,12 @@ def class_teacher_start_result(request):
     # Get parameters from URL
     student_id = request.GET.get('student_id')
     term = request.GET.get('term')
-    academic_year = request.GET.get('year')
+    academic_year = request.GET.get('academic_year')
+    
+    print(f"🔍 DEBUG class_teacher_start_result:")
+    print(f"   student_id: {student_id}")
+    print(f"   term: {term}")
+    print(f"   academic_year: {academic_year}")
     
     if not all([student_id, term, academic_year]):
         messages.error(request, 'Missing required parameters.')
@@ -792,6 +786,7 @@ def class_teacher_start_result(request):
     
     try:
         student = Student.objects.get(id=student_id)
+        print(f"   ✅ Student found: {student.full_name}")
     except Student.DoesNotExist:
         messages.error(request, 'Student not found.')
         return redirect('class_teacher_collate')
@@ -802,6 +797,8 @@ def class_teacher_start_result(request):
         term=term,
         academic_year=academic_year
     ).order_by('subject_name')
+    
+    print(f"   📊 Subject results found: {subject_results.count()}")
     
     if request.method == 'POST':
         try:
@@ -865,6 +862,9 @@ def class_teacher_start_result(request):
             return redirect('class_teacher_collate')
             
         except Exception as e:
+            print(f"❌ ERROR in class_teacher_start_result POST: {str(e)}")
+            import traceback
+            traceback.print_exc()
             messages.error(request, f'Error saving result: {str(e)}')
     
     context = {
@@ -875,8 +875,9 @@ def class_teacher_start_result(request):
         'academic_year': academic_year,
         'result': None,  # No existing result
     }
+    
+    print(f"   📄 Rendering template for student: {student.full_name}")
     return render(request, 'result/class_teacher_start_result.html', context)
-
 
 # UPDATED VERSION of class_teacher_edit_result
 @login_required

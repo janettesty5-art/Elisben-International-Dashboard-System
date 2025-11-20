@@ -85,6 +85,7 @@ urlpatterns = [
     # Check Result Portal
     path('check-result/', views.check_result_portal, name='check_result_portal'),
     path('check-result/view/', views.view_student_result, name='view_student_result'),
+    path('test-subject/', views.test_subject_teacher, name='test_subject'),
     
     # Result PDF/Print
     path('result/print/<int:result_id>/', views.print_result, name='print_result'),

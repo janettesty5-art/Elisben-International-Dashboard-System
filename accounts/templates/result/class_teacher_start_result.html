@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Result - {{ student.full_name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .form-section { margin-bottom: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .form-section h3 { margin-top: 0; color: #007bff; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .subject-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .subject-table th, .subject-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .subject-table th { background: #f8f9fa; }
+        .subject-entry { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f8f9fa; }
+        .subject-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Create Result for {{ student.full_name }}</h1>
+            <p><strong>Class:</strong> {{ student.class_name }} | <strong>Term:</strong> {{ term }} | <strong>Year:</strong> {{ academic_year }}</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- ===== SUBJECT SCORES ENTRY ===== -->
+            <div class="form-section">
+                <h3>📝 Enter Subject Scores</h3>
+                <p style="color: #666; margin-bottom: 15px;">Enter scores for each subject. Test A/B/C (max 20 each), Exam (max 60)</p>
+                
+                <div id="subject-entries">
+                    <!-- Subject entries will be added here dynamically -->
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <button type="button" id="add-subject" class="btn btn-success">➕ Add Subject</button>
+                </div>
+            </div>
+
+            <!-- Attendance Section -->
+            <div class="form-section">
+                <h3>📊 Attendance Record</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Times School Opened:</label>
+                        <input type="number" name="times_opened" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Times Present:</label>
+                        <input type="number" name="times_present" value="0" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Times Absent:</label>
+                        <input type="number" name="times_absent" value="0" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Term Dates -->
+            <div class="form-section">
+                <h3>📅 Term Dates</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Vacation Date:</label>
+                        <input type="date" name="vacation_date">
+                    </div>
+                    <div class="form-group">
+                        <label>Resumption Date:</label>
+                        <input type="date" name="resumption_date">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Next Term Fees -->
+            <div class="form-section">
+                <h3>💰 Next Term Fees</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>PTA Fee (₦):</label>
+                        <input type="number" step="0.01" name="pta_fee" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>School Fee (₦):</label>
+                        <input type="number" step="0.01" name="school_fee" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Affective Domain -->
+            <div class="form-section">
+                <h3>🌟 Affective Domain</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Punctuality:</label>
+                        <select name="aff_punctuality">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Neatness:</label>
+                        <select name="aff_neatness">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Politeness:</label>
+                        <select name="aff_politeness">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Honesty:</label>
+                        <select name="aff_honesty">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Relationship:</label>
+                        <select name="aff_relationship">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Self Control:</label>
+                        <select name="aff_self_control">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Attentiveness:</label>
+                        <select name="aff_attentiveness">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Psychomotor Domain -->
+            <div class="form-section">
+                <h3>🎯 Psychomotor Domain</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Handwriting:</label>
+                        <select name="psycho_handwriting">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sports:</label>
+                        <select name="psycho_sports">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Handling Tools:</label>
+                        <select name="psycho_tools">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Verbal Fluency:</label>
+                        <select name="psycho_verbal">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Games:</label>
+                        <select name="psycho_games">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Drawing:</label>
+                        <select name="psycho_drawing">
+                            <option value="">Select</option>
+                            <option value="Excellent">Excellent</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Subject Results -->
+            <div class="form-section">
+                <h3>📚 Existing Subject Results ({{ subject_results.count }} subjects)</h3>
+                {% if subject_results %}
+                <table class="subject-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Test A</th>
+                            <th>Test B</th>
+                            <th>Test C</th>
+                            <th>Exam</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sr in subject_results %}
+                        <tr>
+                            <td>{{ sr.subject_name }}</td>
+                            <td>{{ sr.test_a }}</td>
+                            <td>{{ sr.test_b }}</td>
+                            <td>{{ sr.test_c }}</td>
+                            <td>{{ sr.exam }}</td>
+                            <td><strong>{{ sr.avg_2 }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color: #666;">No existing subject results found. Add subjects above.</p>
+                {% endif %}
+            </div>
+
+            <!-- Teacher Comment -->
+            <div class="form-section">
+                <h3>💬 Class Teacher's Comment</h3>
+                <div class="form-group">
+                    <textarea name="class_teacher_comment" rows="4" placeholder="Enter your comment about the student..."></textarea>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="submit" class="btn">💾 Save Result</button>
+                <a href="{% url 'class_teacher_collate' %}" class="btn" style="background: #6c757d;">← Back to Class Results</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let subjectCounter = 0;
+        
+        // Add subject entry
+        document.getElementById('add-subject').addEventListener('click', function() {
+            subjectCounter++;
+            const subjectEntry = `
+                <div class="subject-entry" data-id="${subjectCounter}">
+                    <div class="subject-grid">
+                        <div>
+                            <label>Subject Name:</label>
+                            <input type="text" name="subject_name_${subjectCounter}" placeholder="e.g., Mathematics" required>
+                        </div>
+                        <div>
+                            <label>Test A (20):</label>
+                            <input type="number" step="0.1" name="test_a_${subjectCounter}" value="0" min="0" max="20">
+                        </div>
+                        <div>
+                            <label>Test B (20):</label>
+                            <input type="number" step="0.1" name="test_b_${subjectCounter}" value="0" min="0" max="20">
+                        </div>
+                        <div>
+                            <label>Test C (20):</label>
+                            <input type="number" step="0.1" name="test_c_${subjectCounter}" value="0" min="0" max="20">
+                        </div>
+                        <div>
+                            <label>Exam (60):</label>
+                            <input type="number" step="0.1" name="exam_${subjectCounter}" value="0" min="0" max="60">
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-danger remove-subject">🗑️ Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('subject-entries').insertAdjacentHTML('beforeend', subjectEntry);
+        });
+
+        // Remove subject entry
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-subject')) {
+                e.target.closest('.subject-entry').remove();
+            }
+        });
+
+        // Add one subject by default when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('add-subject').click();
+        });
+    </script>
+</body>
+</html>
