@@ -89,4 +89,7 @@ urlpatterns = [
     
     # Result PDF/Print
     path('result/print/<int:result_id>/', views.print_result, name='print_result'),
+
+    path('notification/mark-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
+    path('notification/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
 ]

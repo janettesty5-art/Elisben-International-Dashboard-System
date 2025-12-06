@@ -7,21 +7,23 @@
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
         .navbar { background: #2ecc71; color: white; padding: 20px 40px; }
         .navbar h1 { font-size: 24px; }
-        .container { max-width: 1400px; margin: 40px auto; padding: 0 20px; }
+        .container { max-width: 1600px; margin: 40px auto; padding: 0 20px; }
         .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
         input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
         input:focus, select:focus { outline: none; border-color: #2ecc71; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        table th, table td { border: 1px solid #ddd; padding: 12px; text-align: center; }
-        table th { background: #2ecc71; color: white; }
-        table input { width: 80px; padding: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        table th, table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
+        table th { background: #2ecc71; color: white; font-size: 12px; }
+        table input { width: 70px; padding: 6px; text-align: center; }
+        table input.readonly { background: #e8f5e9; font-weight: 600; }
         .btn { padding: 12px 30px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; }
         .btn:hover { background: #27ae60; }
         .btn-back { background: #95a5a6; margin-left: 10px; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
+        .student-name { text-align: left !important; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -39,7 +41,7 @@
         <div class="card">
             <h2>Step 1: Select Class & Enter Details</h2>
             <form method="GET">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
                     <div class="form-group">
                         <label>Select Class:</label>
                         <select name="class_name" required onchange="this.form.submit()">
@@ -54,8 +56,16 @@
                         <input type="text" name="subject_name" value="{{ subject_name }}" placeholder="e.g., ENGLISH LANGUAGE" required>
                     </div>
                     <div class="form-group">
-                        <label>Term & Year:</label>
-                        <input type="text" name="term" value="{{ term }}" placeholder="e.g., First Term 2024/2025" required>
+                        <label>Select Term:</label>
+                        <select name="term" required>
+                            <option value="First Term" {% if term == "First Term" %}selected{% endif %}>First Term</option>
+                            <option value="Second Term" {% if term == "Second Term" %}selected{% endif %}>Second Term</option>
+                            <option value="Third Term" {% if term == "Third Term" %}selected{% endif %}>Third Term</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Academic Year:</label>
+                        <input type="text" name="academic_year" value="{{ academic_year }}" readonly style="background: #f0f0f0;">
                     </div>
                 </div>
                 <button type="submit" class="btn">Load Students</button>
@@ -64,109 +74,90 @@
         
         {% if students %}
         <div class="card">
-            <h2>Step 2: Enter Results for {{ selected_class }} - {{ subject_name }}</h2>
+            <h2>Step 2: Enter Results for {{ selected_class }} - {{ subject_name }} ({{ term }})</h2>
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="subject_name" value="{{ subject_name }}">
                 <input type="hidden" name="term" value="{{ term }}">
-                <input type="hidden" name="academic_year" value="{{ term }}">
+                <input type="hidden" name="academic_year" value="{{ academic_year }}">
                 
                 <table>
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Student Name</th>
-                            <th>Test A<br>(100%)</th>
-                            <th>Test B<br>(100%)</th>
-                            <th>Test C<br>(100%)</th>
-                            <th>Exam<br>(100%)</th>
-                            <th>LTCUM</th>
-                            <th>ATCUM</th>
+                            <th>TEST-1<br>(100)</th>
+                            <th>TEST-2<br>(100)</th>
+                            <th>TEST-3<br>(100)</th>
+                            <th>AVG-1<br>(Auto)</th>
+                            <th>EXAM<br>(100)</th>
+                            <th>AVG-2<br>(Auto)</th>
+                            {% if term == "Second Term" or term == "Third Term" %}
+                            <th>LTCUM<br>(100)</th>
+                            {% endif %}
+                            <th>CUM<br>(Auto)</th>
+                            <th>POS</th>
+                            <th>GRADE<br>(Auto)</th>
+                            <th>REMARK<br>(Auto)</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for student in students %}
-                        <tr>
+                        <tr data-student-id="{{ student.id }}">
                             <td>{{ forloop.counter }}</td>
-                            <td style="text-align: left;">{{ student.full_name }}</td>
+                            <td class="student-name">{{ student.full_name }}</td>
                             <td>
-                                {% for key, result in existing_results.items %}
-                                    {% if key == student.id %}
-                                        <input type="number" name="test_a_{{ student.id }}" 
-                                               value="{{ result.test_a }}" 
-                                               min="0" max="100" step="0.01" required>
-                                    {% endif %}
-                                {% empty %}
-                                    <input type="number" name="test_a_{{ student.id }}" 
-                                           value="0" 
-                                           min="0" max="100" step="0.01" required>
-                                {% endfor %}
+                                <input type="number" name="test_a_{{ student.id }}" class="test-input" data-field="test_a"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'test_a' }}{% else %}0{% endif %}" 
+                                       min="0" max="100" step="0.01" required>
                                 <input type="hidden" name="student_id" value="{{ student.id }}">
                             </td>
                             <td>
-                                {% for key, result in existing_results.items %}
-                                    {% if key == student.id %}
-                                        <input type="number" name="test_b_{{ student.id }}" 
-                                               value="{{ result.test_b }}" 
-                                               min="0" max="100" step="0.01" required>
-                                    {% endif %}
-                                {% empty %}
-                                    <input type="number" name="test_b_{{ student.id }}" 
-                                           value="0" 
-                                           min="0" max="100" step="0.01" required>
-                                {% endfor %}
+                                <input type="number" name="test_b_{{ student.id }}" class="test-input" data-field="test_b"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'test_b' }}{% else %}0{% endif %}" 
+                                       min="0" max="100" step="0.01" required>
                             </td>
                             <td>
-                                {% for key, result in existing_results.items %}
-                                    {% if key == student.id %}
-                                        <input type="number" name="test_c_{{ student.id }}" 
-                                               value="{{ result.test_c }}" 
-                                               min="0" max="100" step="0.01" required>
-                                    {% endif %}
-                                {% empty %}
-                                    <input type="number" name="test_c_{{ student.id }}" 
-                                           value="0" 
-                                           min="0" max="100" step="0.01" required>
-                                {% endfor %}
+                                <input type="number" name="test_c_{{ student.id }}" class="test-input" data-field="test_c"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'test_c' }}{% else %}0{% endif %}" 
+                                       min="0" max="100" step="0.01" required>
                             </td>
                             <td>
-                                {% for key, result in existing_results.items %}
-                                    {% if key == student.id %}
-                                        <input type="number" name="exam_{{ student.id }}" 
-                                               value="{{ result.exam }}" 
-                                               min="0" max="100" step="0.01" required>
-                                    {% endif %}
-                                {% empty %}
-                                    <input type="number" name="exam_{{ student.id }}" 
-                                           value="0" 
-                                           min="0" max="100" step="0.01" required>
-                                {% endfor %}
+                                <input type="text" class="avg1-display readonly" readonly 
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'avg_1'|floatformat:2 }}{% else %}0.00{% endif %}">
                             </td>
                             <td>
-                                {% for key, result in existing_results.items %}
-                                    {% if key == student.id %}
-                                        <input type="number" name="ltcum_{{ student.id }}" 
-                                               value="{{ result.ltcum }}" 
-                                               min="0" max="100" step="0.01">
-                                    {% endif %}
-                                {% empty %}
-                                    <input type="number" name="ltcum_{{ student.id }}" 
-                                           value="0" 
-                                           min="0" max="100" step="0.01">
-                                {% endfor %}
+                                <input type="number" name="exam_{{ student.id }}" class="exam-input"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'exam' }}{% else %}0{% endif %}" 
+                                       min="0" max="100" step="0.01" required>
                             </td>
                             <td>
-                                {% for key, result in existing_results.items %}
-                                    {% if key == student.id %}
-                                        <input type="number" name="atcum_{{ student.id }}" 
-                                               value="{{ result.atcum }}" 
-                                               min="0" max="100" step="0.01">
-                                    {% endif %}
-                                {% empty %}
-                                    <input type="number" name="atcum_{{ student.id }}" 
-                                           value="0" 
-                                           min="0" max="100" step="0.01">
-                                {% endfor %}
+                                <input type="text" class="avg2-display readonly" readonly 
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'avg_2'|floatformat:2 }}{% else %}0.00{% endif %}">
+                            </td>
+                            {% if term == "Second Term" or term == "Third Term" %}
+                            <td>
+                                <input type="number" name="ltcum_{{ student.id }}" class="ltcum-input"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'ltcum' }}{% else %}0{% endif %}" 
+                                       min="0" max="100" step="0.01">
+                            </td>
+                            {% endif %}
+                            <td>
+                                <input type="text" class="cum-display readonly" readonly 
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'cum'|floatformat:2 }}{% else %}0.00{% endif %}">
+                            </td>
+                            <td>
+                                <input type="number" name="position_{{ student.id }}" style="width: 60px;"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'position_ranking' }}{% endif %}" 
+                                       min="1">
+                            </td>
+                            <td>
+                                <input type="text" class="grade-display readonly" readonly style="width: 50px;"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'grade' }}{% endif %}">
+                            </td>
+                            <td>
+                                <input type="text" class="remark-display readonly" readonly style="width: 100px;"
+                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'grade_remark' }}{% endif %}">
                             </td>
                         </tr>
                         {% endfor %}
@@ -181,5 +172,82 @@
         </div>
         {% endif %}
     </div>
+    
+    <script>
+        // Auto-calculate AVG-1, AVG-2, CUM, GRADE, REMARK in real-time
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const testInputs = row.querySelectorAll('.test-input');
+            const examInput = row.querySelector('.exam-input');
+            const ltcumInput = row.querySelector('.ltcum-input');
+            const avg1Display = row.querySelector('.avg1-display');
+            const avg2Display = row.querySelector('.avg2-display');
+            const cumDisplay = row.querySelector('.cum-display');
+            const gradeDisplay = row.querySelector('.grade-display');
+            const remarkDisplay = row.querySelector('.remark-display');
+            
+            function calculate() {
+                // Get values
+                const testA = parseFloat(testInputs[0].value) || 0;
+                const testB = parseFloat(testInputs[1].value) || 0;
+                const testC = parseFloat(testInputs[2].value) || 0;
+                const exam = parseFloat(examInput.value) || 0;
+                const ltcum = ltcumInput ? (parseFloat(ltcumInput.value) || 0) : 0;
+                
+                // Calculate AVG-1
+                const avg1 = (testA + testB + testC) / 3;
+                avg1Display.value = avg1.toFixed(2);
+                
+                // Calculate AVG-2
+                const avg2 = (avg1 + exam) / 2;
+                avg2Display.value = avg2.toFixed(2);
+                
+                // Calculate CUM
+                let cum;
+                if (ltcumInput && ltcum > 0) {
+                    // 2nd/3rd term: (AVG-2 + LTCUM) / 2
+                    cum = (avg2 + ltcum) / 2;
+                } else {
+                    // 1st term: CUM = AVG-2
+                    cum = avg2;
+                }
+                cumDisplay.value = cum.toFixed(2);
+                
+                // Calculate GRADE and REMARK based on CUM
+                let grade, remark;
+                if (cum >= 70) {
+                    grade = 'A';
+                    remark = 'EXCELLENT';
+                } else if (cum >= 60) {
+                    grade = 'B';
+                    remark = 'VERY GOOD';
+                } else if (cum >= 50) {
+                    grade = 'C';
+                    remark = 'GOOD';
+                } else if (cum >= 45) {
+                    grade = 'D';
+                    remark = 'PASS';
+                } else if (cum >= 40) {
+                    grade = 'E';
+                    remark = 'POOR';
+                } else {
+                    grade = 'F';
+                    remark = 'FAIL';
+                }
+                
+                gradeDisplay.value = grade;
+                remarkDisplay.value = remark;
+            }
+            
+            // Add event listeners
+            testInputs.forEach(input => input.addEventListener('input', calculate));
+            examInput.addEventListener('input', calculate);
+            if (ltcumInput) {
+                ltcumInput.addEventListener('input', calculate);
+            }
+            
+            // Calculate on page load
+            calculate();
+        });
+    </script>
 </body>
 </html>

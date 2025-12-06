@@ -497,13 +497,9 @@ def make_result_portal(request):
 
 @login_required
 def subject_teacher_entry(request):
-    print("🔍 DEBUG subject_teacher_entry: START")
-    
     try:
         teacher = Teacher.objects.get(user=request.user)
-        print(f"✅ Teacher found: {teacher.full_name}")
     except Teacher.DoesNotExist:
-        print("❌ ERROR: Teacher not found!")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('unified_login')
     
@@ -514,22 +510,22 @@ def subject_teacher_entry(request):
             academic_year = request.POST.get('academic_year')
             student_ids = request.POST.getlist('student_id')
             
-            print(f"📝 Processing {len(student_ids)} students for {subject_name}")
-            
             for student_id in student_ids:
                 student = Student.objects.get(id=student_id)
                 
-                # Safe conversion with error handling
-                try:
-                    test_a = float(request.POST.get(f'test_a_{student_id}', 0) or 0)
-                    test_b = float(request.POST.get(f'test_b_{student_id}', 0) or 0)
-                    test_c = float(request.POST.get(f'test_c_{student_id}', 0) or 0)
-                    exam = float(request.POST.get(f'exam_{student_id}', 0) or 0)
-                    ltcum = float(request.POST.get(f'ltcum_{student_id}', 0) or 0)
-                    atcum = float(request.POST.get(f'atcum_{student_id}', 0) or 0)
-                except ValueError as e:
-                    print(f"❌ ValueError for student {student_id}: {e}")
-                    continue  # Skip this student or use default values
+                test_a = float(request.POST.get(f'test_a_{student_id}', 0))
+                test_b = float(request.POST.get(f'test_b_{student_id}', 0))
+                test_c = float(request.POST.get(f'test_c_{student_id}', 0))
+                exam = float(request.POST.get(f'exam_{student_id}', 0))
+                
+                # LTCUM only for 2nd/3rd term
+                ltcum = 0
+                if term in ['Second Term', 'Third Term']:
+                    ltcum = float(request.POST.get(f'ltcum_{student_id}', 0))
+                
+                # Position ranking
+                position = request.POST.get(f'position_{student_id}')
+                position_value = int(position) if position and position.strip() else None
                 
                 SubjectResult.objects.update_or_create(
                     student=student,
@@ -541,8 +537,8 @@ def subject_teacher_entry(request):
                         'test_b': test_b,
                         'test_c': test_c,
                         'exam': exam,
-                        'ltcum': ltcum,
-                        'atcum': atcum,
+                        'ltcum': ltcum if term in ['Second Term', 'Third Term'] else None,
+                        'position_ranking': position_value,
                         'entered_by': teacher,
                     }
                 )
@@ -558,19 +554,28 @@ def subject_teacher_entry(request):
             return redirect('subject_teacher_entry')
             
         except Exception as e:
-            print(f"❌ ERROR in POST: {str(e)}")
-            import traceback
-            traceback.print_exc()
             messages.error(request, f'Error saving results: {str(e)}')
             return redirect('subject_teacher_entry')
     
-    # GET request handling remains the same...
+    # Get current academic year automatically
+    from datetime import datetime
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    
+    # If we're in Jan-Aug, use previous year / current year
+    # If we're in Sep-Dec, use current year / next year
+    if current_month <= 8:
+        academic_year = f"{current_year - 1}/{current_year}"
+    else:
+        academic_year = f"{current_year}/{current_year + 1}"
+    
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     selected_class = request.GET.get('class_name')
     students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
     
     subject_name = request.GET.get('subject_name')
-    term = request.GET.get('term')
+    term = request.GET.get('term', 'First Term')
+    
     existing_results = {}
     if subject_name and term and selected_class:
         for student in students:
@@ -578,7 +583,8 @@ def subject_teacher_entry(request):
                 result = SubjectResult.objects.get(
                     student=student,
                     subject_name=subject_name,
-                    term=term
+                    term=term,
+                    academic_year=academic_year
                 )
                 existing_results[student.id] = result
             except SubjectResult.DoesNotExist:
@@ -592,9 +598,10 @@ def subject_teacher_entry(request):
         'existing_results': existing_results,
         'subject_name': subject_name,
         'term': term,
+        'academic_year': academic_year,
     }
-    
     return render(request, 'result/subject_teacher_entry.html', context)
+
 
 def test_subject_teacher(request):
     print("🎯 TEST VIEW CALLED!")
@@ -604,147 +611,63 @@ def test_subject_teacher(request):
 
 @login_required
 def class_teacher_collate(request):
-    # ===== DEBUG CODE START =====
-    print("=" * 60)
-    print("🔍 DEBUG class_teacher_collate:")
-    print(f"   User: {request.user.username}")
-    print(f"   Method: {request.method}")
-    print(f"   GET params: {dict(request.GET)}")
-    if request.method == 'POST':
-        print(f"   POST params: {dict(request.POST)}")
-    # ===== DEBUG CODE END =====
-    
     try:
         teacher = Teacher.objects.get(user=request.user)
-        print(f"   ✅ Teacher found: {teacher.full_name}")
     except Teacher.DoesNotExist:
-        print("   ❌ ERROR: Teacher not found!")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('unified_login')
-    
-    print("=" * 60)
     
     selected_class = request.GET.get('class_name')
     term = request.GET.get('term')
     academic_year = request.GET.get('academic_year')
     
-    if request.method == 'POST':
-        try:
-            student_id = request.POST.get('student_id')
-            print(f"   📝 Processing student_id: {student_id}")
-            print(f"   📝 Term: {term}, Academic Year: {academic_year}")
-            
-            student = Student.objects.get(id=student_id)
-            print(f"   ✅ Student found: {student.full_name}")
-            
-            result, created = StudentResult.objects.get_or_create(
-                student=student,
-                term=term,
-                academic_year=academic_year,
-                defaults={
-                    'class_name': student.class_name,
-                    'class_teacher': teacher,
-                }
-            )
-            print(f"   {'🆕 Created new' if created else '✏️ Updating existing'} result")
-            
-            result.times_school_opened = int(request.POST.get('times_opened', 0))
-            result.times_present = int(request.POST.get('times_present', 0))
-            result.times_absent = int(request.POST.get('times_absent', 0))
-            result.vacation_date = request.POST.get('vacation_date')
-            result.resumption_date = request.POST.get('resumption_date')
-            result.next_term_pta_fee = float(request.POST.get('pta_fee', 0))
-            result.next_term_school_fee = float(request.POST.get('school_fee', 0))
-            
-            result.affective_punctuality = request.POST.get('aff_punctuality', '')
-            result.affective_neatness = request.POST.get('aff_neatness', '')
-            result.affective_politeness = request.POST.get('aff_politeness', '')
-            result.affective_honesty = request.POST.get('aff_honesty', '')
-            result.affective_relationship = request.POST.get('aff_relationship', '')
-            result.affective_self_control = request.POST.get('aff_self_control', '')
-            result.affective_attentiveness = request.POST.get('aff_attentiveness', '')
-            
-            result.psycho_handwriting = request.POST.get('psycho_handwriting', '')
-            result.psycho_sports = request.POST.get('psycho_sports', '')
-            result.psycho_handling_tools = request.POST.get('psycho_tools', '')
-            result.psycho_verbal_fluency = request.POST.get('psycho_verbal', '')
-            result.psycho_games = request.POST.get('psycho_games', '')
-            result.psycho_drawing = request.POST.get('psycho_drawing', '')
-            
-            result.class_teacher_comment = request.POST.get('class_teacher_comment', '')
-            result.class_teacher = teacher
-            
-            subject_results = SubjectResult.objects.filter(
-                student=student,
-                term=term,
-                academic_year=academic_year
-            )
-            
-            print(f"   📊 Found {subject_results.count()} subject results")
-            
-            result.total_subjects = subject_results.count()
-            result.score_gained = sum([sr.avg_2 for sr in subject_results])
-            result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
-            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
-            
-            result.save()
-            print(f"   ✅ Result saved successfully!")
-            
-            ResultActivityLog.objects.create(
-                action='result_collated',
-                description=f'Result collated for {student.full_name}',
-                student_result=result,
-                performed_by_type='teacher',
-                performed_by_name=teacher.full_name
-            )
-            
-            messages.success(request, f'✅ Result collated for {student.full_name}!')
-            return redirect('class_teacher_collate')
-            
-        except Exception as e:
-            print(f"❌ ERROR in POST: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            messages.error(request, f'Error saving result: {str(e)}')
-            return redirect('class_teacher_collate')
+    # Get classes
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
     
-    students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
-    print(f"   👥 Students in {selected_class}: {len(students)}")
+    # Initialize result lists
+    unsent_results = []
+    sent_results = []
     
-    results = []
     if selected_class and term and academic_year:
+        students = Student.objects.filter(class_name=selected_class).order_by('full_name')
+        
         for student in students:
             try:
                 result = StudentResult.objects.get(
                     student=student,
                     term=term,
-                    academic_year=academic_year
+                    academic_year=academic_year,
+                    class_teacher=teacher
                 )
                 subject_count = SubjectResult.objects.filter(
                     student=student,
                     term=term,
                     academic_year=academic_year
                 ).count()
-                results.append({
+                
+                result_data = {
                     'student': student,
                     'result': result,
                     'subject_count': subject_count,
-                })
+                }
+                
+                # Separate into sent and unsent
+                if result.status in ['sent_to_principal', 'sent_to_admin', 'published']:
+                    sent_results.append(result_data)
+                else:
+                    unsent_results.append(result_data)
+                    
             except StudentResult.DoesNotExist:
                 subject_count = SubjectResult.objects.filter(
                     student=student,
                     term=term,
                     academic_year=academic_year
                 ).count()
-                results.append({
+                unsent_results.append({
                     'student': student,
                     'result': None,
                     'subject_count': subject_count,
                 })
-    
-    print(f"   📋 Results list prepared: {len(results)} entries")
-    
-    classes = Student.objects.values_list('class_name', flat=True).distinct()
     
     context = {
         'teacher': teacher,
@@ -752,15 +675,16 @@ def class_teacher_collate(request):
         'selected_class': selected_class,
         'term': term,
         'academic_year': academic_year,
-        'results': results,
+        'unsent_results': unsent_results,
+        'sent_results': sent_results,
     }
     
-    print(f"   📄 Rendering template: result/class_teacher_collate.html")
     return render(request, 'result/class_teacher_collate.html', context)
-    
 
 
 # ADD THIS NEW VIEW - for creating new results
+# REPLACE class_teacher_start_result in your views.py
+
 @login_required
 def class_teacher_start_result(request):
     """Start a new result for a student"""
@@ -773,12 +697,7 @@ def class_teacher_start_result(request):
     # Get parameters from URL
     student_id = request.GET.get('student_id')
     term = request.GET.get('term')
-    academic_year = request.GET.get('academic_year')
-    
-    print(f"🔍 DEBUG class_teacher_start_result:")
-    print(f"   student_id: {student_id}")
-    print(f"   term: {term}")
-    print(f"   academic_year: {academic_year}")
+    academic_year = request.GET.get('year')
     
     if not all([student_id, term, academic_year]):
         messages.error(request, 'Missing required parameters.')
@@ -786,7 +705,6 @@ def class_teacher_start_result(request):
     
     try:
         student = Student.objects.get(id=student_id)
-        print(f"   ✅ Student found: {student.full_name}")
     except Student.DoesNotExist:
         messages.error(request, 'Student not found.')
         return redirect('class_teacher_collate')
@@ -797,8 +715,6 @@ def class_teacher_start_result(request):
         term=term,
         academic_year=academic_year
     ).order_by('subject_name')
-    
-    print(f"   📊 Subject results found: {subject_results.count()}")
     
     if request.method == 'POST':
         try:
@@ -842,9 +758,9 @@ def class_teacher_start_result(request):
             result.class_teacher_comment = request.POST.get('class_teacher_comment', '')
             result.class_teacher = teacher
             
-            # Calculate totals
+            # Calculate totals using CUM (not avg_2)
             result.total_subjects = subject_results.count()
-            result.score_gained = sum([sr.avg_2 for sr in subject_results])
+            result.score_gained = sum([sr.cum for sr in subject_results])  # Changed from avg_2 to cum
             result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
             result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
             
@@ -862,9 +778,6 @@ def class_teacher_start_result(request):
             return redirect('class_teacher_collate')
             
         except Exception as e:
-            print(f"❌ ERROR in class_teacher_start_result POST: {str(e)}")
-            import traceback
-            traceback.print_exc()
             messages.error(request, f'Error saving result: {str(e)}')
     
     context = {
@@ -875,8 +788,6 @@ def class_teacher_start_result(request):
         'academic_year': academic_year,
         'result': None,  # No existing result
     }
-    
-    print(f"   📄 Rendering template for student: {student.full_name}")
     return render(request, 'result/class_teacher_start_result.html', context)
 
 # UPDATED VERSION of class_teacher_edit_result
@@ -954,19 +865,34 @@ def send_result_to_principal(request, result_id):
         teacher = Teacher.objects.get(user=request.user)
         result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
         
+        # Check if this is a resend (result was already sent before)
+        is_resend = result.status == 'sent_to_principal'
+        
         result.status = 'sent_to_principal'
         result.sent_to_principal_at = timezone.now()
         result.save()
         
+        # Create notification for ALL principals
+        principals = Principal.objects.all()
+        for principal in principals:
+            ResultNotification.objects.create(
+                recipient_type='principal',
+                recipient=principal.user,
+                student_result=result,
+                notification_type='result_resent' if is_resend else 'new_result',
+                message=f"{'UPDATED RESULT' if is_resend else 'New result'} from {teacher.full_name} for {result.student.full_name} ({result.class_name}) - {result.term} {result.academic_year}"
+            )
+        
+        # Log activity
         ResultActivityLog.objects.create(
             action='sent_to_principal',
-            description=f'Result for {result.student.full_name} sent to Principal',
+            description=f"{'RESENT (Updated)' if is_resend else 'Sent'} result for {result.student.full_name} to Principal",
             student_result=result,
             performed_by_type='teacher',
             performed_by_name=teacher.full_name
         )
         
-        messages.success(request, f'✅ Result sent to Principal!')
+        messages.success(request, f"✅ Result {'resent (updated)' if is_resend else 'sent'} to Principal!")
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
     
@@ -980,25 +906,50 @@ def send_batch_to_principal(request):
             result_ids = request.POST.getlist('result_ids')
             
             count = 0
+            resent_count = 0
+            
             for result_id in result_ids:
                 result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+                
+                is_resend = result.status == 'sent_to_principal'
+                if is_resend:
+                    resent_count += 1
+                
                 result.status = 'sent_to_principal'
                 result.sent_to_principal_at = timezone.now()
                 result.save()
+                
+                # Create notification for ALL principals
+                principals = Principal.objects.all()
+                for principal in principals:
+                    ResultNotification.objects.create(
+                        recipient_type='principal',
+                        recipient=principal.user,
+                        student_result=result,
+                        notification_type='result_resent' if is_resend else 'new_result',
+                        message=f"{'UPDATED RESULT' if is_resend else 'New result'} from {teacher.full_name} for {result.student.full_name} ({result.class_name})"
+                    )
+                
                 count += 1
             
             ResultActivityLog.objects.create(
                 action='sent_to_principal',
-                description=f'{count} results sent to Principal by {teacher.full_name}',
+                description=f'{count} results sent to Principal by {teacher.full_name} ({resent_count} resent)',
                 performed_by_type='teacher',
                 performed_by_name=teacher.full_name
             )
             
-            messages.success(request, f'✅ {count} results sent to Principal!')
+            msg = f'✅ {count} results sent to Principal!'
+            if resent_count > 0:
+                msg += f' ({resent_count} updated and resent)'
+            messages.success(request, msg)
+            
         except Exception as e:
             messages.error(request, f'Error: {str(e)}')
     
     return redirect('class_teacher_collate')
+
+# REPLACE principal_result_review in your views.py
 
 @login_required
 def principal_result_review(request):
@@ -1008,16 +959,68 @@ def principal_result_review(request):
         messages.error(request, 'Access denied. Principal only.')
         return redirect('unified_login')
     
+    # Get incoming results (sent to principal)
     incoming_results = StudentResult.objects.filter(
         status='sent_to_principal'
     ).order_by('class_name', 'student__full_name')
     
+    # Get sent results (sent to admin)
+    sent_results = StudentResult.objects.filter(
+        status__in=['sent_to_admin', 'published'],
+        principal=principal
+    ).order_by('-sent_to_admin_at')
+    
+    # Get unread notifications
+    unread_notifications = ResultNotification.objects.filter(
+        recipient=principal.user,
+        is_read=False
+    ).order_by('-created_at')
+    
+    # Get all notifications (last 20)
+    all_notifications = ResultNotification.objects.filter(
+        recipient=principal.user
+    ).order_by('-created_at')[:20]
+    
     context = {
         'principal': principal,
         'incoming_results': incoming_results,
+        'sent_results': sent_results,
+        'unread_notifications': unread_notifications,
+        'all_notifications': all_notifications,
+        'unread_count': unread_notifications.count(),
     }
     return render(request, 'result/principal_review.html', context)
 
+
+# ADD THIS NEW VIEW - Mark notification as read
+@login_required
+def mark_notification_read(request, notification_id):
+    try:
+        notification = ResultNotification.objects.get(id=notification_id, recipient=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'status': 'success'})
+    except ResultNotification.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Notification not found'})
+
+
+# ADD THIS NEW VIEW - Mark all notifications as read
+@login_required
+def mark_all_notifications_read(request):
+    try:
+        ResultNotification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
+        messages.success(request, '✅ All notifications marked as read!')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    if hasattr(request.user, 'principal'):
+        return redirect('principal_result_review')
+    elif hasattr(request.user, 'admin'):
+        return redirect('admin_result_management')
+    else:
+        return redirect('unified_login')
+
+        
 @login_required
 def principal_add_comment(request, result_id):
     try:
@@ -1062,19 +1065,32 @@ def send_result_to_admin(request, result_id):
         principal = Principal.objects.get(user=request.user)
         result = StudentResult.objects.get(id=result_id)
         
+        is_resend = result.status == 'sent_to_admin'
+        
         result.status = 'sent_to_admin'
         result.sent_to_admin_at = timezone.now()
         result.save()
         
+        # Create notification for ALL admins
+        admins = Admin.objects.all()
+        for admin in admins:
+            ResultNotification.objects.create(
+                recipient_type='admin',
+                recipient=admin.user,
+                student_result=result,
+                notification_type='result_resent' if is_resend else 'new_result',
+                message=f"{'UPDATED RESULT' if is_resend else 'New result'} from Principal for {result.student.full_name} ({result.class_name}) - {result.term} {result.academic_year}"
+            )
+        
         ResultActivityLog.objects.create(
             action='sent_to_admin',
-            description=f'Result for {result.student.full_name} sent to Admin',
+            description=f"{'RESENT (Updated)' if is_resend else 'Sent'} result for {result.student.full_name} to Admin",
             student_result=result,
             performed_by_type='principal',
             performed_by_name=principal.full_name
         )
         
-        messages.success(request, 'Result sent to Admin!')
+        messages.success(request, f"✅ Result {'resent (updated)' if is_resend else 'sent'} to Admin!")
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
     
@@ -1088,21 +1104,44 @@ def send_batch_to_admin(request):
             result_ids = request.POST.getlist('result_ids')
             
             count = 0
+            resent_count = 0
+            
             for result_id in result_ids:
                 result = StudentResult.objects.get(id=result_id)
+                
+                is_resend = result.status == 'sent_to_admin'
+                if is_resend:
+                    resent_count += 1
+                
                 result.status = 'sent_to_admin'
                 result.sent_to_admin_at = timezone.now()
                 result.save()
+                
+                # Create notification for ALL admins
+                admins = Admin.objects.all()
+                for admin in admins:
+                    ResultNotification.objects.create(
+                        recipient_type='admin',
+                        recipient=admin.user,
+                        student_result=result,
+                        notification_type='result_resent' if is_resend else 'new_result',
+                        message=f"{'UPDATED' if is_resend else 'New'} result from Principal for {result.student.full_name}"
+                    )
+                
                 count += 1
             
             ResultActivityLog.objects.create(
                 action='sent_to_admin',
-                description=f'{count} results sent to Admin by {principal.full_name}',
+                description=f'{count} results sent to Admin by {principal.full_name} ({resent_count} resent)',
                 performed_by_type='principal',
                 performed_by_name=principal.full_name
             )
             
-            messages.success(request, f'✅ {count} results sent to Admin!')
+            msg = f'✅ {count} results sent to Admin!'
+            if resent_count > 0:
+                msg += f' ({resent_count} updated and resent)'
+            messages.success(request, msg)
+            
         except Exception as e:
             messages.error(request, f'Error: {str(e)}')
     

@@ -471,25 +471,27 @@ class ActivityLog(models.Model):
 # ============================================================================
 
 # Subject Result Entry by Subject Teachers
+# FIND THIS MODEL IN YOUR models.py AND REPLACE IT
+
 class SubjectResult(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
-    subject_name = models.CharField(max_length=200)  # Manually entered
-    term = models.CharField(max_length=100)  # Manually entered (e.g., "First Term 2024/2025")
+    subject_name = models.CharField(max_length=200)
+    term = models.CharField(max_length=100)  # "First Term", "Second Term", "Third Term"
     academic_year = models.CharField(max_length=50)  # e.g., "2024/2025"
     
     # Test Scores (Each out of 100)
-    test_a = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # 100%
-    test_b = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # 100%
-    test_c = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # 100%
+    test_a = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    test_b = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    test_c = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     avg_1 = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Average of A, B, C
     
     # Exam Score
-    exam = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # 100%
+    exam = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     
     # Averages and Cumulative
-    avg_2 = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Final average
-    ltcum = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Last term cumulative
-    atcum = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # All term cumulative
+    avg_2 = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # (AVG-1 + EXAM) / 2
+    ltcum = models.DecimalField(max_digits=5, decimal_places=2, default=0, null=True, blank=True)  # Only for 2nd/3rd term
+    cum = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # Cumulative score
     
     # Grade and Position
     grade = models.CharField(max_length=2, blank=True)  # A, B, C, D, E, F
@@ -506,27 +508,35 @@ class SubjectResult(models.Model):
         unique_together = ['student', 'subject_name', 'term', 'academic_year']
     
     def calculate_grades(self):
-        """Calculate AVG-1, AVG-2, Grade, and Remark"""
+        """Calculate AVG-1, AVG-2, CUM, Grade, and Remark"""
         # AVG-1: Average of 3 tests
         self.avg_1 = (self.test_a + self.test_b + self.test_c) / 3
         
-        # AVG-2: Final average (typically avg of tests and exam)
+        # AVG-2: Average of AVG-1 and Exam
         self.avg_2 = (self.avg_1 + self.exam) / 2
         
-        # Determine grade based on AVG-2
-        if self.avg_2 >= 70:
+        # CUM: Calculate based on term
+        if self.term in ['Second Term', 'Third Term'] and self.ltcum and self.ltcum > 0:
+            # For 2nd/3rd term: average of AVG-2 and LTCUM
+            self.cum = (self.avg_2 + self.ltcum) / 2
+        else:
+            # For 1st term: CUM equals AVG-2
+            self.cum = self.avg_2
+        
+        # Determine grade based on CUM
+        if self.cum >= 70:
             self.grade = 'A'
             self.grade_remark = 'EXCELLENT'
-        elif self.avg_2 >= 60:
+        elif self.cum >= 60:
             self.grade = 'B'
             self.grade_remark = 'VERY GOOD'
-        elif self.avg_2 >= 50:
+        elif self.cum >= 50:
             self.grade = 'C'
             self.grade_remark = 'GOOD'
-        elif self.avg_2 >= 45:
+        elif self.cum >= 45:
             self.grade = 'D'
             self.grade_remark = 'PASS'
-        elif self.avg_2 >= 40:
+        elif self.cum >= 40:
             self.grade = 'E'
             self.grade_remark = 'POOR'
         else:
@@ -539,7 +549,6 @@ class SubjectResult(models.Model):
     
     def __str__(self):
         return f"{self.student.full_name} - {self.subject_name} - {self.term}"
-
 
 # Complete Student Result (Collated by Class Teacher)
 class StudentResult(models.Model):
@@ -643,6 +652,30 @@ class PublishedResult(models.Model):
             pin = ''.join([str(random.randint(0, 9)) for _ in range(12)])
             if not PublishedResult.objects.filter(pin=pin).exists():
                 return pin
+
+
+# ADD THIS MODEL TO YOUR models.py (at the end, after PublishedResult)
+
+class ResultNotification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('new_result', 'New Result Submitted'),
+        ('result_updated', 'Result Updated'),
+        ('result_resent', 'Result Resent'),
+    ]
+    
+    recipient_type = models.CharField(max_length=20)  # 'principal' or 'admin'
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='result_notifications')
+    student_result = models.ForeignKey(StudentResult, on_delete=models.CASCADE)
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.notification_type} - {self.student_result.student.full_name}"
 
 
 # Activity Log for Result System

@@ -1,77 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Create Result - {{ student.full_name }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class Teacher - Complete Student Result</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
-        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-        .form-section { margin-bottom: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-        .form-section h3 { margin-top: 0; color: #007bff; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
-        .btn:hover { background: #0056b3; }
-        .btn-success { background: #28a745; }
-        .btn-success:hover { background: #218838; }
-        .btn-danger { background: #dc3545; }
-        .btn-danger:hover { background: #c82333; }
-        .subject-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .subject-table th, .subject-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        .subject-table th { background: #f8f9fa; }
-        .subject-entry { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: #f8f9fa; }
-        .subject-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .navbar { background: #e67e22; color: white; padding: 20px 40px; }
+        .navbar h1 { font-size: 24px; }
+        .container { max-width: 1600px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .student-info { background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .student-info h3 { color: #856404; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        table th { background: #e67e22; color: white; font-size: 11px; }
+        .subject-name { text-align: left !important; font-weight: 600; }
+        .readonly-score { background: #f8f9fa; font-weight: 600; }
+        
+        .form-section { margin-top: 30px; }
+        .form-section h3 { color: #e67e22; margin-bottom: 15px; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+        .form-group input, .form-group select, .form-group textarea { 
+            width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; 
+        }
+        .form-group textarea { min-height: 100px; }
+        
+        .rating-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .rating-item { display: flex; align-items: center; gap: 10px; }
+        .rating-item label { margin: 0; font-weight: normal; font-size: 14px; }
+        .rating-item select { width: auto; padding: 5px; }
+        
+        .btn { padding: 12px 30px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+        .btn:hover { background: #d35400; }
+        .btn-back { background: #95a5a6; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #d4edda; color: #155724; }
     </style>
 </head>
 <body>
+    <div class="navbar">
+        <h1>📝 Class Teacher - Complete Student Result</h1>
+    </div>
+    
     <div class="container">
-        <div class="header">
-            <h1>Create Result for {{ student.full_name }}</h1>
-            <p><strong>Class:</strong> {{ student.class_name }} | <strong>Term:</strong> {{ term }} | <strong>Year:</strong> {{ academic_year }}</p>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="student-info">
+            <h3>👤 {{ student.full_name }} - {{ student.class_name }}</h3>
+            <p><strong>Term:</strong> {{ term }} | <strong>Academic Year:</strong> {{ academic_year }}</p>
+            <p><strong>Total Subjects:</strong> {{ subject_results.count }}</p>
         </div>
-
-        <form method="post">
+        
+        <!-- SUBJECT RESULTS TABLE - SHOWS ALL COLUMNS -->
+        <div class="card">
+            <h2>📚 Subject Results Summary</h2>
+            {% if subject_results %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>SUBJECT NAME</th>
+                        <th>TEST-1</th>
+                        <th>TEST-2</th>
+                        <th>TEST-3</th>
+                        <th>AVG-1</th>
+                        <th>EXAM</th>
+                        <th>AVG-2</th>
+                        {% if term == "Second Term" or term == "Third Term" %}
+                        <th>LTCUM</th>
+                        {% endif %}
+                        <th>CUM</th>
+                        <th>POS</th>
+                        <th>GRADE</th>
+                        <th>REMARK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subject_results %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="subject-name">{{ subject.subject_name }}</td>
+                        <td class="readonly-score">{{ subject.test_a|floatformat:2 }}</td>
+                        <td class="readonly-score">{{ subject.test_b|floatformat:2 }}</td>
+                        <td class="readonly-score">{{ subject.test_c|floatformat:2 }}</td>
+                        <td class="readonly-score">{{ subject.avg_1|floatformat:2 }}</td>
+                        <td class="readonly-score">{{ subject.exam|floatformat:2 }}</td>
+                        <td class="readonly-score">{{ subject.avg_2|floatformat:2 }}</td>
+                        {% if term == "Second Term" or term == "Third Term" %}
+                        <td class="readonly-score">{{ subject.ltcum|floatformat:2|default:"—" }}</td>
+                        {% endif %}
+                        <td class="readonly-score"><strong>{{ subject.cum|floatformat:2 }}</strong></td>
+                        <td class="readonly-score">{{ subject.position_ranking|default:"—" }}</td>
+                        <td class="readonly-score"><strong>{{ subject.grade }}</strong></td>
+                        <td class="readonly-score">{{ subject.grade_remark }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="text-align: center; color: #999; padding: 40px;">
+                ⚠️ No subject results found for this student. Please ensure subject teachers have entered results first.
+            </p>
+            {% endif %}
+        </div>
+        
+        <!-- CLASS TEACHER'S INPUT FORM -->
+        <form method="POST">
             {% csrf_token %}
             
-            <!-- ===== SUBJECT SCORES ENTRY ===== -->
-            <div class="form-section">
-                <h3>📝 Enter Subject Scores</h3>
-                <p style="color: #666; margin-bottom: 15px;">Enter scores for each subject. Test A/B/C (max 20 each), Exam (max 60)</p>
-                
-                <div id="subject-entries">
-                    <!-- Subject entries will be added here dynamically -->
-                </div>
-                
-                <div style="margin-top: 15px;">
-                    <button type="button" id="add-subject" class="btn btn-success">➕ Add Subject</button>
-                </div>
-            </div>
-
-            <!-- Attendance Section -->
-            <div class="form-section">
-                <h3>📊 Attendance Record</h3>
+            <div class="card form-section">
+                <h3>📊 Attendance & Dates</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Times School Opened:</label>
-                        <input type="number" name="times_opened" value="0" min="0">
+                        <input type="number" name="times_opened" value="0" required>
                     </div>
                     <div class="form-group">
                         <label>Times Present:</label>
-                        <input type="number" name="times_present" value="0" min="0">
+                        <input type="number" name="times_present" value="0" required>
                     </div>
                     <div class="form-group">
                         <label>Times Absent:</label>
-                        <input type="number" name="times_absent" value="0" min="0">
+                        <input type="number" name="times_absent" value="0" required>
                     </div>
-                </div>
-            </div>
-
-            <!-- Term Dates -->
-            <div class="form-section">
-                <h3>📅 Term Dates</h3>
-                <div class="form-grid">
                     <div class="form-group">
                         <label>Vacation Date:</label>
                         <input type="date" name="vacation_date">
@@ -80,93 +138,92 @@
                         <label>Resumption Date:</label>
                         <input type="date" name="resumption_date">
                     </div>
-                </div>
-            </div>
-
-            <!-- Next Term Fees -->
-            <div class="form-section">
-                <h3>💰 Next Term Fees</h3>
-                <div class="form-grid">
                     <div class="form-group">
-                        <label>PTA Fee (₦):</label>
-                        <input type="number" step="0.01" name="pta_fee" value="0">
+                        <label>Next Term PTA Fee (₦):</label>
+                        <input type="number" name="pta_fee" value="0" step="0.01">
                     </div>
                     <div class="form-group">
-                        <label>School Fee (₦):</label>
-                        <input type="number" step="0.01" name="school_fee" value="0">
+                        <label>Next Term School Fee (₦):</label>
+                        <input type="number" name="school_fee" value="0" step="0.01">
                     </div>
                 </div>
             </div>
-
-            <!-- Affective Domain -->
-            <div class="form-section">
-                <h3>🌟 Affective Domain</h3>
-                <div class="form-grid">
-                    <div class="form-group">
+            
+            <div class="card form-section">
+                <h3>😊 Affective Domain (Behavior)</h3>
+                <div class="rating-grid">
+                    <div class="rating-item">
                         <label>Punctuality:</label>
                         <select name="aff_punctuality">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Neatness:</label>
                         <select name="aff_neatness">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Politeness:</label>
                         <select name="aff_politeness">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Honesty:</label>
                         <select name="aff_honesty">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Relationship:</label>
                         <select name="aff_relationship">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Self Control:</label>
                         <select name="aff_self_control">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Attentiveness:</label>
                         <select name="aff_attentiveness">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
@@ -174,66 +231,71 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Psychomotor Domain -->
-            <div class="form-section">
-                <h3>🎯 Psychomotor Domain</h3>
-                <div class="form-grid">
-                    <div class="form-group">
+            
+            <div class="card form-section">
+                <h3>🎨 Psychomotor Domain (Skills)</h3>
+                <div class="rating-grid">
+                    <div class="rating-item">
                         <label>Handwriting:</label>
                         <select name="psycho_handwriting">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Sports:</label>
                         <select name="psycho_sports">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Handling Tools:</label>
                         <select name="psycho_tools">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Verbal Fluency:</label>
                         <select name="psycho_verbal">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Games:</label>
                         <select name="psycho_games">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="rating-item">
                         <label>Drawing:</label>
                         <select name="psycho_drawing">
-                            <option value="">Select</option>
+                            <option value="">—</option>
                             <option value="Excellent">Excellent</option>
+                            <option value="V.Good">V.Good</option>
                             <option value="Good">Good</option>
                             <option value="Fair">Fair</option>
                             <option value="Poor">Poor</option>
@@ -241,105 +303,19 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Existing Subject Results -->
-            <div class="form-section">
-                <h3>📚 Existing Subject Results ({{ subject_results.count }} subjects)</h3>
-                {% if subject_results %}
-                <table class="subject-table">
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Test A</th>
-                            <th>Test B</th>
-                            <th>Test C</th>
-                            <th>Exam</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for sr in subject_results %}
-                        <tr>
-                            <td>{{ sr.subject_name }}</td>
-                            <td>{{ sr.test_a }}</td>
-                            <td>{{ sr.test_b }}</td>
-                            <td>{{ sr.test_c }}</td>
-                            <td>{{ sr.exam }}</td>
-                            <td><strong>{{ sr.avg_2 }}</strong></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p style="color: #666;">No existing subject results found. Add subjects above.</p>
-                {% endif %}
-            </div>
-
-            <!-- Teacher Comment -->
-            <div class="form-section">
+            
+            <div class="card form-section">
                 <h3>💬 Class Teacher's Comment</h3>
                 <div class="form-group">
-                    <textarea name="class_teacher_comment" rows="4" placeholder="Enter your comment about the student..."></textarea>
+                    <textarea name="class_teacher_comment" placeholder="Enter your comment about the student's performance..." required></textarea>
                 </div>
             </div>
-
-            <!-- Buttons -->
+            
             <div style="text-align: center; margin-top: 30px;">
-                <button type="submit" class="btn">💾 Save Result</button>
-                <a href="{% url 'class_teacher_collate' %}" class="btn" style="background: #6c757d;">← Back to Class Results</a>
+                <button type="submit" class="btn">💾 Save Complete Result</button>
+                <a href="{% url 'class_teacher_collate' %}?class_name={{ student.class_name }}&term={{ term }}&academic_year={{ academic_year }}" class="btn btn-back">← Back</a>
             </div>
         </form>
     </div>
-
-    <script>
-        let subjectCounter = 0;
-        
-        // Add subject entry
-        document.getElementById('add-subject').addEventListener('click', function() {
-            subjectCounter++;
-            const subjectEntry = `
-                <div class="subject-entry" data-id="${subjectCounter}">
-                    <div class="subject-grid">
-                        <div>
-                            <label>Subject Name:</label>
-                            <input type="text" name="subject_name_${subjectCounter}" placeholder="e.g., Mathematics" required>
-                        </div>
-                        <div>
-                            <label>Test A (20):</label>
-                            <input type="number" step="0.1" name="test_a_${subjectCounter}" value="0" min="0" max="20">
-                        </div>
-                        <div>
-                            <label>Test B (20):</label>
-                            <input type="number" step="0.1" name="test_b_${subjectCounter}" value="0" min="0" max="20">
-                        </div>
-                        <div>
-                            <label>Test C (20):</label>
-                            <input type="number" step="0.1" name="test_c_${subjectCounter}" value="0" min="0" max="20">
-                        </div>
-                        <div>
-                            <label>Exam (60):</label>
-                            <input type="number" step="0.1" name="exam_${subjectCounter}" value="0" min="0" max="60">
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-danger remove-subject">🗑️ Remove</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('subject-entries').insertAdjacentHTML('beforeend', subjectEntry);
-        });
-
-        // Remove subject entry
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('remove-subject')) {
-                e.target.closest('.subject-entry').remove();
-            }
-        });
-
-        // Add one subject by default when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('add-subject').click();
-        });
-    </script>
 </body>
 </html>
