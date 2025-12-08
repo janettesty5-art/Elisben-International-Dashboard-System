@@ -1,3 +1,4 @@
+{% load result_filters %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -103,63 +104,65 @@
                     </thead>
                     <tbody>
                         {% for student in students %}
+                        {% with existing=existing_results|get_item:student.id %}
                         <tr data-student-id="{{ student.id }}">
                             <td>{{ forloop.counter }}</td>
                             <td class="student-name">{{ student.full_name }}</td>
                             <td>
                                 <input type="number" name="test_a_{{ student.id }}" class="test-input" data-field="test_a"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'test_a' }}{% else %}0{% endif %}" 
+                                       value="{% if existing %}{{ existing.test_a }}{% else %}0{% endif %}" 
                                        min="0" max="100" step="0.01" required>
                                 <input type="hidden" name="student_id" value="{{ student.id }}">
                             </td>
                             <td>
                                 <input type="number" name="test_b_{{ student.id }}" class="test-input" data-field="test_b"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'test_b' }}{% else %}0{% endif %}" 
+                                       value="{% if existing %}{{ existing.test_b }}{% else %}0{% endif %}" 
                                        min="0" max="100" step="0.01" required>
                             </td>
                             <td>
                                 <input type="number" name="test_c_{{ student.id }}" class="test-input" data-field="test_c"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'test_c' }}{% else %}0{% endif %}" 
+                                       value="{% if existing %}{{ existing.test_c }}{% else %}0{% endif %}" 
                                        min="0" max="100" step="0.01" required>
                             </td>
                             <td>
                                 <input type="text" class="avg1-display readonly" readonly 
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'avg_1'|floatformat:2 }}{% else %}0.00{% endif %}">
+                                       value="{% if existing %}{{ existing.avg_1|floatformat:2 }}{% else %}0.00{% endif %}">
                             </td>
                             <td>
                                 <input type="number" name="exam_{{ student.id }}" class="exam-input"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'exam' }}{% else %}0{% endif %}" 
+                                       value="{% if existing %}{{ existing.exam }}{% else %}0{% endif %}" 
                                        min="0" max="100" step="0.01" required>
                             </td>
                             <td>
                                 <input type="text" class="avg2-display readonly" readonly 
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'avg_2'|floatformat:2 }}{% else %}0.00{% endif %}">
+                                       value="{% if existing %}{{ existing.avg_2|floatformat:2 }}{% else %}0.00{% endif %}">
                             </td>
                             {% if term == "Second Term" or term == "Third Term" %}
                             <td>
                                 <input type="number" name="ltcum_{{ student.id }}" class="ltcum-input"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'ltcum' }}{% else %}0{% endif %}" 
+                                       value="{% if existing and existing.ltcum %}{{ existing.ltcum }}{% else %}0{% endif %}" 
                                        min="0" max="100" step="0.01">
                             </td>
                             {% endif %}
                             <td>
                                 <input type="text" class="cum-display readonly" readonly 
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'cum'|floatformat:2 }}{% else %}0.00{% endif %}">
+                                       value="{% if existing %}{{ existing.cum|floatformat:2 }}{% else %}0.00{% endif %}">
                             </td>
                             <td>
                                 <input type="number" name="position_{{ student.id }}" style="width: 60px;"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'position_ranking' }}{% endif %}" 
+                                       value="{% if existing and existing.position_ranking %}{{ existing.position_ranking }}{% endif %}" 
                                        min="1">
                             </td>
                             <td>
                                 <input type="text" class="grade-display readonly" readonly style="width: 50px;"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'grade' }}{% endif %}">
+                                       value="{% if existing %}{{ existing.grade }}{% endif %}">
                             </td>
                             <td>
                                 <input type="text" class="remark-display readonly" readonly style="width: 100px;"
-                                       value="{% if student.id in existing_results %}{{ existing_results|dict_get:student.id|attr:'grade_remark' }}{% endif %}">
+                                       value="{% if existing %}{{ existing.grade_remark }}{% endif %}">
                             </td>
                         </tr>
+                        {% endwith %}
                         {% endfor %}
                     </tbody>
                 </table>

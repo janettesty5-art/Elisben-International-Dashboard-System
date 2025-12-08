@@ -64,12 +64,16 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Term:</label>
-                        <input type="text" name="term" value="{{ term }}" placeholder="e.g., First Term" required>
+                        <label>Select Term:</label>
+                        <select name="term" required>
+                            <option value="First Term" {% if term == "First Term" %}selected{% endif %}>First Term</option>
+                            <option value="Second Term" {% if term == "Second Term" %}selected{% endif %}>Second Term</option>
+                            <option value="Third Term" {% if term == "Third Term" %}selected{% endif %}>Third Term</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Academic Year:</label>
-                        <input type="text" name="academic_year" value="{{ academic_year }}" placeholder="e.g., 2024/2025" required>
+                        <input type="text" name="academic_year" value="{{ academic_year }}" readonly style="background: #f0f0f0;">
                     </div>
                 </div>
                 <button type="submit" class="btn">Load Students</button>

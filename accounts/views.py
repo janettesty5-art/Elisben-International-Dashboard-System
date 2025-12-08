@@ -618,8 +618,17 @@ def class_teacher_collate(request):
         return redirect('unified_login')
     
     selected_class = request.GET.get('class_name')
-    term = request.GET.get('term')
-    academic_year = request.GET.get('academic_year')
+    term = request.GET.get('term', 'First Term')  # Default to First Term
+    
+    # Auto-calculate academic year (SAME AS SUBJECT TEACHER)
+    from datetime import datetime
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    
+    if current_month <= 8:
+        academic_year = f"{current_year - 1}/{current_year}"
+    else:
+        academic_year = f"{current_year}/{current_year + 1}"
     
     # Get classes
     classes = Student.objects.values_list('class_name', flat=True).distinct()
@@ -680,6 +689,7 @@ def class_teacher_collate(request):
     }
     
     return render(request, 'result/class_teacher_collate.html', context)
+    
 
 
 # ADD THIS NEW VIEW - for creating new results
