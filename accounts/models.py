@@ -72,14 +72,32 @@ class Teacher(models.Model):
         return f"{self.full_name} ({self.teacher_id})"
 
 
-# Student Model
+# In your models.py, FIND the Student model and UPDATE it:
+
 class Student(models.Model):
+    DEPARTMENT_CHOICES = [
+        ('', 'N/A (Junior Classes)'),  # Default for JSS1-3
+        ('Science', 'Science Department'),
+        ('Art', 'Art Department'),
+        ('Commercial', 'Commercial Department'),
+    ]
+    
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     student_id = models.CharField(max_length=20, unique=True)
     full_name = models.CharField(max_length=200)
-    email = models.EmailField(blank=True, null=True)  # Made optional
-    phone = models.CharField(max_length=15, blank=True, null=True)  # Made optional
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=15, blank=True, null=True)
     class_name = models.CharField(max_length=50)
+    
+    # NEW FIELD - Department for SS1-3
+    department = models.CharField(
+        max_length=20, 
+        choices=DEPARTMENT_CHOICES, 
+        blank=True, 
+        default='',
+        help_text="Required for SS1, SS2, SS3 students only"
+    )
+    
     profile_picture = models.ImageField(upload_to='student_profiles/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     registered_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True)
@@ -91,6 +109,13 @@ class Student(models.Model):
 
     def __str__(self):
         return f"{self.full_name} ({self.student_id})"
+    
+    # Helper property to check if department is required
+    @property
+    def requires_department(self):
+        """Check if this student's class requires a department"""
+        senior_classes = ['SS1', 'SS2', 'SS3', 'ss1', 'ss2', 'ss3']
+        return any(cls in self.class_name.upper() for cls in ['SS1', 'SS2', 'SS3'])
 
 
 # NEW: Alumni Model

@@ -92,4 +92,6 @@ urlpatterns = [
 
     path('notification/mark-read/<int:notification_id>/', views.mark_notification_read, name='mark_notification_read'),
     path('notification/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+     # ✅ ADD THIS NEW LINE:
+    path('admin/edit-student/<int:student_id>/', views.edit_student, name='edit_student'),
 ]

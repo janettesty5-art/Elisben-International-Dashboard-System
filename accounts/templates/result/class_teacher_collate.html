@@ -28,6 +28,7 @@
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
         .alert-info { background: #d1ecf1; color: #0c5460; }
+        .alert-warning { background: #fff3cd; color: #856404; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         table th, table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         table th { background: #e67e22; color: white; }
@@ -36,11 +37,24 @@
         .status-sent { background: #d4edda; color: #155724; }
         .status-updated { background: #d1ecf1; color: #0c5460; }
         .filter-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
+        .dept-section { background: #fff8e1; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .dept-section h3 { color: #f57c00; margin-bottom: 10px; }
+        .dept-badge { 
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .dept-science { background: #e3f2fd; color: #1976d2; }
+        .dept-art { background: #fce4ec; color: #c2185b; }
+        .dept-commercial { background: #fff3e0; color: #f57c00; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1>📝 Class Teacher - Collate Results</h1>
+        <h1>📋 Class Teacher - Collate Results</h1>
     </div>
     
     <div class="container">
@@ -63,6 +77,20 @@
                             {% endfor %}
                         </select>
                     </div>
+                    
+                    <!-- ✅ DEPARTMENT FILTER (Only for SS1-3) -->
+                    {% if is_senior_class %}
+                    <div class="form-group">
+                        <label>Department: <span style="color: red;">*</span></label>
+                        <select name="department" required onchange="this.form.submit()">
+                            <option value="">-- Select Department --</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept }}" {% if dept == department %}selected{% endif %}>{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
                     <div class="form-group">
                         <label>Select Term:</label>
                         <select name="term" required>
@@ -73,14 +101,27 @@
                     </div>
                     <div class="form-group">
                         <label>Academic Year:</label>
-                        <input type="text" name="academic_year" value="{{ academic_year }}"  style="background: #f0f0f0;">
+                        <input type="text" name="academic_year" value="{{ academic_year }}" style="background: #f0f0f0;">
                     </div>
                 </div>
                 <button type="submit" class="btn">Load Students</button>
             </form>
+            
+            {% if is_senior_class and not department %}
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                ⚠️ <strong>Please select a department</strong> to view students for this senior class ({{ selected_class }}).
+            </div>
+            {% endif %}
         </div>
         
         {% if unsent_results or sent_results %}
+        {% if department %}
+        <div class="dept-section">
+            <h3>🎓 Working on: {{ selected_class }} - {{ department }} Department</h3>
+            <p style="color: #666; font-size: 14px;">You are collating results for students in the {{ department }} department.</p>
+        </div>
+        {% endif %}
+        
         <div class="card">
             <!-- TABS -->
             <div class="tabs">
@@ -94,7 +135,7 @@
             
             <!-- UNSENT RESULTS TAB -->
             <div id="unsent-tab" class="tab-content active">
-                <h2>Step 2: Student Results for {{ selected_class }} - {{ term }} {{ academic_year }}</h2>
+                <h2>Step 2: Student Results for {{ selected_class }}{% if department %} - {{ department }}{% endif %} - {{ term }} {{ academic_year }}</h2>
                 
                 <form method="POST" action="{% url 'send_batch_to_principal' %}">
                     {% csrf_token %}
@@ -119,7 +160,14 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ item.student.full_name }}</td>
+                                <td>
+                                    {{ item.student.full_name }}
+                                    {% if item.student.department %}
+                                    <span class="dept-badge dept-{{ item.student.department|lower }}">
+                                        {{ item.student.department }}
+                                    </span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ item.subject_count }} subjects</td>
                                 <td>
                                     {% if item.result %}
@@ -182,7 +230,14 @@
                                     <input type="checkbox" name="result_ids" value="{{ item.result.id }}" class="result-checkbox-sent">
                                 </td>
                                 <td>{{ forloop.counter }}</td>
-                                <td><strong>{{ item.student.full_name }}</strong></td>
+                                <td>
+                                    <strong>{{ item.student.full_name }}</strong>
+                                    {% if item.student.department %}
+                                    <span class="dept-badge dept-{{ item.student.department|lower }}">
+                                        {{ item.student.department }}
+                                    </span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ item.subject_count }} subjects</td>
                                 <td>
                                     {% if item.result.status == 'sent_to_principal' %}
@@ -229,9 +284,7 @@
     </div>
     
     <script>
-        // Tab switching
         function switchTab(tabName) {
-            // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
@@ -239,19 +292,16 @@
                 button.classList.remove('active');
             });
             
-            // Show selected tab
             document.getElementById(tabName + '-tab').classList.add('active');
             event.target.classList.add('active');
         }
         
-        // Select all checkboxes - Unsent
         document.getElementById('select-all-unsent')?.addEventListener('change', function() {
             document.querySelectorAll('.result-checkbox-unsent').forEach(cb => {
                 cb.checked = this.checked;
             });
         });
         
-        // Select all checkboxes - Sent
         document.getElementById('select-all-sent')?.addEventListener('change', function() {
             document.querySelectorAll('.result-checkbox-sent').forEach(cb => {
                 cb.checked = this.checked;

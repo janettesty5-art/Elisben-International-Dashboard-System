@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Student - {{ student.full_name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; }
+        .navbar h1 { font-size: 24px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+        input:focus, select:focus { outline: none; border-color: #667eea; }
+        .readonly { background: #f0f0f0; cursor: not-allowed; }
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; text-decoration: none; display: inline-block; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-save:hover { background: #218838; }
+        .btn-cancel { background: #6c757d; color: white; }
+        .btn-cancel:hover { background: #5a6268; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .info-box { background: #e7f3ff; border-left: 4px solid #2196F3; padding: 15px; margin-bottom: 25px; border-radius: 5px; }
+        .info-box strong { color: #1976D2; }
+        .department-section { border: 2px solid #ffc107; padding: 20px; border-radius: 10px; background: #fff8e1; margin-top: 15px; }
+        .department-section h3 { color: #f57c00; margin-bottom: 15px; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>✏️ Edit Student Information</h1>
+    </nav>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="card">
+            <div class="info-box">
+                <strong>📌 Note:</strong> You can edit all information except the Student ID. 
+                This will NOT affect the student's exam scores, attendance, fees, or any other existing data.
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Student ID (Cannot be changed):</label>
+                    <input type="text" value="{{ student.student_id }}" class="readonly" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label>Full Name: <span style="color: red;">*</span></label>
+                    <input type="text" name="full_name" value="{{ student.full_name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" name="email" value="{{ student.email|default:'' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Phone Number:</label>
+                    <input type="text" name="phone" value="{{ student.phone|default:'' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label>Class Name: <span style="color: red;">*</span></label>
+                    <select name="class_name" id="class_name" required onchange="toggleDepartment()">
+                        <option value="">-- Select Class --</option>
+                        <option value="JSS1" {% if student.class_name == 'JSS1' %}selected{% endif %}>JSS1</option>
+                        <option value="JSS2" {% if student.class_name == 'JSS2' %}selected{% endif %}>JSS2</option>
+                        <option value="JSS3" {% if student.class_name == 'JSS3' %}selected{% endif %}>JSS3</option>
+                        <option value="SS1" {% if student.class_name == 'SS1' %}selected{% endif %}>SS1</option>
+                        <option value="SS2" {% if student.class_name == 'SS2' %}selected{% endif %}>SS2</option>
+                        <option value="SS3" {% if student.class_name == 'SS3' %}selected{% endif %}>SS3</option>
+                    </select>
+                </div>
+                
+                <!-- Department Section (Only for SS1-3) -->
+                <div id="department-section" class="department-section" style="display: none;">
+                    <h3>🎓 Department Selection (Required for Senior Classes)</h3>
+                    <div class="form-group">
+                        <label>Select Department: <span style="color: red;">*</span></label>
+                        <select name="department" id="department">
+                            <option value="">-- Select Department --</option>
+                            <option value="Science" {% if student.department == 'Science' %}selected{% endif %}>
+                                Science Department
+                            </option>
+                            <option value="Art" {% if student.department == 'Art' %}selected{% endif %}>
+                                Art Department
+                            </option>
+                            <option value="Commercial" {% if student.department == 'Commercial' %}selected{% endif %}>
+                                Commercial Department
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button type="submit" class="btn btn-save">💾 Save Changes</button>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-cancel">❌ Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function toggleDepartment() {
+            const className = document.getElementById('class_name').value.toUpperCase();
+            const deptSection = document.getElementById('department-section');
+            const deptSelect = document.getElementById('department');
+            
+            const isSenior = className === 'SS1' || className === 'SS2' || className === 'SS3';
+            
+            if (isSenior) {
+                deptSection.style.display = 'block';
+                deptSelect.required = true;
+            } else {
+                deptSection.style.display = 'none';
+                deptSelect.required = false;
+                deptSelect.value = '';  // Clear department for junior classes
+            }
+        }
+        
+        // Run on page load to show/hide department based on current class
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleDepartment();
+        });
+    </script>
+</body>
+</html>

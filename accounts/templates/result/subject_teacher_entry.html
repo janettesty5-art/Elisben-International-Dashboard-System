@@ -24,7 +24,11 @@
         .btn-back { background: #95a5a6; margin-left: 10px; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
         .student-name { text-align: left !important; font-weight: 600; }
+        .dept-section { background: #fff8e1; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .dept-section h3 { color: #f57c00; margin-bottom: 10px; }
+        input[type="text"]#subject-input { text-transform: uppercase !important; }
     </style>
 </head>
 <body>
@@ -52,9 +56,25 @@
                             {% endfor %}
                         </select>
                     </div>
+                    
+                    <!-- ✅ DEPARTMENT FILTER (Only for SS1-3) -->
+                    {% if is_senior_class %}
+                    <div class="form-group">
+                        <label>Department: <span style="color: red;">*</span></label>
+                        <select name="department" required onchange="this.form.submit()">
+                            <option value="">-- Select Department --</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept }}" {% if dept == department %}selected{% endif %}>{{ dept }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
                     <div class="form-group">
                         <label>Subject Name:</label>
-                        <input type="text" name="subject_name" value="{{ subject_name }}" placeholder="e.g., ENGLISH LANGUAGE" required>
+                        <input type="text" name="subject_name" id="subject-input" value="{{ subject_name }}" 
+                               placeholder="e.g., ENGLISH LANGUAGE" required 
+                               style="text-transform: uppercase;">
                     </div>
                     <div class="form-group">
                         <label>Select Term:</label>
@@ -66,16 +86,29 @@
                     </div>
                     <div class="form-group">
                         <label>Academic Year:</label>
-                        <input type="text" name="academic_year" value="{{ academic_year }}"  style="background: #f0f0f0;">
+                        <input type="text" name="academic_year" value="{{ academic_year }}" style="background: #f0f0f0;">
                     </div>
                 </div>
                 <button type="submit" class="btn">Load Students</button>
             </form>
+            
+            {% if is_senior_class and not department %}
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                ⚠️ <strong>Please select a department</strong> to view students for this senior class ({{ selected_class }}).
+            </div>
+            {% endif %}
         </div>
         
         {% if students %}
         <div class="card">
-            <h2>Step 2: Enter Results for {{ selected_class }} - {{ subject_name }} ({{ term }})</h2>
+            {% if department %}
+            <div class="dept-section">
+                <h3>🎓 Recording for: {{ selected_class }} - {{ department }} Department</h3>
+                <p style="color: #666; font-size: 14px;">You are entering results for {{ students.count }} student(s) in the {{ department }} department.</p>
+            </div>
+            {% endif %}
+            
+            <h2>Step 2: Enter Results for {{ selected_class }}{% if department %} - {{ department }}{% endif %} - {{ subject_name }} ({{ term }})</h2>
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="subject_name" value="{{ subject_name }}">
@@ -107,7 +140,12 @@
                         {% with existing=existing_results|get_item:student.id %}
                         <tr data-student-id="{{ student.id }}">
                             <td>{{ forloop.counter }}</td>
-                            <td class="student-name">{{ student.full_name }}</td>
+                            <td class="student-name">
+                                {{ student.full_name }}
+                                {% if student.department %}
+                                <span style="font-size: 11px; color: #666;">({{ student.department }})</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <input type="number" name="test_a_{{ student.id }}" class="test-input" data-field="test_a"
                                        value="{% if existing %}{{ existing.test_a }}{% else %}0{% endif %}" 
@@ -177,6 +215,11 @@
     </div>
     
     <script>
+        // ✅ AUTO-UPPERCASE SUBJECT NAME
+        document.getElementById('subject-input')?.addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+        
         // Auto-calculate AVG-1, AVG-2, CUM, GRADE, REMARK in real-time
         document.querySelectorAll('tbody tr').forEach(row => {
             const testInputs = row.querySelectorAll('.test-input');
@@ -189,33 +232,26 @@
             const remarkDisplay = row.querySelector('.remark-display');
             
             function calculate() {
-                // Get values
                 const testA = parseFloat(testInputs[0].value) || 0;
                 const testB = parseFloat(testInputs[1].value) || 0;
                 const testC = parseFloat(testInputs[2].value) || 0;
                 const exam = parseFloat(examInput.value) || 0;
                 const ltcum = ltcumInput ? (parseFloat(ltcumInput.value) || 0) : 0;
                 
-                // Calculate AVG-1
                 const avg1 = (testA + testB + testC) / 3;
                 avg1Display.value = avg1.toFixed(2);
                 
-                // Calculate AVG-2
                 const avg2 = (avg1 + exam) / 2;
                 avg2Display.value = avg2.toFixed(2);
                 
-                // Calculate CUM
                 let cum;
                 if (ltcumInput && ltcum > 0) {
-                    // 2nd/3rd term: (AVG-2 + LTCUM) / 2
                     cum = (avg2 + ltcum) / 2;
                 } else {
-                    // 1st term: CUM = AVG-2
                     cum = avg2;
                 }
                 cumDisplay.value = cum.toFixed(2);
                 
-                // Calculate GRADE and REMARK based on CUM
                 let grade, remark;
                 if (cum >= 70) {
                     grade = 'A';
@@ -241,14 +277,12 @@
                 remarkDisplay.value = remark;
             }
             
-            // Add event listeners
             testInputs.forEach(input => input.addEventListener('input', calculate));
             examInput.addEventListener('input', calculate);
             if (ltcumInput) {
                 ltcumInput.addEventListener('input', calculate);
             }
             
-            // Calculate on page load
             calculate();
         });
     </script>

@@ -505,7 +505,8 @@ def subject_teacher_entry(request):
     
     if request.method == 'POST':
         try:
-            subject_name = request.POST.get('subject_name')
+            # AUTO-UPPERCASE THE SUBJECT NAME
+            subject_name = request.POST.get('subject_name', '').upper()  # ✅ UPPERCASE
             term = request.POST.get('term')
             academic_year = request.POST.get('academic_year')
             student_ids = request.POST.getlist('student_id')
@@ -518,18 +519,16 @@ def subject_teacher_entry(request):
                 test_c = float(request.POST.get(f'test_c_{student_id}', 0))
                 exam = float(request.POST.get(f'exam_{student_id}', 0))
                 
-                # LTCUM only for 2nd/3rd term
                 ltcum = 0
                 if term in ['Second Term', 'Third Term']:
                     ltcum = float(request.POST.get(f'ltcum_{student_id}', 0))
                 
-                # Position ranking
                 position = request.POST.get(f'position_{student_id}')
                 position_value = int(position) if position and position.strip() else None
                 
                 SubjectResult.objects.update_or_create(
                     student=student,
-                    subject_name=subject_name,
+                    subject_name=subject_name,  # Already uppercase
                     term=term,
                     academic_year=academic_year,
                     defaults={
@@ -557,13 +556,11 @@ def subject_teacher_entry(request):
             messages.error(request, f'Error saving results: {str(e)}')
             return redirect('subject_teacher_entry')
     
-    # Get current academic year automatically
+    # GET request - Load students
     from datetime import datetime
     current_year = datetime.now().year
     current_month = datetime.now().month
     
-    # If we're in Jan-Aug, use previous year / current year
-    # If we're in Sep-Dec, use current year / next year
     if current_month <= 8:
         academic_year = f"{current_year - 1}/{current_year}"
     else:
@@ -571,10 +568,32 @@ def subject_teacher_entry(request):
     
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     selected_class = request.GET.get('class_name')
-    students = Student.objects.filter(class_name=selected_class).order_by('full_name') if selected_class else []
+    department = request.GET.get('department', '')
     
-    subject_name = request.GET.get('subject_name')
+    # Filter students by class AND department (for SS1-3)
+    students = []
+    if selected_class:
+        class_upper = selected_class.upper()
+        is_senior = any(cls in class_upper for cls in ['SS1', 'SS2', 'SS3'])
+        
+        if is_senior and department:
+            # Filter by both class and department
+            students = Student.objects.filter(
+                class_name=selected_class,
+                department=department
+            ).order_by('full_name')
+        elif is_senior and not department:
+            # For senior classes without department, show none (force selection)
+            students = []
+        else:
+            # For junior classes, show all students in that class
+            students = Student.objects.filter(class_name=selected_class).order_by('full_name')
+    
+    subject_name = request.GET.get('subject_name', '').upper()  # ✅ UPPERCASE
     term = request.GET.get('term', 'First Term')
+    
+    # Get departments for SS classes
+    departments = ['Science', 'Art', 'Commercial']
     
     existing_results = {}
     if subject_name and term and selected_class:
@@ -599,6 +618,9 @@ def subject_teacher_entry(request):
         'subject_name': subject_name,
         'term': term,
         'academic_year': academic_year,
+        'department': department,
+        'departments': departments,
+        'is_senior_class': selected_class and any(cls in selected_class.upper() for cls in ['SS1', 'SS2', 'SS3']),
     }
     return render(request, 'result/subject_teacher_entry.html', context)
 
@@ -618,9 +640,9 @@ def class_teacher_collate(request):
         return redirect('unified_login')
     
     selected_class = request.GET.get('class_name')
-    term = request.GET.get('term', 'First Term')  # Default to First Term
+    term = request.GET.get('term', 'First Term')
+    department = request.GET.get('department', '')
     
-    # Auto-calculate academic year (SAME AS SUBJECT TEACHER)
     from datetime import datetime
     current_year = datetime.now().year
     current_month = datetime.now().month
@@ -630,15 +652,26 @@ def class_teacher_collate(request):
     else:
         academic_year = f"{current_year}/{current_year + 1}"
     
-    # Get classes
     classes = Student.objects.values_list('class_name', flat=True).distinct()
+    departments = ['Science', 'Art', 'Commercial']
     
-    # Initialize result lists
     unsent_results = []
     sent_results = []
     
     if selected_class and term and academic_year:
-        students = Student.objects.filter(class_name=selected_class).order_by('full_name')
+        class_upper = selected_class.upper()
+        is_senior = any(cls in class_upper for cls in ['SS1', 'SS2', 'SS3'])
+        
+        # Filter students by department for senior classes
+        if is_senior and department:
+            students = Student.objects.filter(
+                class_name=selected_class,
+                department=department
+            ).order_by('full_name')
+        elif is_senior and not department:
+            students = []  # Force department selection
+        else:
+            students = Student.objects.filter(class_name=selected_class).order_by('full_name')
         
         for student in students:
             try:
@@ -660,7 +693,6 @@ def class_teacher_collate(request):
                     'subject_count': subject_count,
                 }
                 
-                # Separate into sent and unsent
                 if result.status in ['sent_to_principal', 'sent_to_admin', 'published']:
                     sent_results.append(result_data)
                 else:
@@ -686,10 +718,70 @@ def class_teacher_collate(request):
         'academic_year': academic_year,
         'unsent_results': unsent_results,
         'sent_results': sent_results,
+        'department': department,
+        'departments': departments,
+        'is_senior_class': selected_class and any(cls in selected_class.upper() for cls in ['SS1', 'SS2', 'SS3']),
     }
     
     return render(request, 'result/class_teacher_collate.html', context)
     
+
+
+    # ADD THESE NEW VIEWS TO YOUR views.py FILE
+
+# ============= EDIT STUDENT VIEW (NEW) =============
+@login_required
+def edit_student(request, student_id):
+    """Edit student information without affecting ID, scores, or other data"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    student = get_object_or_404(Student, id=student_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update student information (NOT the student_id)
+            student.full_name = request.POST.get('full_name', student.full_name)
+            student.email = request.POST.get('email', student.email)
+            student.phone = request.POST.get('phone', student.phone)
+            student.class_name = request.POST.get('class_name', student.class_name)
+            
+            # Handle department for SS1-3
+            class_name_upper = student.class_name.upper()
+            if any(cls in class_name_upper for cls in ['SS1', 'SS2', 'SS3']):
+                department = request.POST.get('department', '')
+                if not department:
+                    messages.error(request, 'Department is required for SS1, SS2, and SS3 students!')
+                    return redirect('edit_student', student_id=student_id)
+                student.department = department
+            else:
+                # Clear department for junior classes
+                student.department = ''
+            
+            student.save()
+            
+            ActivityLog.objects.create(
+                action='student_edited',
+                description=f'Student {student.full_name} ({student.student_id}) information updated',
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+            
+            messages.success(request, f'✅ Student {student.full_name} updated successfully!')
+            return redirect('admin_dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error updating student: {str(e)}')
+            return redirect('edit_student', student_id=student_id)
+    
+    context = {
+        'admin': admin,
+        'student': student,
+    }
+    return render(request, 'edit_student.html', context)
 
 
 # ADD THIS NEW VIEW - for creating new results
@@ -1503,6 +1595,17 @@ def register_student(request):
             email = request.POST.get('email')
             phone = request.POST.get('phone')
             class_name = request.POST.get('class_name')
+            department = request.POST.get('department', '')
+            
+            # Validate department for SS1-3
+            class_name_upper = class_name.upper()
+            if any(cls in class_name_upper for cls in ['SS1', 'SS2', 'SS3']):
+                if not department:
+                    messages.error(request, '⚠️ Department is required for SS1, SS2, and SS3 students!')
+                    return redirect('register_student')
+            else:
+                # Clear department for junior classes
+                department = ''
             
             username = full_name.replace(' ', '').lower() + str(random.randint(100, 999))
             user = User.objects.create_user(
@@ -1517,12 +1620,14 @@ def register_student(request):
                 email=email if email else None,
                 phone=phone if phone else None,
                 class_name=class_name,
+                department=department,  # NEW FIELD
                 registered_by=admin if is_admin else None
             )
             
+            dept_info = f" - {department} Department" if department else ""
             ActivityLog.objects.create(
                 action='student_registered',
-                description=f'Student {full_name} registered with ID {student.student_id}',
+                description=f'Student {full_name} registered with ID {student.student_id}{dept_info}',
                 performed_by_type='admin' if is_admin else 'principal',
                 performed_by_name=user_obj.full_name
             )

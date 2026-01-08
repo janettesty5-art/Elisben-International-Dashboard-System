@@ -37,6 +37,8 @@
         table th { background: #f8f9fa; font-weight: 600; color: #666; }
         
         .btn { padding: 8px 15px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; font-size: 13px; margin: 2px; }
+        .btn-edit { background: #17a2b8; color: white; }
+        .btn-edit:hover { background: #138496; }
         .btn-alumni { background: #3498db; color: white; }
         .btn-delete { background: #ff4757; color: white; }
         .btn-delete:hover { background: #ee2f3b; }
@@ -46,6 +48,19 @@
         .activity-item .description { color: #333; margin-top: 5px; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        
+        /* Department Badge */
+        .dept-badge { 
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .dept-science { background: #e3f2fd; color: #1976d2; }
+        .dept-art { background: #fce4ec; color: #c2185b; }
+        .dept-commercial { background: #fff3e0; color: #f57c00; }
         
         @media (max-width: 768px) {
             .navbar { flex-direction: column; gap: 10px; text-align: center; }
@@ -147,12 +162,24 @@
                     {% for student in students %}
                     <tr>
                         <td>{{ student.student_id }}</td>
-                        <td>{{ student.full_name }}</td>
+                        <td>
+                            {{ student.full_name }}
+                            {% if student.department %}
+                                <span class="dept-badge dept-{{ student.department|lower }}">
+                                    {{ student.department }}
+                                </span>
+                            {% endif %}
+                        </td>
                         <td>{{ student.class_name }}</td>
                         <td>{{ student.email|default:"N/A" }}</td>
                         <td>{{ student.phone|default:"N/A" }}</td>
                         <td>{{ student.created_at|date:"M d, Y" }}</td>
                         <td>
+                            <!-- ✅ NEW EDIT BUTTON -->
+                            <a href="{% url 'edit_student' student.id %}" class="btn btn-edit" title="Edit student information">
+                                ✏️ Edit
+                            </a>
+                            
                             <a href="{% url 'move_to_alumni' student.id %}" class="btn btn-alumni"
                                onclick="return confirm('Move {{ student.full_name }} to Alumni?')">
                                 🎓 Alumni

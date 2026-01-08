@@ -5,157 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Student</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
-        }
-        
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .navbar a {
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 8px;
-        }
-        
-        .container {
-            max-width: 700px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        
-        .form-card {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        
-        .form-card h2 {
-            margin-bottom: 30px;
-            color: #333;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 15px;
-        }
-        
-        input:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 30px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-        }
-        
-        .btn-submit:hover {
-            opacity: 0.9;
-        }
-        
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 40px 20px; }
+        .container { max-width: 700px; margin: 0 auto; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        h1 { color: #667eea; margin-bottom: 30px; text-align: center; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+        input:focus, select:focus { outline: none; border-color: #667eea; }
+        .btn { padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-back { background: #95a5a6; margin-top: 15px; }
+        .alert { padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .department-section { border: 2px solid #ffc107; padding: 20px; border-radius: 10px; background: #fff8e1; margin-top: 15px; display: none; }
+        .department-section h3 { color: #f57c00; margin-bottom: 15px; font-size: 18px; }
+        .info-box { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 12px; margin-bottom: 20px; border-radius: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <h1>👨‍🎓 Register New Student</h1>
-        <a href="{% url 'admin_dashboard' %}">← Back to Dashboard</a>
-    </nav>
-    
     <div class="container">
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        <div class="form-card">
-            <h2>Student Registration Form</h2>
+        <div class="card">
+            <h1>👨‍🎓 Register New Student</h1>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-error">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="info-box">
+                <strong>📌 Note:</strong> For SS1, SS2, and SS3 students, you must select a department (Science, Art, or Commercial).
+            </div>
             
             <form method="POST">
                 {% csrf_token %}
                 
                 <div class="form-group">
-                    <label for="full_name">Full Name *</label>
-                    <input type="text" name="full_name" id="full_name" required>
+                    <label>Full Name: <span style="color: red;">*</span></label>
+                    <input type="text" name="full_name" placeholder="Enter student's full name" required>
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">Email Address (Optional)</label>
-                    <input type="email" name="email" id="email">
+                    <label>Email:</label>
+                    <input type="email" name="email" placeholder="student@example.com">
                 </div>
                 
                 <div class="form-group">
-                    <label for="phone">Phone Number (Optional)</label>
-                    <input type="tel" name="phone" id="phone">
+                    <label>Phone Number:</label>
+                    <input type="text" name="phone" placeholder="+234 XXX XXX XXXX">
                 </div>
                 
                 <div class="form-group">
-                    <label for="class_name">Class *</label>
-                    <select name="class_name" id="class_name" required>
+                    <label>Class: <span style="color: red;">*</span></label>
+                    <select name="class_name" id="class_name" required onchange="toggleDepartment()">
                         <option value="">-- Select Class --</option>
-                        <option value="JSS1">JSS 1</option>
-                        <option value="JSS2">JSS 2</option>
-                        <option value="JSS3">JSS 3</option>
-                        <option value="SS1">SS 1</option>
-                        <option value="SS2">SS 2</option>
-                        <option value="SS3">SS 3</option>
+                        <option value="JSS1">JSS1</option>
+                        <option value="JSS2">JSS2</option>
+                        <option value="JSS3">JSS3</option>
+                        <option value="SS1">SS1</option>
+                        <option value="SS2">SS2</option>
+                        <option value="SS3">SS3</option>
                     </select>
                 </div>
                 
-                <button type="submit" class="btn-submit">
-                    Register Student
-                </button>
+                <!-- Department Section (Only shows for SS1-3) -->
+                <div id="department-section" class="department-section">
+                    <h3>🎓 Department Selection (Required for Senior Classes)</h3>
+                    <div class="form-group">
+                        <label>Select Department: <span style="color: red;">*</span></label>
+                        <select name="department" id="department">
+                            <option value="">-- Select Department --</option>
+                            <option value="Science">Science Department</option>
+                            <option value="Art">Art Department</option>
+                            <option value="Commercial">Commercial Department</option>
+                        </select>
+                    </div>
+                    <p style="color: #666; font-size: 13px; margin-top: 10px;">
+                        ⚠️ This selection determines which subject results will be recorded for this student.
+                    </p>
+                </div>
+                
+                <button type="submit" class="btn">✅ Register Student</button>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-back" style="text-align: center; text-decoration: none; display: block;">← Back to Dashboard</a>
             </form>
         </div>
     </div>
+    
+    <script>
+        function toggleDepartment() {
+            const className = document.getElementById('class_name').value.toUpperCase();
+            const deptSection = document.getElementById('department-section');
+            const deptSelect = document.getElementById('department');
+            
+            // Show department section only for SS1, SS2, SS3
+            const isSenior = className === 'SS1' || className === 'SS2' || className === 'SS3';
+            
+            if (isSenior) {
+                deptSection.style.display = 'block';
+                deptSelect.required = true;
+            } else {
+                deptSection.style.display = 'none';
+                deptSelect.required = false;
+                deptSelect.value = '';  // Clear selection
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleDepartment();
+        });
+    </script>
 </body>
 </html>
