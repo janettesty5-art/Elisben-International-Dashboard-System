@@ -95,8 +95,7 @@ if DATABASE_URL:
             'HOST': db_config['HOST'],
             'PORT': db_config['PORT'],
             'OPTIONS': {
-                'options': '-c search_path=public',
-                'sslmode': 'require',  # Required for Supabase
+                'options': '-c search_path=public -c sslmode=require',
             },
         }
     }
@@ -116,6 +115,8 @@ print(f"DATABASE_URL: {'Set' if DATABASE_URL else 'Not set'}")
 print(f"Database engine: {DATABASES['default']['ENGINE']}")
 if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
     print(f"Database name: {DATABASES['default']['NAME']}")
+    print(f"Database host: {DATABASES['default']['HOST']}")
+    print(f"Database user: {DATABASES['default']['USER']}")
     print(f"Database options: {DATABASES['default'].get('OPTIONS', 'No options')}")
 print("===========================")
 
