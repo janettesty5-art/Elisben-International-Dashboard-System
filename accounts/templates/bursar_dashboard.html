@@ -135,6 +135,10 @@
                             <a href="{% url 'edit_payment_record' record.latest_record.id %}" class="btn btn-edit">
                                 ✏️ Edit
                             </a>
+                            <form method="POST" action="{% url 'delete_payment_record' record.latest_record.id %}" style="display: inline;" onsubmit="return confirm('Delete this payment record?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-delete">🗑️ Delete</button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}

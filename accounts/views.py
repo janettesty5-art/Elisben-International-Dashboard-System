@@ -495,8 +495,11 @@ def make_result_portal(request):
     
     return render(request, 'result/make_result_portal.html')
 
+# ============= REPLACE YOUR subject_teacher_entry VIEW =============
 @login_required
 def subject_teacher_entry(request):
+    from django.db.models import Count, Max  # ✅ Add imports
+    
     try:
         teacher = Teacher.objects.get(user=request.user)
     except Teacher.DoesNotExist:
@@ -630,7 +633,6 @@ def subject_teacher_entry(request):
 def test_subject_teacher(request):
     print("🎯 TEST VIEW CALLED!")
     return HttpResponse("Test view working!")
-
 
 
 @login_required
@@ -803,6 +805,8 @@ def delete_payment_record(request, record_id):
 @login_required
 def update_outstanding_payment(request, student_id):
     """Update payment for student with outstanding balance"""
+    from decimal import Decimal
+    
     try:
         bursar = Bursar.objects.get(user=request.user)
     except Bursar.DoesNotExist:
@@ -822,7 +826,7 @@ def update_outstanding_payment(request, student_id):
     
     if request.method == 'POST':
         try:
-            additional_payment = float(request.POST.get('additional_payment', 0))
+            additional_payment = Decimal(request.POST.get('additional_payment', 0))  # ✅ Convert to Decimal
             payment_method = request.POST.get('payment_method')
             payment_date = request.POST.get('payment_date')
             
@@ -833,7 +837,7 @@ def update_outstanding_payment(request, student_id):
                     term=latest_record.term,
                     total_fee=latest_record.balance,  # Previous balance becomes new total
                     amount_paid=additional_payment,
-                    balance=latest_record.balance - additional_payment,
+                    balance=latest_record.balance - additional_payment,  # ✅ Now both are Decimal
                     fee_type=f"{latest_record.fee_type} - Balance Payment",
                     payment_method=payment_method,
                     payment_date=payment_date,

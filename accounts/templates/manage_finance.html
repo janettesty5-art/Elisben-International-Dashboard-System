@@ -101,35 +101,6 @@
             opacity: 0.9;
         }
         
-        .records-section {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        
-        .records-section h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        table th, table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        
-        table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #666;
-        }
-        
         .alert {
             padding: 15px;
             border-radius: 8px;
@@ -141,7 +112,7 @@
             color: #155724;
         }
         
-        /* NEW: Search Box Styles */
+        /* Search Box Styles */
         .search-box {
             position: relative;
             margin-bottom: 15px;
@@ -189,7 +160,7 @@
         
         <!-- Record Payment Form -->
         <div class="form-card">
-            <h2>Record New Payment</h2>
+            <h2>💳 Record New Payment</h2>
             
             <form method="POST">
                 {% csrf_token %}
@@ -198,7 +169,7 @@
                     <div class="form-group">
                         <label for="student_id">Student ID *</label>
                         
-                        <!-- NEW: Search Box -->
+                        <!-- Search Box -->
                         <div class="search-box">
                             <input type="text" 
                                    id="student_search" 
@@ -264,46 +235,13 @@
                 </button>
             </form>
         </div>
-        
-        <!-- Payment Records -->
-        <div class="records-section">
-            <h2>Recent Payment Records</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Student ID</th>
-                        <th>Student Name</th>
-                        <th>Fee Type</th>
-                        <th>Amount</th>
-                        <th>Method</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in fee_records %}
-                    <tr>
-                        <td>{{ record.payment_date|date:"M d, Y" }}</td>
-                        <td>{{ record.student.student_id }}</td>
-                        <td>{{ record.student.full_name }}</td>
-                        <td>{{ record.fee_type }}</td>
-                        <td><strong>₦{{ record.amount_paid|floatformat:2 }}</strong></td>
-                        <td>{{ record.payment_method }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; color: #999;">No payment records yet</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
     
     <script>
         // Set today's date as default
         document.getElementById('payment_date').valueAsDate = new Date();
         
-        // NEW: Filter Students Function
+        // Filter Students Function
         function filterStudents() {
             const searchInput = document.getElementById('student_search').value.toLowerCase();
             const select = document.getElementById('student_id');
