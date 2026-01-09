@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Outstanding Payment</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); color: white; padding: 20px 40px; }
+        .navbar h1 { font-size: 24px; }
+        .container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .student-info { background: #fff8e1; border-left: 4px solid #ffc107; padding: 20px; margin-bottom: 30px; border-radius: 5px; }
+        .student-info h3 { color: #f57c00; margin-bottom: 10px; }
+        .balance-display { font-size: 32px; font-weight: bold; color: #e74c3c; margin: 20px 0; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+        input:focus, select:focus { outline: none; border-color: #f39c12; }
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; text-decoration: none; display: inline-block; }
+        .btn-save { background: #28a745; color: white; }
+        .btn-save:hover { background: #218838; }
+        .btn-cancel { background: #6c757d; color: white; }
+        .btn-cancel:hover { background: #5a6268; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .calculation-box { background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        .calculation-box p { margin: 8px 0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>💵 Update Outstanding Payment</h1>
+    </nav>
+    
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="card">
+            <div class="student-info">
+                <h3>👨‍🎓 Student Information</h3>
+                <p><strong>Name:</strong> {{ student.full_name }}</p>
+                <p><strong>Student ID:</strong> {{ student.student_id }}</p>
+                <p><strong>Class:</strong> {{ student.class_name }}</p>
+            </div>
+            
+            {% if latest_record %}
+            <div class="calculation-box">
+                <p><strong>Previous Total Fee:</strong> ₦{{ latest_record.total_fee|floatformat:2 }}</p>
+                <p><strong>Amount Already Paid:</strong> ₦{{ latest_record.amount_paid|floatformat:2 }}</p>
+                <p style="border-top: 2px solid #333; padding-top: 10px; margin-top: 10px;">
+                    <strong>Outstanding Balance:</strong> 
+                    <span class="balance-display">₦{{ latest_record.balance|floatformat:2 }}</span>
+                </p>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Additional Payment Amount (₦): <span style="color: red;">*</span></label>
+                    <input type="number" name="additional_payment" step="0.01" min="0" max="{{ latest_record.balance }}" required placeholder="Enter amount to pay">
+                    <p style="font-size: 13px; color: #666; margin-top: 5px;">Maximum: ₦{{ latest_record.balance|floatformat:2 }}</p>
+                </div>
+                
+                <div class="form-group">
+                    <label>Payment Method: <span style="color: red;">*</span></label>
+                    <select name="payment_method" required>
+                        <option value="">-- Select Method --</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="Card">Card</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Payment Date: <span style="color: red;">*</span></label>
+                    <input type="date" name="payment_date" required>
+                </div>
+                
+                <div style="margin-top: 30px;">
+                    <button type="submit" class="btn btn-save">💰 Record Payment</button>
+                    <a href="{% url 'bursar_dashboard' %}" class="btn btn-cancel">❌ Cancel</a>
+                </div>
+            </form>
+            {% else %}
+            <p style="color: #999; text-align: center;">No outstanding balance found for this student.</p>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{% url 'bursar_dashboard' %}" class="btn btn-cancel">← Back</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        // Set today's date as default
+        document.querySelector('input[name="payment_date"]').valueAsDate = new Date();
+    </script>
+</body>
+</html>

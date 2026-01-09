@@ -74,6 +74,8 @@ class Teacher(models.Model):
 
 # In your models.py, FIND the Student model and UPDATE it:
 
+# In your models.py, FIND the Student model and UPDATE it:
+
 class Student(models.Model):
     DEPARTMENT_CHOICES = [
         ('', 'N/A (Junior Classes)'),  # Default for JSS1-3
@@ -114,8 +116,14 @@ class Student(models.Model):
     @property
     def requires_department(self):
         """Check if this student's class requires a department"""
-        senior_classes = ['SS1', 'SS2', 'SS3', 'ss1', 'ss2', 'ss3']
-        return any(cls in self.class_name.upper() for cls in ['SS1', 'SS2', 'SS3'])
+        class_upper = self.class_name.upper()
+        return 'SS1' in class_upper or 'SS2' in class_upper or 'SS3' in class_upper
+    
+    @property
+    def is_senior_class(self):
+        """Check if student is in senior secondary"""
+        class_upper = self.class_name.upper()
+        return 'SS1' in class_upper or 'SS2' in class_upper or 'SS3' in class_upper
 
 
 # NEW: Alumni Model

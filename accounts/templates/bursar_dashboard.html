@@ -26,14 +26,8 @@
         .section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
         .section h2 { margin-bottom: 20px; color: #333; }
         
-        /* Search Bar */
-        .search-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
-        .search-form { display: flex; gap: 15px; align-items: center; }
-        .search-input { flex: 1; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; }
-        .search-input:focus { outline: none; border-color: #f39c12; }
-        .btn-search { background: #f39c12; color: white; padding: 15px 30px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; }
-        .btn-search:hover { background: #e67e22; }
-        .btn-clear { background: #95a5a6; color: white; padding: 15px 25px; border-radius: 10px; text-decoration: none; display: inline-block; }
+        .section.balanced { border-left: 5px solid #28a745; }
+        .section.outstanding { border-left: 5px solid #e74c3c; }
         
         table { width: 100%; border-collapse: collapse; }
         table th, table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
@@ -41,18 +35,23 @@
         
         .badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .badge-balanced { background: #d4edda; color: #155724; }
-        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-outstanding { background: #f8d7da; color: #721c24; }
+        
+        .balance-text { color: #e74c3c; font-weight: bold; font-size: 14px; }
+        
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; font-size: 13px; margin: 2px; cursor: pointer; }
+        .btn-update { background: #3498db; color: white; }
+        .btn-update:hover { background: #2980b9; }
+        .btn-edit { background: #f39c12; color: white; }
+        .btn-edit:hover { background: #e67e22; }
+        .btn-delete { background: #e74c3c; color: white; }
+        .btn-delete:hover { background: #c0392b; }
         
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
         
-        .activity-item { padding: 15px; border-left: 4px solid #f39c12; margin-bottom: 15px; background: #f8f9fa; border-radius: 8px; }
-        .activity-item .time { color: #999; font-size: 12px; }
-        .activity-item .description { color: #333; margin-top: 5px; }
-        
         @media (max-width: 768px) {
             .navbar { flex-direction: column; gap: 10px; text-align: center; }
-            .search-form { flex-direction: column; }
             .stats-grid, .actions-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -82,11 +81,11 @@
             </div>
             <div class="stat-card">
                 <h3>Total Outstanding Balance</h3>
-                <div class="number">₦{{ total_balance|floatformat:0 }}</div>
+                <div class="number" style="color: #e74c3c;">₦{{ total_outstanding|floatformat:0 }}</div>
             </div>
             <div class="stat-card">
                 <h3>Total Students</h3>
-                <div class="number">{{ students.count }}</div>
+                <div class="number">{{ total_students }}</div>
             </div>
         </div>
         
@@ -98,90 +97,100 @@
             </a>
         </div>
         
-        <!-- Search Bar -->
-        <div class="search-container">
-            <h2 style="margin-bottom: 15px;">🔍 Search Students or Payment Records</h2>
-            <form method="GET" action="" class="search-form">
-                <input type="text" name="search" class="search-input" 
-                       placeholder="Search by student name, ID, or fee type..." 
-                       value="{{ request.GET.search }}">
-                <button type="submit" class="btn-search">Search</button>
-                {% if request.GET.search %}
-                <a href="{% url 'bursar_dashboard' %}" class="btn-clear">Clear</a>
-                {% endif %}
-            </form>
-            {% if request.GET.search %}
-            <p style="margin-top: 15px; color: #666;">
-                Showing results for "<strong>{{ request.GET.search }}</strong>" - {{ fee_records.count }} record(s) found
-            </p>
-            {% endif %}
-        </div>
-        
-        <!-- Fee Records -->
-        <div class="section">
-            <h2>Payment Records</h2>
+        <!-- OUTSTANDING RECORDS SECTION -->
+        <div class="section outstanding">
+            <h2>⚠️ Outstanding Records ({{ outstanding_records|length }})</h2>
+            <p style="color: #666; margin-bottom: 20px;">Students with unpaid balances</p>
+            
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
                         <th>Student ID</th>
                         <th>Student Name</th>
-                        <th>Fee Type</th>
-                        <th>Total Fee</th>
-                        <th>Amount Paid</th>
+                        <th>Class</th>
+                        <th>Total Fees</th>
+                        <th>Total Paid</th>
                         <th>Balance</th>
-                        <th>Status</th>
-                        <th>Method</th>
+                        <th>Last Payment</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for record in fee_records %}
+                    {% for record in outstanding_records %}
                     <tr>
-                        <td>{{ record.payment_date|date:"M d, Y" }}</td>
                         <td>{{ record.student.student_id }}</td>
-                        <td>{{ record.student.full_name }}</td>
-                        <td>{{ record.fee_type }}</td>
-                        <td><strong>₦{{ record.total_fee|floatformat:2 }}</strong></td>
-                        <td>₦{{ record.amount_paid|floatformat:2 }}</td>
-                        <td>₦{{ record.balance|floatformat:2 }}</td>
                         <td>
-                            {% if record.is_balanced %}
-                                <span class="badge badge-balanced">✓ Balanced</span>
-                            {% else %}
-                                <span class="badge badge-pending">Pending</span>
-                            {% endif %}
+                            <strong>{{ record.student.full_name }}</strong><br>
+                            <span class="balance-text">To Balance: ₦{{ record.balance|floatformat:2 }}</span>
                         </td>
-                        <td>{{ record.payment_method }}</td>
+                        <td>{{ record.student.class_name }}</td>
+                        <td>₦{{ record.total_fees|floatformat:2 }}</td>
+                        <td>₦{{ record.total_paid|floatformat:2 }}</td>
+                        <td><strong style="color: #e74c3c;">₦{{ record.balance|floatformat:2 }}</strong></td>
+                        <td>{{ record.latest_record.payment_date|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'update_outstanding_payment' record.student.student_id %}" class="btn btn-update">
+                                💵 Update
+                            </a>
+                            <a href="{% url 'edit_payment_record' record.latest_record.id %}" class="btn btn-edit">
+                                ✏️ Edit
+                            </a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" style="text-align: center; color: #999;">
-                            {% if request.GET.search %}
-                                No records found matching "{{ request.GET.search }}"
-                            {% else %}
-                                No payment records yet
-                            {% endif %}
-                        </td>
+                        <td colspan="8" style="text-align: center; color: #999;">No outstanding records! All students are balanced. 🎉</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         
-        <!-- Recent Activities -->
-        <div class="section">
-            <h2>Recent Activities</h2>
-            {% for activity in activities %}
-            <div class="activity-item">
-                <div class="time">{{ activity.timestamp|date:"M d, Y H:i" }}</div>
-                <div class="description">
-                    <strong>{{ activity.get_action_display }}</strong><br>
-                    {{ activity.description }}
-                </div>
-            </div>
-            {% empty %}
-            <p style="color: #999;">No recent activities</p>
-            {% endfor %}
+        <!-- BALANCED RECORDS SECTION -->
+        <div class="section balanced">
+            <h2>✅ Balanced Records ({{ balanced_records|length }})</h2>
+            <p style="color: #666; margin-bottom: 20px;">Students who have completed their payments</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Class</th>
+                        <th>Total Fees</th>
+                        <th>Total Paid</th>
+                        <th>Status</th>
+                        <th>Last Payment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in balanced_records %}
+                    <tr>
+                        <td>{{ record.student.student_id }}</td>
+                        <td><strong>{{ record.student.full_name }}</strong></td>
+                        <td>{{ record.student.class_name }}</td>
+                        <td>₦{{ record.total_fees|floatformat:2 }}</td>
+                        <td>₦{{ record.total_paid|floatformat:2 }}</td>
+                        <td><span class="badge badge-balanced">✓ Balanced</span></td>
+                        <td>{{ record.latest_record.payment_date|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'edit_payment_record' record.latest_record.id %}" class="btn btn-edit">
+                                ✏️ Edit
+                            </a>
+                            <form method="POST" action="{% url 'delete_payment_record' record.latest_record.id %}" style="display: inline;" onsubmit="return confirm('Delete this payment record?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-delete">🗑️ Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; color: #999;">No balanced records yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </body>

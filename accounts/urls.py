@@ -94,4 +94,9 @@ urlpatterns = [
     path('notification/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
      # ✅ ADD THIS NEW LINE:
     path('admin/edit-student/<int:student_id>/', views.edit_student, name='edit_student'),
+    # Bursar Payment Management
+    path('bursar/edit-payment/<int:record_id>/', views.edit_payment_record, name='edit_payment_record'),
+    path('bursar/delete-payment/<int:record_id>/', views.delete_payment_record, name='delete_payment_record'),
+    path('bursar/update-outstanding/<str:student_id>/', views.update_outstanding_payment, name='update_outstanding_payment'),
+    
 ]

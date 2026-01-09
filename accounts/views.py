@@ -505,8 +505,7 @@ def subject_teacher_entry(request):
     
     if request.method == 'POST':
         try:
-            # AUTO-UPPERCASE THE SUBJECT NAME
-            subject_name = request.POST.get('subject_name', '').upper()  # ✅ UPPERCASE
+            subject_name = request.POST.get('subject_name', '').upper()
             term = request.POST.get('term')
             academic_year = request.POST.get('academic_year')
             student_ids = request.POST.getlist('student_id')
@@ -528,7 +527,7 @@ def subject_teacher_entry(request):
                 
                 SubjectResult.objects.update_or_create(
                     student=student,
-                    subject_name=subject_name,  # Already uppercase
+                    subject_name=subject_name,
                     term=term,
                     academic_year=academic_year,
                     defaults={
@@ -556,7 +555,6 @@ def subject_teacher_entry(request):
             messages.error(request, f'Error saving results: {str(e)}')
             return redirect('subject_teacher_entry')
     
-    # GET request - Load students
     from datetime import datetime
     current_year = datetime.now().year
     current_month = datetime.now().month
@@ -570,29 +568,24 @@ def subject_teacher_entry(request):
     selected_class = request.GET.get('class_name')
     department = request.GET.get('department', '')
     
-    # Filter students by class AND department (for SS1-3)
     students = []
+    is_senior_class = False
+    
     if selected_class:
         class_upper = selected_class.upper()
-        is_senior = any(cls in class_upper for cls in ['SS1', 'SS2', 'SS3'])
+        is_senior_class = 'SS1' in class_upper or 'SS2' in class_upper or 'SS3' in class_upper
         
-        if is_senior and department:
-            # Filter by both class and department
+        if is_senior_class and department:
             students = Student.objects.filter(
                 class_name=selected_class,
                 department=department
             ).order_by('full_name')
-        elif is_senior and not department:
-            # For senior classes without department, show none (force selection)
-            students = []
-        else:
-            # For junior classes, show all students in that class
+        elif not is_senior_class:
             students = Student.objects.filter(class_name=selected_class).order_by('full_name')
     
-    subject_name = request.GET.get('subject_name', '').upper()  # ✅ UPPERCASE
+    subject_name = request.GET.get('subject_name', '').upper()
     term = request.GET.get('term', 'First Term')
     
-    # Get departments for SS classes
     departments = ['Science', 'Art', 'Commercial']
     
     existing_results = {}
@@ -609,6 +602,14 @@ def subject_teacher_entry(request):
             except SubjectResult.DoesNotExist:
                 pass
     
+    # Get all recorded results by this teacher
+    recorded_results = SubjectResult.objects.filter(
+        entered_by=teacher
+    ).values('subject_name', 'term', 'academic_year', 'student__class_name').annotate(
+        student_count=Count('id'),
+        last_updated=Max('updated_at')
+    ).order_by('-last_updated')
+    
     context = {
         'teacher': teacher,
         'classes': classes,
@@ -620,7 +621,8 @@ def subject_teacher_entry(request):
         'academic_year': academic_year,
         'department': department,
         'departments': departments,
-        'is_senior_class': selected_class and any(cls in selected_class.upper() for cls in ['SS1', 'SS2', 'SS3']),
+        'is_senior_class': is_senior_class,
+        'recorded_results': recorded_results,
     }
     return render(request, 'result/subject_teacher_entry.html', context)
 
@@ -657,21 +659,21 @@ def class_teacher_collate(request):
     
     unsent_results = []
     sent_results = []
+    is_senior_class = False
     
     if selected_class and term and academic_year:
         class_upper = selected_class.upper()
-        is_senior = any(cls in class_upper for cls in ['SS1', 'SS2', 'SS3'])
+        is_senior_class = 'SS1' in class_upper or 'SS2' in class_upper or 'SS3' in class_upper
         
-        # Filter students by department for senior classes
-        if is_senior and department:
+        if is_senior_class and department:
             students = Student.objects.filter(
                 class_name=selected_class,
                 department=department
             ).order_by('full_name')
-        elif is_senior and not department:
-            students = []  # Force department selection
-        else:
+        elif not is_senior_class:
             students = Student.objects.filter(class_name=selected_class).order_by('full_name')
+        else:
+            students = []
         
         for student in students:
             try:
@@ -720,10 +722,138 @@ def class_teacher_collate(request):
         'sent_results': sent_results,
         'department': department,
         'departments': departments,
-        'is_senior_class': selected_class and any(cls in selected_class.upper() for cls in ['SS1', 'SS2', 'SS3']),
+        'is_senior_class': is_senior_class,
     }
     
     return render(request, 'result/class_teacher_collate.html', context)
+
+
+
+    # ============= ADD THESE NEW VIEWS TO YOUR views.py =============
+
+# ============= EDIT PAYMENT RECORD (NEW) =============
+@login_required
+def edit_payment_record(request, record_id):
+    """Edit payment record - Bursar only"""
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+    except Bursar.DoesNotExist:
+        try:
+            admin = Admin.objects.get(user=request.user)
+        except Admin.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    record = get_object_or_404(FeeRecord, id=record_id)
+    
+    if request.method == 'POST':
+        try:
+            # Update ALL fields
+            record.student = Student.objects.get(student_id=request.POST.get('student_id'))
+            record.total_fee = float(request.POST.get('total_fee'))
+            record.amount_paid = float(request.POST.get('amount_paid'))
+            record.fee_type = request.POST.get('fee_type')
+            record.payment_method = request.POST.get('payment_method')
+            record.payment_date = request.POST.get('payment_date')
+            record.save()  # This auto-calculates balance
+            
+            messages.success(request, '✅ Payment record updated successfully!')
+            return redirect('bursar_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error updating record: {str(e)}')
+    
+    students = Student.objects.all().order_by('full_name')
+    context = {
+        'record': record,
+        'students': students,
+    }
+    return render(request, 'edit_payment_record.html', context)
+
+
+# ============= DELETE PAYMENT RECORD (NEW) =============
+@login_required
+def delete_payment_record(request, record_id):
+    """Delete payment record - Bursar only"""
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+    except Bursar.DoesNotExist:
+        try:
+            admin = Admin.objects.get(user=request.user)
+        except Admin.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            record = FeeRecord.objects.get(id=record_id)
+            student_name = record.student.full_name
+            amount = record.amount_paid
+            record.delete()
+            
+            messages.success(request, f'✅ Payment record for {student_name} (₦{amount}) deleted successfully!')
+        except FeeRecord.DoesNotExist:
+            messages.error(request, 'Payment record not found.')
+        except Exception as e:
+            messages.error(request, f'Error deleting record: {str(e)}')
+    
+    return redirect('bursar_dashboard')
+
+
+# ============= UPDATE OUTSTANDING PAYMENT (NEW) =============
+@login_required
+def update_outstanding_payment(request, student_id):
+    """Update payment for student with outstanding balance"""
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+    except Bursar.DoesNotExist:
+        try:
+            admin = Admin.objects.get(user=request.user)
+        except Admin.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    student = get_object_or_404(Student, student_id=student_id)
+    
+    # Get most recent outstanding record
+    latest_record = FeeRecord.objects.filter(
+        student=student,
+        is_balanced=False
+    ).order_by('-payment_date').first()
+    
+    if request.method == 'POST':
+        try:
+            additional_payment = float(request.POST.get('additional_payment', 0))
+            payment_method = request.POST.get('payment_method')
+            payment_date = request.POST.get('payment_date')
+            
+            if latest_record:
+                # Create new payment record
+                FeeRecord.objects.create(
+                    student=student,
+                    term=latest_record.term,
+                    total_fee=latest_record.balance,  # Previous balance becomes new total
+                    amount_paid=additional_payment,
+                    balance=latest_record.balance - additional_payment,
+                    fee_type=f"{latest_record.fee_type} - Balance Payment",
+                    payment_method=payment_method,
+                    payment_date=payment_date,
+                    recorded_by=bursar if hasattr(request.user, 'bursar') else None,
+                    recorded_by_admin=admin if hasattr(request.user, 'admin') else None,
+                )
+                
+                messages.success(request, f'✅ Payment of ₦{additional_payment} recorded for {student.full_name}!')
+            else:
+                messages.error(request, 'No outstanding record found for this student.')
+            
+            return redirect('bursar_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error recording payment: {str(e)}')
+    
+    context = {
+        'student': student,
+        'latest_record': latest_record,
+    }
+    return render(request, 'update_outstanding_payment.html', context)
     
 
 
@@ -1998,7 +2128,7 @@ def principal_dashboard(request):
     }
     return render(request, 'principal_dashboard.html', context)
 
-# ============= BURSAR VIEWS =============
+# ============= REPLACE YOUR bursar_dashboard VIEW =============
 @login_required
 def bursar_dashboard(request):
     try:
@@ -2009,27 +2139,57 @@ def bursar_dashboard(request):
     
     search_query = request.GET.get('search', '')
     
-    fee_records = FeeRecord.objects.all().order_by('-payment_date')
-    
-    if search_query:
-        fee_records = fee_records.filter(
-            Q(student__full_name__icontains=search_query) |
-            Q(student__student_id__icontains=search_query) |
-            Q(fee_type__icontains=search_query) |
-            Q(payment_method__icontains=search_query)
-        )
-    
+    # Get all students
     students = Student.objects.all()
-    total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
-    total_balance = FeeRecord.objects.aggregate(Sum('balance'))['balance__sum'] or 0
+    
+    # Calculate balanced and outstanding records
+    balanced_records = []
+    outstanding_records = []
+    
+    for student in students:
+        # Get all payment records for this student
+        student_records = FeeRecord.objects.filter(student=student).order_by('-payment_date')
+        
+        if student_records.exists():
+            # Calculate total fees and total paid
+            total_fees = sum([r.total_fee for r in student_records])
+            total_paid = sum([r.amount_paid for r in student_records])
+            balance = total_fees - total_paid
+            
+            latest_record = student_records.first()
+            
+            record_data = {
+                'student': student,
+                'total_fees': total_fees,
+                'total_paid': total_paid,
+                'balance': balance,
+                'latest_record': latest_record,
+                'record_count': student_records.count(),
+            }
+            
+            if balance <= 0:
+                balanced_records.append(record_data)
+            else:
+                outstanding_records.append(record_data)
+    
+    # Apply search filter
+    if search_query:
+        balanced_records = [r for r in balanced_records if search_query.lower() in r['student'].full_name.lower() or search_query.lower() in r['student'].student_id.lower()]
+        outstanding_records = [r for r in outstanding_records if search_query.lower() in r['student'].full_name.lower() or search_query.lower() in r['student'].student_id.lower()]
+    
+    # Calculate totals
+    total_fees_collected = sum([r['total_paid'] for r in balanced_records + outstanding_records])
+    total_outstanding = sum([r['balance'] for r in outstanding_records])
+    
     recent_activities = ActivityLog.objects.filter(performed_by_type='bursar')[:20]
     
     context = {
         'bursar': bursar,
-        'fee_records': fee_records,
-        'students': students,
-        'total_fees': total_fees,
-        'total_balance': total_balance,
+        'balanced_records': balanced_records,
+        'outstanding_records': outstanding_records,
+        'total_fees': total_fees_collected,
+        'total_outstanding': total_outstanding,
+        'total_students': students.count(),
         'activities': recent_activities,
         'search_query': search_query,
     }
