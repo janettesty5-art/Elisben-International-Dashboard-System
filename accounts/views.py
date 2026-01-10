@@ -575,8 +575,14 @@ def subject_teacher_entry(request):
     is_senior_class = False
     
     if selected_class:
-        class_upper = selected_class.upper()
-        is_senior_class = 'SS1' in class_upper or 'SS2' in class_upper or 'SS3' in class_upper
+    class_upper = selected_class.upper()
+    # ✅ FIXED: More precise check for SS1, SS2, SS3 only
+    is_senior_class = (
+        class_upper in ['SS1', 'SS2', 'SS3'] or 
+        class_upper.startswith('SS1') or 
+        class_upper.startswith('SS2') or 
+        class_upper.startswith('SS3')
+    )
         
         if is_senior_class and department:
             students = Student.objects.filter(
@@ -664,8 +670,14 @@ def class_teacher_collate(request):
     is_senior_class = False
     
     if selected_class and term and academic_year:
-        class_upper = selected_class.upper()
-        is_senior_class = 'SS1' in class_upper or 'SS2' in class_upper or 'SS3' in class_upper
+    class_upper = selected_class.upper()
+    # ✅ FIXED: More precise check for SS1, SS2, SS3 only
+    is_senior_class = (
+        class_upper in ['SS1', 'SS2', 'SS3'] or 
+        class_upper.startswith('SS1') or 
+        class_upper.startswith('SS2') or 
+        class_upper.startswith('SS3')
+    )
         
         if is_senior_class and department:
             students = Student.objects.filter(
