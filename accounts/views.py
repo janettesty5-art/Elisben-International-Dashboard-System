@@ -818,44 +818,71 @@ def update_outstanding_payment(request, student_id):
     
     student = get_object_or_404(Student, student_id=student_id)
     
-    # Get most recent outstanding record
-    latest_record = FeeRecord.objects.filter(
-        student=student,
-        is_balanced=False
-    ).order_by('-payment_date').first()
+    # Get ALL records for this student to calculate total balance
+    all_student_records = FeeRecord.objects.filter(student=student).order_by('-payment_date')
+    
+    # Calculate current outstanding balance
+    total_fees = sum([Decimal(str(r.total_fee)) for r in all_student_records])
+    total_paid = sum([Decimal(str(r.amount_paid)) for r in all_student_records])
+    current_balance = total_fees - total_paid
+    
+    # Get most recent record for display
+    latest_record = all_student_records.first()
     
     if request.method == 'POST':
         try:
-            additional_payment = Decimal(request.POST.get('additional_payment', 0))  # ✅ Convert to Decimal
+            additional_payment = Decimal(request.POST.get('additional_payment', 0))
             payment_method = request.POST.get('payment_method')
             payment_date = request.POST.get('payment_date')
             
-            if latest_record:
-                # Create new payment record
-                FeeRecord.objects.create(
-                    student=student,
-                    term=latest_record.term,
-                    total_fee=latest_record.balance,  # Previous balance becomes new total
-                    amount_paid=additional_payment,
-                    balance=latest_record.balance - additional_payment,  # ✅ Now both are Decimal
-                    fee_type=f"{latest_record.fee_type} - Balance Payment",
-                    payment_method=payment_method,
-                    payment_date=payment_date,
-                    recorded_by=bursar if hasattr(request.user, 'bursar') else None,
-                    recorded_by_admin=admin if hasattr(request.user, 'admin') else None,
-                )
-                
-                messages.success(request, f'✅ Payment of ₦{additional_payment} recorded for {student.full_name}!')
+            # Validate payment doesn't exceed balance
+            if additional_payment > current_balance:
+                messages.error(request, f'Payment amount (₦{additional_payment}) cannot exceed outstanding balance (₦{current_balance})!')
+                return redirect('update_outstanding_payment', student_id=student_id)
+            
+            # Calculate new balance
+            new_balance = current_balance - additional_payment
+            
+            # Create new payment record
+            FeeRecord.objects.create(
+                student=student,
+                term=latest_record.term if latest_record else None,
+                total_fee=Decimal('0.00'),  # Don't add to total fees again
+                amount_paid=additional_payment,  # Just the payment amount
+                balance=new_balance,  # New balance after this payment
+                fee_type=f"Balance Payment" if latest_record else "Payment",
+                payment_method=payment_method,
+                payment_date=payment_date,
+                recorded_by=bursar if hasattr(request.user, 'bursar') else None,
+                recorded_by_admin=admin if hasattr(request.user, 'admin') else None,
+                is_balanced=(new_balance <= 0)  # Mark as balanced if fully paid
+            )
+            
+            # Log activity
+            ActivityLog.objects.create(
+                action='fee_recorded',
+                description=f'Balance payment of ₦{additional_payment} recorded for {student.full_name}. New balance: ₦{new_balance}',
+                performed_by_type='bursar' if hasattr(request.user, 'bursar') else 'admin',
+                performed_by_name=bursar.full_name if hasattr(request.user, 'bursar') else admin.full_name
+            )
+            
+            if new_balance <= 0:
+                messages.success(request, f'✅ Payment of ₦{additional_payment} recorded! {student.full_name} is now FULLY BALANCED! 🎉')
             else:
-                messages.error(request, 'No outstanding record found for this student.')
+                messages.success(request, f'✅ Payment of ₦{additional_payment} recorded! Remaining balance: ₦{new_balance:.2f}')
             
             return redirect('bursar_dashboard')
+            
         except Exception as e:
             messages.error(request, f'Error recording payment: {str(e)}')
+            return redirect('update_outstanding_payment', student_id=student_id)
     
     context = {
         'student': student,
         'latest_record': latest_record,
+        'current_balance': current_balance,  # Pass the actual calculated balance
+        'total_fees': total_fees,
+        'total_paid': total_paid,
     }
     return render(request, 'update_outstanding_payment.html', context)
     
@@ -2133,6 +2160,7 @@ def principal_dashboard(request):
     return render(request, 'principal_dashboard.html', context)
 
 # ============= REPLACE YOUR bursar_dashboard VIEW =============
+
 @login_required
 def bursar_dashboard(request):
     try:
@@ -2140,6 +2168,8 @@ def bursar_dashboard(request):
     except Bursar.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
+    
+    from decimal import Decimal
     
     search_query = request.GET.get('search', '')
     
@@ -2155,9 +2185,9 @@ def bursar_dashboard(request):
         student_records = FeeRecord.objects.filter(student=student).order_by('-payment_date')
         
         if student_records.exists():
-            # Calculate total fees and total paid
-            total_fees = sum([r.total_fee for r in student_records])
-            total_paid = sum([r.amount_paid for r in student_records])
+            # Calculate total fees and total paid using Decimal for precision
+            total_fees = sum([Decimal(str(r.total_fee)) for r in student_records])
+            total_paid = sum([Decimal(str(r.amount_paid)) for r in student_records])
             balance = total_fees - total_paid
             
             latest_record = student_records.first()
@@ -2171,7 +2201,8 @@ def bursar_dashboard(request):
                 'record_count': student_records.count(),
             }
             
-            if balance <= 0:
+            # Use Decimal comparison for accuracy
+            if balance <= Decimal('0.00'):
                 balanced_records.append(record_data)
             else:
                 outstanding_records.append(record_data)
