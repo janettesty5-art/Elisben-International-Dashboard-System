@@ -641,6 +641,49 @@ def test_subject_teacher(request):
     return HttpResponse("Test view working!")
 
 
+    # ============= DELETE ALL PAYMENT RECORDS FOR A STUDENT (NEW) =============
+@login_required
+def delete_all_student_payments(request, student_id):
+    """Delete ALL payment records for a student - Bursar only"""
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+    except Bursar.DoesNotExist:
+        try:
+            admin = Admin.objects.get(user=request.user)
+        except Admin.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            student = Student.objects.get(student_id=student_id)
+            student_name = student.full_name
+            
+            # Get all records for this student
+            all_records = FeeRecord.objects.filter(student=student)
+            record_count = all_records.count()
+            total_amount = sum([r.amount_paid for r in all_records])
+            
+            # Delete all records
+            all_records.delete()
+            
+            # Log activity
+            ActivityLog.objects.create(
+                action='fee_recorded',
+                description=f'All payment records ({record_count} records, ₦{total_amount}) deleted for {student_name}',
+                performed_by_type='bursar' if hasattr(request.user, 'bursar') else 'admin',
+                performed_by_name=bursar.full_name if hasattr(request.user, 'bursar') else admin.full_name
+            )
+            
+            messages.success(request, f'✅ All payment records for {student_name} deleted successfully! ({record_count} records removed)')
+        except Student.DoesNotExist:
+            messages.error(request, 'Student not found.')
+        except Exception as e:
+            messages.error(request, f'Error deleting records: {str(e)}')
+    
+    return redirect('bursar_dashboard')
+
+
 @login_required
 def class_teacher_collate(request):
     try:

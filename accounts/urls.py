@@ -98,5 +98,6 @@ urlpatterns = [
     path('bursar/edit-payment/<int:record_id>/', views.edit_payment_record, name='edit_payment_record'),
     path('bursar/delete-payment/<int:record_id>/', views.delete_payment_record, name='delete_payment_record'),
     path('bursar/update-outstanding/<str:student_id>/', views.update_outstanding_payment, name='update_outstanding_payment'),
-    
+    # Bursar Payment Management
+    path('bursar/delete-all-payments/<str:student_id>/', views.delete_all_student_payments, name='delete_all_student_payments'),  # ✅ NEW LINE
 ]

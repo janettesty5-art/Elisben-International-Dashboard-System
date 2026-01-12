@@ -57,10 +57,8 @@
                         </select>
                     </div>
                     
-                    <!-- ✅ DEPARTMENT FILTER (Only for SS1-3) -->
                    <!-- ✅ DEPARTMENT FILTER (Only for SS1-3) -->
-{% if selected_class %}
-    {% if 'SS1' in selected_class|upper or 'SS2' in selected_class|upper or 'SS3' in selected_class|upper %}
+{% if selected_class and is_senior_class %}
     <div class="form-group">
         <label>Department: <span style="color: red;">*</span></label>
         <select name="department" required onchange="this.form.submit()">
@@ -70,7 +68,6 @@
             {% endfor %}
         </select>
     </div>
-    {% endif %}
 {% endif %}
                     
                     <div class="form-group">

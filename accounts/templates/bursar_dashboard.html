@@ -151,51 +151,52 @@
         </div>
         
         <!-- BALANCED RECORDS SECTION -->
-        <div class="section balanced">
-            <h2>✅ Balanced Records ({{ balanced_records|length }})</h2>
-            <p style="color: #666; margin-bottom: 20px;">Students who have completed their payments</p>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Student ID</th>
-                        <th>Student Name</th>
-                        <th>Class</th>
-                        <th>Total Fees</th>
-                        <th>Total Paid</th>
-                        <th>Status</th>
-                        <th>Last Payment</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in balanced_records %}
-                    <tr>
-                        <td>{{ record.student.student_id }}</td>
-                        <td><strong>{{ record.student.full_name }}</strong></td>
-                        <td>{{ record.student.class_name }}</td>
-                        <td>₦{{ record.total_fees|floatformat:2 }}</td>
-                        <td>₦{{ record.total_paid|floatformat:2 }}</td>
-                        <td><span class="badge badge-balanced">✓ Balanced</span></td>
-                        <td>{{ record.latest_record.payment_date|date:"M d, Y" }}</td>
-                        <td>
-                            <a href="{% url 'edit_payment_record' record.latest_record.id %}" class="btn btn-edit">
-                                ✏️ Edit
-                            </a>
-                            <form method="POST" action="{% url 'delete_payment_record' record.latest_record.id %}" style="display: inline;" onsubmit="return confirm('Delete this payment record?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-delete">🗑️ Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" style="text-align: center; color: #999;">No balanced records yet</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+<div class="section balanced">
+    <h2>✅ Balanced Records ({{ balanced_records|length }})</h2>
+    <p style="color: #666; margin-bottom: 20px;">Students who have completed their payments</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Class</th>
+                <th>Total Fees</th>
+                <th>Total Paid</th>
+                <th>Status</th>
+                <th>Last Payment</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in balanced_records %}
+            <tr>
+                <td>{{ record.student.student_id }}</td>
+                <td><strong>{{ record.student.full_name }}</strong></td>
+                <td>{{ record.student.class_name }}</td>
+                <td>₦{{ record.total_fees|floatformat:2 }}</td>
+                <td>₦{{ record.total_paid|floatformat:2 }}</td>
+                <td><span class="badge badge-balanced">✓ Balanced</span></td>
+                <td>{{ record.latest_record.payment_date|date:"M d, Y" }}</td>
+                <td>
+                    
+                    <a href="{% url 'edit_payment_record' record.latest_record.id %}" class="btn btn-edit">✏️ Edit</a>
+                    <!-- ✅ CHANGED: Delete ALL records for this student -->
+                    <form method="POST" action="{% url 'delete_all_student_payments' record.student.student_id %}" style="display: inline;" onsubmit="return confirm('⚠️ Delete ALL payment records for {{ record.student.full_name }}? This will remove {{ record.record_count }} payment record(s) permanently!');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-delete">🗑️ Delete All</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" style="text-align: center; color: #999;">No balanced records yet</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
     </div>
 </body>
 </html>
