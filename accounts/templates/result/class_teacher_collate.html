@@ -177,19 +177,27 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if item.result %}
-                                        <a href="{% url 'class_teacher_edit_result' item.result.id %}" class="btn btn-edit" style="font-size: 13px; padding: 8px 15px;">
-                                            ✏️ Edit
-                                        </a>
-                                        <a href="{% url 'send_result_to_principal' item.result.id %}" class="btn btn-send" style="font-size: 13px; padding: 8px 15px;">
-                                            📤 Send to Principal
-                                        </a>
-                                    {% else %}
-                                        <a href="{% url 'class_teacher_start_result' %}?student_id={{ item.student.id }}&term={{ term }}&year={{ academic_year }}" class="btn" style="font-size: 13px; padding: 8px 15px;">
-                                            ➕ Start Result
-                                        </a>
-                                    {% endif %}
-                                </td>
+    {% if item.result %}
+        <!-- ✅ NEW: Delete Button -->
+        <form method="POST" action="{% url 'delete_student_result' item.result.id %}" style="display: inline;" onsubmit="return confirm('⚠️ Are you sure you want to DELETE this result for {{ item.student.full_name }}? This cannot be undone!');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-delete" style="font-size: 13px; padding: 8px 15px;">
+                🗑️ Delete
+            </button>
+        </form>
+        
+        <a href="{% url 'class_teacher_edit_result' item.result.id %}" class="btn btn-edit" style="font-size: 13px; padding: 8px 15px;">
+            ✏️ Edit
+        </a>
+        <a href="{% url 'send_result_to_principal' item.result.id %}" class="btn btn-send" style="font-size: 13px; padding: 8px 15px;">
+            📤 Send to Principal
+        </a>
+    {% else %}
+        <a href="{% url 'class_teacher_start_result' %}?student_id={{ item.student.id }}&term={{ term }}&year={{ academic_year }}" class="btn" style="font-size: 13px; padding: 8px 15px;">
+            ➕ Start Result
+        </a>
+    {% endif %}
+</td>
                             </tr>
                             {% endfor %}
                         </tbody>

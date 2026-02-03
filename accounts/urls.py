@@ -99,5 +99,8 @@ urlpatterns = [
     path('bursar/delete-payment/<int:record_id>/', views.delete_payment_record, name='delete_payment_record'),
     path('bursar/update-outstanding/<str:student_id>/', views.update_outstanding_payment, name='update_outstanding_payment'),
     # Bursar Payment Management
+    path('make-result/subject-teacher/delete/<int:student_id>/<str:subject_name>/<str:term>/<str:academic_year>/', views.delete_subject_result, name='delete_subject_result'),  # ✅ NEW
+path('make-result/subject-teacher/edit/<int:result_id>/', views.edit_subject_result, name='edit_subject_result'),  # ✅ NEW
+    path('make-result/class-teacher/delete/<int:result_id>/', views.delete_student_result, name='delete_student_result'),  # ✅ NEW
     path('bursar/delete-all-payments/<str:student_id>/', views.delete_all_student_payments, name='delete_all_student_payments'),  # ✅ NEW LINE
 ]

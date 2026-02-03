@@ -684,6 +684,114 @@ def delete_all_student_payments(request, student_id):
     return redirect('bursar_dashboard')
 
 
+# ============= DELETE STUDENT RESULT RECORD (CLASS TEACHER) =============
+@login_required
+def delete_student_result(request, result_id):
+    """Delete a student's result record - Class Teacher only"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
+    except:
+        messages.error(request, 'Access denied or result not found.')
+        return redirect('class_teacher_collate')
+    
+    if request.method == 'POST':
+        try:
+            student_name = result.student.full_name
+            result.delete()
+            
+            ResultActivityLog.objects.create(
+                action='result_collated',
+                description=f'Result record deleted for {student_name}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Result record for {student_name} deleted successfully!')
+        except Exception as e:
+            messages.error(request, f'Error deleting result: {str(e)}')
+    
+    return redirect('class_teacher_collate')
+
+
+# ============= DELETE SUBJECT RESULT RECORD (SUBJECT TEACHER) =============
+@login_required
+def delete_subject_result(request, student_id, subject_name, term, academic_year):
+    """Delete a student's subject result - Subject Teacher only"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        student = Student.objects.get(id=student_id)
+        
+        result = SubjectResult.objects.get(
+            student=student,
+            subject_name=subject_name,
+            term=term,
+            academic_year=academic_year,
+            entered_by=teacher
+        )
+    except:
+        messages.error(request, 'Access denied or result not found.')
+        return redirect('subject_teacher_entry')
+    
+    if request.method == 'POST':
+        try:
+            result.delete()
+            
+            ResultActivityLog.objects.create(
+                action='subject_result_entered',
+                description=f'Subject result deleted: {subject_name} for {student.full_name}',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ {subject_name} result for {student.full_name} deleted successfully!')
+        except Exception as e:
+            messages.error(request, f'Error deleting result: {str(e)}')
+    
+    # Redirect back to the same page
+    return redirect(f'/make-result/subject-teacher/?class_name={student.class_name}&subject_name={subject_name}&term={term}&academic_year={academic_year}')
+
+
+# ============= EDIT SUBJECT RESULT (SUBJECT TEACHER) =============
+@login_required
+def edit_subject_result(request, result_id):
+    """Edit a single subject result"""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        result = SubjectResult.objects.get(id=result_id, entered_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('subject_teacher_entry')
+    
+    if request.method == 'POST':
+        try:
+            # ✅ NEW: Allow editing subject name
+            result.subject_name = request.POST.get('subject_name', result.subject_name).upper()
+
+            result.test_a = float(request.POST.get('test_a', result.test_a))
+            result.test_b = float(request.POST.get('test_b', result.test_b))
+            result.test_c = float(request.POST.get('test_c', result.test_c))
+            result.exam = float(request.POST.get('exam', result.exam))
+            
+            if result.term in ['Second Term', 'Third Term']:
+                result.ltcum = float(request.POST.get('ltcum', result.ltcum or 0))
+            
+            position = request.POST.get('position')
+            result.position_ranking = int(position) if position and position.strip() else None
+            
+            result.save()
+            
+            messages.success(request, f'✅ Result updated for {result.student.full_name}!')
+            return redirect('subject_teacher_entry')
+        except Exception as e:
+            messages.error(request, f'Error updating result: {str(e)}')
+    
+    context = {
+        'teacher': teacher,
+        'result': result,
+    }
+    return render(request, 'result/edit_subject_result.html', context)
+
 @login_required
 def class_teacher_collate(request):
     try:

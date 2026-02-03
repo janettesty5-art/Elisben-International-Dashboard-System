@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Subject Result</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        .navbar { background: #2ecc71; color: white; padding: 20px 40px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; }
+        .btn { padding: 12px 30px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px; text-decoration: none; display: inline-block; }
+        .btn-back { background: #95a5a6; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>✏️ Edit Subject Result</h1>
+    </div>
+    
+    <div class="container">
+        <div class="card">
+            <h2>{{ result.student.full_name }} - {{ result.subject_name }}</h2>
+            <p style="color: #666; margin-bottom: 20px;">{{ result.term }} {{ result.academic_year }}</p>
+            
+            <form method="POST">
+                {% csrf_token %}
+
+                 <div class="form-group">
+        <label>Subject Name:</label>
+        <input type="text" name="subject_name" value="{{ result.subject_name }}" required style="text-transform: uppercase;">
+        </div>
+                
+                <div class="form-group">
+                    <label>TEST-1 (100):</label>
+                    <input type="number" name="test_a" value="{{ result.test_a }}" min="0" max="100" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>TEST-2 (100):</label>
+                    <input type="number" name="test_b" value="{{ result.test_b }}" min="0" max="100" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>TEST-3 (100):</label>
+                    <input type="number" name="test_c" value="{{ result.test_c }}" min="0" max="100" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>EXAM (100):</label>
+                    <input type="number" name="exam" value="{{ result.exam }}" min="0" max="100" step="0.01" required>
+                </div>
+                
+                {% if result.term == "Second Term" or result.term == "Third Term" %}
+                <div class="form-group">
+                    <label>LTCUM (100):</label>
+                    <input type="number" name="ltcum" value="{{ result.ltcum|default:0 }}" min="0" max="100" step="0.01">
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label>Position:</label>
+                    <input type="number" name="position" value="{{ result.position_ranking }}" min="1">
+                </div>
+                
+                <button type="submit" class="btn">💾 Save Changes</button>
+                <a href="{% url 'subject_teacher_entry' %}" class="btn btn-back">← Back</a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
