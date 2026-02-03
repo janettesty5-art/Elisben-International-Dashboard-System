@@ -748,7 +748,7 @@ def delete_subject_result(request, student_id, subject_name, term, academic_year
         except Exception as e:
             messages.error(request, f'Error deleting result: {str(e)}')
     
-    # Redirect back to the same page
+    # Redirect back to the same subject/class
     return redirect(f'/make-result/subject-teacher/?class_name={student.class_name}&subject_name={subject_name}&term={term}&academic_year={academic_year}')
 
 
@@ -765,9 +765,9 @@ def edit_subject_result(request, result_id):
     
     if request.method == 'POST':
         try:
-            # ✅ NEW: Allow editing subject name
+            # ✅ Allow editing subject name
             result.subject_name = request.POST.get('subject_name', result.subject_name).upper()
-
+            
             result.test_a = float(request.POST.get('test_a', result.test_a))
             result.test_b = float(request.POST.get('test_b', result.test_b))
             result.test_c = float(request.POST.get('test_c', result.test_c))
