@@ -495,10 +495,16 @@ def make_result_portal(request):
     
     return render(request, 'result/make_result_portal.html')
 
-# ============= REPLACE YOUR subject_teacher_entry VIEW =============
 @login_required
 def subject_teacher_entry(request):
-    from django.db.models import Count, Max  # ✅ Add imports
+    """
+    Subject Teacher Entry - FIXED VERSION
+    - Saves data properly
+    - Redirects back to same class/subject/term after save
+    - Shows saved data immediately
+    - Edit/Delete buttons activate after save
+    """
+    from django.db.models import Count, Max
     
     try:
         teacher = Teacher.objects.get(user=request.user)
@@ -513,8 +519,19 @@ def subject_teacher_entry(request):
             academic_year = request.POST.get('academic_year')
             student_ids = request.POST.getlist('student_id')
             
+            # ✅ Get the class and department for redirect
+            selected_class = None
+            department = ''
+            
+            saved_count = 0
+            
             for student_id in student_ids:
                 student = Student.objects.get(id=student_id)
+                
+                # ✅ Capture class for redirect
+                if not selected_class:
+                    selected_class = student.class_name
+                    department = student.department if hasattr(student, 'department') else ''
                 
                 test_a = float(request.POST.get(f'test_a_{student_id}', 0))
                 test_b = float(request.POST.get(f'test_b_{student_id}', 0))
@@ -528,7 +545,8 @@ def subject_teacher_entry(request):
                 position = request.POST.get(f'position_{student_id}')
                 position_value = int(position) if position and position.strip() else None
                 
-                SubjectResult.objects.update_or_create(
+                # ✅ SAVE THE RESULT
+                result, created = SubjectResult.objects.update_or_create(
                     student=student,
                     subject_name=subject_name,
                     term=term,
@@ -543,21 +561,38 @@ def subject_teacher_entry(request):
                         'entered_by': teacher,
                     }
                 )
+                
+                # ✅ Force recalculation by calling save() again
+                # This ensures all auto-calculated fields are updated
+                result.save()
+                
+                saved_count += 1
             
+            # ✅ LOG ACTIVITY
             ResultActivityLog.objects.create(
                 action='subject_result_entered',
-                description=f'{teacher.full_name} entered {subject_name} results for {term}',
+                description=f'{teacher.full_name} entered {subject_name} results for {saved_count} student(s) in {term}',
                 performed_by_type='teacher',
                 performed_by_name=teacher.full_name
             )
             
-            messages.success(request, f'✅ Results saved for {subject_name}!')
-            return redirect('subject_teacher_entry')
+            messages.success(request, f'✅ Results saved for {saved_count} student(s) in {subject_name}!')
+            
+            # ✅ REDIRECT BACK TO THE SAME PAGE WITH ALL PARAMETERS
+            redirect_url = f'/make-result/subject-teacher/?class_name={selected_class}&subject_name={subject_name}&term={term}&academic_year={academic_year}'
+            
+            if department:
+                redirect_url += f'&department={department}'
+            
+            return redirect(redirect_url)
             
         except Exception as e:
             messages.error(request, f'Error saving results: {str(e)}')
+            import traceback
+            print("SAVE ERROR:", traceback.format_exc())
             return redirect('subject_teacher_entry')
     
+    # ✅ GET REQUEST - SHOW FORM
     from datetime import datetime
     current_year = datetime.now().year
     current_month = datetime.now().month
@@ -566,6 +601,9 @@ def subject_teacher_entry(request):
         academic_year = f"{current_year - 1}/{current_year}"
     else:
         academic_year = f"{current_year}/{current_year + 1}"
+    
+    # ✅ Override with GET parameter if provided
+    academic_year = request.GET.get('academic_year', academic_year)
     
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     selected_class = request.GET.get('class_name')
@@ -576,7 +614,6 @@ def subject_teacher_entry(request):
     
     if selected_class:
         class_upper = selected_class.upper()
-        # ✅ FIXED: More precise check for SS1, SS2, SS3 only
         is_senior_class = (
             class_upper in ['SS1', 'SS2', 'SS3'] or 
             class_upper.startswith('SS1') or 
@@ -597,8 +634,9 @@ def subject_teacher_entry(request):
     
     departments = ['Science', 'Art', 'Commercial']
     
+    # ✅ FETCH EXISTING RESULTS
     existing_results = {}
-    if subject_name and term and selected_class:
+    if subject_name and term and selected_class and students:
         for student in students:
             try:
                 result = SubjectResult.objects.get(
@@ -608,7 +646,12 @@ def subject_teacher_entry(request):
                     academic_year=academic_year
                 )
                 existing_results[student.id] = result
+                
+                # ✅ DEBUG: Print to confirm data exists
+                print(f"✅ Found existing result for {student.full_name}: Test A={result.test_a}, Grade={result.grade}")
+                
             except SubjectResult.DoesNotExist:
+                print(f"❌ No existing result for {student.full_name}")
                 pass
     
     # Get all recorded results by this teacher
@@ -633,6 +676,7 @@ def subject_teacher_entry(request):
         'is_senior_class': is_senior_class,
         'recorded_results': recorded_results,
     }
+    
     return render(request, 'result/subject_teacher_entry.html', context)
 
 
