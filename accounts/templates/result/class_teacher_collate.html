@@ -55,6 +55,19 @@
         .dept-science { background: #e3f2fd; color: #1976d2; }
         .dept-art { background: #fce4ec; color: #c2185b; }
         .dept-commercial { background: #fff3e0; color: #f57c00; }
+        
+        /* ✅ MODAL STYLES */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 30px; border: 1px solid #888; border-radius: 10px; width: 90%; max-width: 500px; text-align: center; }
+        .modal-icon { font-size: 60px; margin-bottom: 20px; }
+        .modal-message { font-size: 20px; font-weight: 600; margin-bottom: 15px; color: #333; }
+        .modal-sub { font-size: 15px; color: #666; margin-bottom: 25px; }
+        .modal-buttons { display: flex; justify-content: center; gap: 15px; }
+        .modal-btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        .modal-btn-yes { background: #e74c3c; color: white; }
+        .modal-btn-yes:hover { background: #c0392b; }
+        .modal-btn-no { background: #95a5a6; color: white; }
+        .modal-btn-no:hover { background: #7f8c8d; }
     </style>
 </head>
 <body>
@@ -83,7 +96,6 @@
                         </select>
                     </div>
                     
-                    <!-- ✅ DEPARTMENT FILTER (Only for SS1-3) -->
                     {% if selected_class and is_senior_class %}
                     <div class="form-group">
                         <label>Department: <span style="color: red;">*</span></label>
@@ -128,7 +140,6 @@
         {% endif %}
         
         <div class="card">
-            <!-- TABS -->
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('unsent')">
                     📋 Unsent Results ({{ unsent_results|length }})
@@ -151,7 +162,7 @@
                                 <th><input type="checkbox" id="select-all-unsent"></th>
                                 <th>#</th>
                                 <th>Student Name</th>
-                                <th>Subjects Entered</th>
+                                <th>Subjects</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -160,13 +171,13 @@
                             {% for item in unsent_results %}
                             <tr>
                                 <td>
-                                    {% if item.result and item.result.status == 'draft' %}
+                                    {% if item.result %}
                                     <input type="checkbox" name="result_ids" value="{{ item.result.id }}" class="result-checkbox-unsent">
                                     {% endif %}
                                 </td>
                                 <td>{{ forloop.counter }}</td>
                                 <td>
-                                    {{ item.student.full_name }}
+                                    <strong>{{ item.student.full_name }}</strong>
                                     {% if item.student.department %}
                                     <span class="dept-badge dept-{{ item.student.department|lower }}">
                                         {{ item.student.department }}
@@ -176,20 +187,20 @@
                                 <td>{{ item.subject_count }} subjects</td>
                                 <td>
                                     {% if item.result %}
-                                        <span class="status-badge status-unsent">📝 UNSENT</span>
+                                        <span class="status-badge status-unsent">📝 READY TO SEND</span>
                                     {% else %}
                                         <span class="status-badge status-unsent">⚠️ NOT STARTED</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if item.result %}
-                                        <!-- ✅ Delete Button -->
-                                        <form method="POST" action="{% url 'delete_student_result' item.result.id %}" style="display: inline;" onsubmit="return confirm('⚠️ Are you sure you want to DELETE this result for {{ item.student.full_name }}? This cannot be undone!');">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-delete" style="font-size: 13px; padding: 8px 15px;">
-                                                🗑️ Delete
-                                            </button>
-                                        </form>
+                                        <!-- ✅ DELETE BUTTON WITH MODAL -->
+                                        <button type="button" class="btn btn-delete delete-result-btn" 
+                                                style="font-size: 13px; padding: 8px 15px;"
+                                                data-result-id="{{ item.result.id }}"
+                                                data-student-name="{{ item.student.full_name }}">
+                                            🗑️ Delete
+                                        </button>
                                         
                                         <a href="{% url 'class_teacher_edit_result' item.result.id %}" class="btn btn-edit" style="font-size: 13px; padding: 8px 15px;">
                                             ✏️ Edit
@@ -240,7 +251,7 @@
                             {% for item in sent_results %}
                             <tr>
                                 <td>
-                                    <input type="checkbox" name="result_ids" value="{{ item.result.id %}" class="result-checkbox-sent">
+                                    <input type="checkbox" name="result_ids" value="{{ item.result.id }}" class="result-checkbox-sent">
                                 </td>
                                 <td>{{ forloop.counter }}</td>
                                 <td>
@@ -296,6 +307,20 @@
         </div>
     </div>
     
+    <!-- ✅ DELETE CONFIRMATION MODAL -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon">⚠️</div>
+            <div class="modal-message">Are you sure you want to delete this result?</div>
+            <div class="modal-sub" id="deleteStudentName"></div>
+            <p style="color: #e74c3c; font-size: 13px; margin-bottom: 20px;">This action cannot be undone!</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-yes" id="confirmDelete">Yes, Delete</button>
+                <button class="modal-btn modal-btn-no" id="cancelDelete">No, Cancel</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         function switchTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -319,6 +344,58 @@
             document.querySelectorAll('.result-checkbox-sent').forEach(cb => {
                 cb.checked = this.checked;
             });
+        });
+        
+        // ✅ DELETE MODAL FUNCTIONALITY
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteStudentName = document.getElementById('deleteStudentName');
+        const confirmDeleteBtn = document.getElementById('confirmDelete');
+        const cancelDeleteBtn = document.getElementById('cancelDelete');
+        
+        let deleteForm = null;
+        
+        document.querySelectorAll('.delete-result-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const resultId = this.dataset.resultId;
+                const studentName = this.dataset.studentName;
+                
+                deleteStudentName.textContent = `Student: ${studentName}`;
+                
+                // Create form for deletion
+                deleteForm = document.createElement('form');
+                deleteForm.method = 'POST';
+                deleteForm.action = `/make-result/class-teacher/delete/${resultId}/`;
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken;
+                deleteForm.appendChild(csrfInput);
+                
+                deleteModal.style.display = 'block';
+            });
+        });
+        
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (deleteForm) {
+                document.body.appendChild(deleteForm);
+                deleteForm.submit();
+            }
+        });
+        
+        cancelDeleteBtn.addEventListener('click', function() {
+            deleteModal.style.display = 'none';
+            deleteForm = null;
+        });
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === deleteModal) {
+                deleteModal.style.display = 'none';
+                deleteForm = null;
+            }
         });
     </script>
 </body>

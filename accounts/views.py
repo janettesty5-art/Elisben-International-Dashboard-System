@@ -1216,37 +1216,82 @@ def class_teacher_start_result(request):
     }
     return render(request, 'result/class_teacher_start_result.html', context)
 
-# UPDATED VERSION of class_teacher_edit_result
+# ============= CLASS TEACHER EDIT RESULT (FULL ACCESS) =============
 @login_required
 def class_teacher_edit_result(request, result_id):
+    """
+    Edit student result - Class Teacher has FULL ACCESS to edit ANY part
+    including subject results that were entered by subject teachers
+    """
     try:
         teacher = Teacher.objects.get(user=request.user)
         result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
-    except Teacher.DoesNotExist:
-        messages.error(request, 'Access denied. Teachers only.')
-        return redirect('unified_login')
-    except StudentResult.DoesNotExist:
-        messages.error(request, 'Result not found or you do not have permission to edit it.')
+    except:
+        messages.error(request, 'Access denied or result not found.')
         return redirect('class_teacher_collate')
-    
-    subject_results = SubjectResult.objects.filter(
-        student=result.student,
-        term=result.term,
-        academic_year=result.academic_year
-    ).order_by('subject_name')
     
     if request.method == 'POST':
         try:
-            # Update all fields
+            # ✅ Get all subject results for this student
+            subject_results = SubjectResult.objects.filter(
+                student=result.student,
+                term=result.term,
+                academic_year=result.academic_year
+            )
+            
+            # ✅ UPDATE SUBJECT RESULTS (Class teacher can edit these!)
+            for subject in subject_results:
+                # Update subject name
+                subject_name_key = f'subject_name_{subject.id}'
+                if subject_name_key in request.POST:
+                    subject.subject_name = request.POST.get(subject_name_key, subject.subject_name).upper()
+                
+                # Update scores
+                test_a_key = f'test_a_{subject.id}'
+                test_b_key = f'test_b_{subject.id}'
+                test_c_key = f'test_c_{subject.id}'
+                exam_key = f'exam_{subject.id}'
+                ltcum_key = f'ltcum_{subject.id}'
+                position_key = f'position_{subject.id}'
+                
+                if test_a_key in request.POST:
+                    subject.test_a = float(request.POST.get(test_a_key, subject.test_a))
+                if test_b_key in request.POST:
+                    subject.test_b = float(request.POST.get(test_b_key, subject.test_b))
+                if test_c_key in request.POST:
+                    subject.test_c = float(request.POST.get(test_c_key, subject.test_c))
+                if exam_key in request.POST:
+                    subject.exam = float(request.POST.get(exam_key, subject.exam))
+                
+                if ltcum_key in request.POST and result.term in ['Second Term', 'Third Term']:
+                    subject.ltcum = float(request.POST.get(ltcum_key, subject.ltcum or 0))
+                
+                if position_key in request.POST:
+                    pos_val = request.POST.get(position_key)
+                    subject.position_ranking = int(pos_val) if pos_val and pos_val.strip() else None
+                
+                # Save will automatically recalculate grades via model's save method
+                subject.save()
+            
+            # ✅ UPDATE ATTENDANCE
             result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
             result.times_present = int(request.POST.get('times_present', result.times_present))
             result.times_absent = int(request.POST.get('times_absent', result.times_absent))
-            result.vacation_date = request.POST.get('vacation_date') or result.vacation_date
-            result.resumption_date = request.POST.get('resumption_date') or result.resumption_date
+            
+            # ✅ UPDATE NEXT TERM INFO
+            from datetime import datetime
+            vac_date = request.POST.get('vacation_date')
+            res_date = request.POST.get('resumption_date')
+            
+            if vac_date:
+                result.vacation_date = datetime.strptime(vac_date, '%Y-%m-%d').date()
+            if res_date:
+                result.resumption_date = datetime.strptime(res_date, '%Y-%m-%d').date()
+            
             result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
             result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
             
-            # Affective domain
+            # ✅ UPDATE AFFECTIVE DOMAIN
             result.affective_punctuality = request.POST.get('aff_punctuality', result.affective_punctuality)
             result.affective_neatness = request.POST.get('aff_neatness', result.affective_neatness)
             result.affective_politeness = request.POST.get('aff_politeness', result.affective_politeness)
@@ -1255,7 +1300,7 @@ def class_teacher_edit_result(request, result_id):
             result.affective_self_control = request.POST.get('aff_self_control', result.affective_self_control)
             result.affective_attentiveness = request.POST.get('aff_attentiveness', result.affective_attentiveness)
             
-            # Psychomotor domain
+            # ✅ UPDATE PSYCHOMOTOR DOMAIN
             result.psycho_handwriting = request.POST.get('psycho_handwriting', result.psycho_handwriting)
             result.psycho_sports = request.POST.get('psycho_sports', result.psycho_sports)
             result.psycho_handling_tools = request.POST.get('psycho_tools', result.psycho_handling_tools)
@@ -1263,25 +1308,71 @@ def class_teacher_edit_result(request, result_id):
             result.psycho_games = request.POST.get('psycho_games', result.psycho_games)
             result.psycho_drawing = request.POST.get('psycho_drawing', result.psycho_drawing)
             
+            # ✅ UPDATE CLASS TEACHER COMMENT
             result.class_teacher_comment = request.POST.get('class_teacher_comment', result.class_teacher_comment)
             
-            # Recalculate totals
-            result.total_subjects = subject_results.count()
-            result.score_gained = sum([sr.avg_2 for sr in subject_results])
+            # ✅ RECALCULATE OVERALL STATISTICS
+            subject_results_fresh = SubjectResult.objects.filter(
+                student=result.student,
+                term=result.term,
+                academic_year=result.academic_year
+            )
+            
+            result.total_subjects = subject_results_fresh.count()
+            result.score_gained = sum(float(sr.cum) for sr in subject_results_fresh)
             result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
-            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
+            
+            # Calculate position in class
+            class_students = Student.objects.filter(class_name=result.class_name)
+            results_in_class = StudentResult.objects.filter(
+                term=result.term,
+                academic_year=result.academic_year,
+                class_name=result.class_name
+            ).order_by('-average_score')
+            
+            position = 1
+            for idx, r in enumerate(results_in_class, 1):
+                if r.id == result.id:
+                    position = idx
+                    break
+            
+            result.position_in_class = f"{position}/{results_in_class.count()}"
+            
+            # Determine promotion status
+            if result.average_score >= 50:
+                result.status_promotion = "PROMOTED"
+            else:
+                result.status_promotion = "REPEAT"
             
             result.save()
             
-            messages.success(request, 'Result updated successfully!')
+            # ✅ LOG ACTIVITY
+            ResultActivityLog.objects.create(
+                action='result_edited',
+                description=f'Class teacher {teacher.full_name} edited full result for {result.student.full_name} (including subject scores)',
+                performed_by_type='class_teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            messages.success(request, f'✅ Result updated successfully for {result.student.full_name}! All changes saved.')
             return redirect('class_teacher_collate')
+            
         except Exception as e:
             messages.error(request, f'Error updating result: {str(e)}')
+            import traceback
+            print("ERROR:", traceback.format_exc())
+    
+    # GET request - show form
+    subject_results = SubjectResult.objects.filter(
+        student=result.student,
+        term=result.term,
+        academic_year=result.academic_year
+    ).order_by('subject_name')
     
     context = {
+        'teacher': teacher,
         'result': result,
         'subject_results': subject_results,
-        'teacher': teacher,
     }
     return render(request, 'result/edit_result.html', context)
 

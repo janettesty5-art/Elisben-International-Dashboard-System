@@ -9,10 +9,20 @@
         .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
         .card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; }
-        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; }
-        .btn { padding: 12px 30px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px; text-decoration: none; display: inline-block; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+        input:focus, select:focus { outline: none; border-color: #2ecc71; }
+        input.readonly { background: #e8f5e9; }
+        .btn { padding: 12px 30px; background: #2ecc71; color: white; border: none; border-radius: 8px; cursor: pointer; margin-right: 10px; text-decoration: none; display: inline-block; font-size: 16px; }
         .btn-back { background: #95a5a6; }
+        .btn:hover { background: #27ae60; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
+        .info-box { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2ecc71; }
+        .score-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .section-title { background: #2ecc71; color: white; padding: 12px 20px; border-radius: 8px; margin: 30px 0 20px 0; font-size: 18px; }
+        #subject-input { text-transform: uppercase !important; }
     </style>
 </head>
 <body>
@@ -22,53 +32,219 @@
     
     <div class="container">
         <div class="card">
-            <h2>{{ result.student.full_name }} - {{ result.subject_name }}</h2>
-            <p style="color: #666; margin-bottom: 20px;">{{ result.term }} {{ result.academic_year }}</p>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-success">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
             
-            <form method="POST">
+            <div class="alert-warning" style="padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>⚠️ Full Edit Mode:</strong> You can edit ANY field in this result including subject name, all scores, and position. All auto-calculated fields (AVG-1, AVG-2, CUM, GRADE, REMARK) will update automatically based on your changes.
+            </div>
+            
+            <div class="info-box">
+                <h3 style="margin-bottom: 10px; color: #2ecc71;">📝 Student Information</h3>
+                <p><strong>Student:</strong> {{ result.student.full_name }}</p>
+                <p><strong>Class:</strong> {{ result.student.class_name }}</p>
+                <p><strong>Term:</strong> {{ result.term }}</p>
+                <p><strong>Academic Year:</strong> {{ result.academic_year }}</p>
+            </div>
+            
+            <form method="POST" id="editForm">
                 {% csrf_token %}
-
-                 <div class="form-group">
-        <label>Subject Name:</label>
-        <input type="text" name="subject_name" value="{{ result.subject_name }}" required style="text-transform: uppercase;">
-        </div>
+                
+                <div class="section-title">📚 Subject Information</div>
                 
                 <div class="form-group">
-                    <label>TEST-1 (100):</label>
-                    <input type="number" name="test_a" value="{{ result.test_a }}" min="0" max="100" step="0.01" required>
+                    <label>Subject Name: <span style="color: red;">*</span></label>
+                    <input type="text" name="subject_name" id="subject-input" value="{{ result.subject_name }}" required style="text-transform: uppercase;">
+                    <small style="color: #666;">You can change the subject name if needed</small>
                 </div>
                 
-                <div class="form-group">
-                    <label>TEST-2 (100):</label>
-                    <input type="number" name="test_b" value="{{ result.test_b }}" min="0" max="100" step="0.01" required>
+                <div class="section-title">📊 Test Scores (Each out of 100)</div>
+                
+                <div class="score-grid">
+                    <div class="form-group">
+                        <label>TEST-1 (100): <span style="color: red;">*</span></label>
+                        <input type="number" name="test_a" id="test_a" value="{{ result.test_a }}" min="0" max="100" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>TEST-2 (100): <span style="color: red;">*</span></label>
+                        <input type="number" name="test_b" id="test_b" value="{{ result.test_b }}" min="0" max="100" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>TEST-3 (100): <span style="color: red;">*</span></label>
+                        <input type="number" name="test_c" id="test_c" value="{{ result.test_c }}" min="0" max="100" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>AVG-1 (Auto-Calculated):</label>
+                        <input type="text" id="avg1_display" class="readonly" readonly value="{{ result.avg_1|floatformat:2 }}">
+                        <small style="color: #666;">Average of TEST-1, TEST-2, TEST-3</small>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>TEST-3 (100):</label>
-                    <input type="number" name="test_c" value="{{ result.test_c }}" min="0" max="100" step="0.01" required>
-                </div>
+                <div class="section-title">📝 Exam Score</div>
                 
-                <div class="form-group">
-                    <label>EXAM (100):</label>
-                    <input type="number" name="exam" value="{{ result.exam }}" min="0" max="100" step="0.01" required>
+                <div class="score-grid">
+                    <div class="form-group">
+                        <label>EXAM (100): <span style="color: red;">*</span></label>
+                        <input type="number" name="exam" id="exam" value="{{ result.exam }}" min="0" max="100" step="0.01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>AVG-2 (Auto-Calculated):</label>
+                        <input type="text" id="avg2_display" class="readonly" readonly value="{{ result.avg_2|floatformat:2 }}">
+                        <small style="color: #666;">(AVG-1 + EXAM) / 2</small>
+                    </div>
                 </div>
                 
                 {% if result.term == "Second Term" or result.term == "Third Term" %}
+                <div class="section-title">📈 Previous Term Score (LTCUM)</div>
+                
+                <div class="score-grid">
+                    <div class="form-group">
+                        <label>LTCUM (100):</label>
+                        <input type="number" name="ltcum" id="ltcum" value="{{ result.ltcum|default:0 }}" min="0" max="100" step="0.01">
+                        <small style="color: #666;">Last Term Cumulative (Optional for {{ result.term }})</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>CUM (Auto-Calculated):</label>
+                        <input type="text" id="cum_display" class="readonly" readonly value="{{ result.cum|floatformat:2 }}">
+                        <small style="color: #666;">{% if result.ltcum and result.ltcum > 0 %}(AVG-2 + LTCUM) / 2{% else %}Same as AVG-2{% endif %}</small>
+                    </div>
+                </div>
+                {% else %}
+                <div class="section-title">📈 Cumulative Score</div>
+                
                 <div class="form-group">
-                    <label>LTCUM (100):</label>
-                    <input type="number" name="ltcum" value="{{ result.ltcum|default:0 }}" min="0" max="100" step="0.01">
+                    <label>CUM (Auto-Calculated):</label>
+                    <input type="text" id="cum_display" class="readonly" readonly value="{{ result.cum|floatformat:2 }}">
+                    <small style="color: #666;">For First Term, CUM equals AVG-2</small>
                 </div>
                 {% endif %}
                 
-                <div class="form-group">
-                    <label>Position:</label>
-                    <input type="number" name="position" value="{{ result.position_ranking }}" min="1">
+                <div class="section-title">🏆 Grade & Position</div>
+                
+                <div class="score-grid">
+                    <div class="form-group">
+                        <label>GRADE (Auto-Calculated):</label>
+                        <input type="text" id="grade_display" class="readonly" readonly value="{{ result.grade }}">
+                        <small style="color: #666;">Calculated based on CUM score</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>REMARK (Auto-Calculated):</label>
+                        <input type="text" id="remark_display" class="readonly" readonly value="{{ result.grade_remark }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Position Ranking:</label>
+                        <input type="number" name="position" value="{{ result.position_ranking }}" min="1" placeholder="e.g., 1, 2, 3...">
+                        <small style="color: #666;">Student's position in subject (Optional)</small>
+                    </div>
                 </div>
                 
-                <button type="submit" class="btn">💾 Save Changes</button>
-                <a href="{% url 'subject_teacher_entry' %}" class="btn btn-back">← Back</a>
+                <div class="info-box" style="margin-top: 30px; background: #fff3cd; border-left-color: #ffc107;">
+                    <h4 style="color: #856404; margin-bottom: 10px;">📊 Grading Scale:</h4>
+                    <p style="font-size: 13px; color: #666; line-height: 1.8;">
+                        70-100 = A (EXCELLENT) | 60-69 = B (VERY GOOD) | 50-59 = C (GOOD)<br>
+                        45-49 = D (PASS) | 40-44 = E (POOR) | 0-39 = F (FAIL)
+                    </p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd;">
+                    <button type="submit" class="btn">💾 Save Changes</button>
+                    <a href="{% url 'subject_teacher_entry' %}" class="btn btn-back">← Cancel</a>
+                </div>
             </form>
         </div>
     </div>
+    
+    <script>
+        // ✅ AUTO-UPPERCASE SUBJECT NAME
+        document.getElementById('subject-input').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+        });
+        
+        // ✅ REAL-TIME AUTO-CALCULATION
+        const testA = document.getElementById('test_a');
+        const testB = document.getElementById('test_b');
+        const testC = document.getElementById('test_c');
+        const exam = document.getElementById('exam');
+        const ltcum = document.getElementById('ltcum');
+        const avg1Display = document.getElementById('avg1_display');
+        const avg2Display = document.getElementById('avg2_display');
+        const cumDisplay = document.getElementById('cum_display');
+        const gradeDisplay = document.getElementById('grade_display');
+        const remarkDisplay = document.getElementById('remark_display');
+        
+        const isTerm2or3 = {{ result.term|lower == "second term" or result.term|lower == "third term"|yesno:"true,false" }};
+        
+        function calculate() {
+            const a = parseFloat(testA.value) || 0;
+            const b = parseFloat(testB.value) || 0;
+            const c = parseFloat(testC.value) || 0;
+            const e = parseFloat(exam.value) || 0;
+            const l = ltcum ? (parseFloat(ltcum.value) || 0) : 0;
+            
+            // AVG-1: Average of 3 tests
+            const avg1 = (a + b + c) / 3;
+            avg1Display.value = avg1.toFixed(2);
+            
+            // AVG-2: Average of AVG-1 and Exam
+            const avg2 = (avg1 + e) / 2;
+            avg2Display.value = avg2.toFixed(2);
+            
+            // CUM: Calculate based on term and LTCUM
+            let cum;
+            if (isTerm2or3 && l > 0) {
+                cum = (avg2 + l) / 2;
+            } else {
+                cum = avg2;
+            }
+            cumDisplay.value = cum.toFixed(2);
+            
+            // Determine grade based on CUM
+            let grade, remark;
+            if (cum >= 70) {
+                grade = 'A';
+                remark = 'EXCELLENT';
+            } else if (cum >= 60) {
+                grade = 'B';
+                remark = 'VERY GOOD';
+            } else if (cum >= 50) {
+                grade = 'C';
+                remark = 'GOOD';
+            } else if (cum >= 45) {
+                grade = 'D';
+                remark = 'PASS';
+            } else if (cum >= 40) {
+                grade = 'E';
+                remark = 'POOR';
+            } else {
+                grade = 'F';
+                remark = 'FAIL';
+            }
+            
+            gradeDisplay.value = grade;
+            remarkDisplay.value = remark;
+        }
+        
+        // Add event listeners to all input fields
+        testA.addEventListener('input', calculate);
+        testB.addEventListener('input', calculate);
+        testC.addEventListener('input', calculate);
+        exam.addEventListener('input', calculate);
+        if (ltcum) {
+            ltcum.addEventListener('input', calculate);
+        }
+        
+        // Calculate on page load
+        calculate();
+    </script>
 </body>
 </html>
