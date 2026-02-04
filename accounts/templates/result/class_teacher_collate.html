@@ -240,7 +240,7 @@
                             {% for item in sent_results %}
                             <tr>
                                 <td>
-                                    <input type="checkbox" name="result_ids" value="{{ item.result.id }}" class="result-checkbox-sent">
+                                    <input type="checkbox" name="result_ids" value="{{ item.result.id %}" class="result-checkbox-sent">
                                 </td>
                                 <td>{{ forloop.counter }}</td>
                                 <td>
