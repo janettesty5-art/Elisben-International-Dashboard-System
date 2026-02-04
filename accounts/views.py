@@ -498,11 +498,11 @@ def make_result_portal(request):
 @login_required
 def subject_teacher_entry(request):
     """
-    Subject Teacher Entry - FIXED VERSION
-    - Saves data properly
-    - Redirects back to same class/subject/term after save
-    - Shows saved data immediately
-    - Edit/Delete buttons activate after save
+    Subject Teacher Entry - COMPLETELY FIXED VERSION
+    - Only saves students where data was actually entered
+    - Shows students only after subject name is entered
+    - Data persists properly
+    - Edit/Delete buttons work immediately
     """
     from django.db.models import Count, Max
     
@@ -524,6 +524,7 @@ def subject_teacher_entry(request):
             department = ''
             
             saved_count = 0
+            skipped_count = 0
             
             for student_id in student_ids:
                 student = Student.objects.get(id=student_id)
@@ -533,10 +534,17 @@ def subject_teacher_entry(request):
                     selected_class = student.class_name
                     department = student.department if hasattr(student, 'department') else ''
                 
+                # ✅ GET THE SCORES
                 test_a = float(request.POST.get(f'test_a_{student_id}', 0))
                 test_b = float(request.POST.get(f'test_b_{student_id}', 0))
                 test_c = float(request.POST.get(f'test_c_{student_id}', 0))
                 exam = float(request.POST.get(f'exam_{student_id}', 0))
+                
+                # ✅ CRITICAL FIX: Only save if at least ONE score is greater than 0
+                # This prevents saving empty/zero records for all students
+                if test_a == 0 and test_b == 0 and test_c == 0 and exam == 0:
+                    skipped_count += 1
+                    continue  # Skip this student - no data entered
                 
                 ltcum = 0
                 if term in ['Second Term', 'Third Term']:
@@ -545,7 +553,7 @@ def subject_teacher_entry(request):
                 position = request.POST.get(f'position_{student_id}')
                 position_value = int(position) if position and position.strip() else None
                 
-                # ✅ SAVE THE RESULT
+                # ✅ SAVE THE RESULT (only for students with actual data)
                 result, created = SubjectResult.objects.update_or_create(
                     student=student,
                     subject_name=subject_name,
@@ -562,21 +570,27 @@ def subject_teacher_entry(request):
                     }
                 )
                 
-                # ✅ Force recalculation by calling save() again
-                # This ensures all auto-calculated fields are updated
+                # ✅ Force recalculation to ensure accuracy
                 result.save()
                 
                 saved_count += 1
+                
+                # ✅ DEBUG LOG
+                print(f"✅ SAVED: {student.full_name} - Test A: {test_a}, Grade: {result.grade}")
             
             # ✅ LOG ACTIVITY
             ResultActivityLog.objects.create(
                 action='subject_result_entered',
-                description=f'{teacher.full_name} entered {subject_name} results for {saved_count} student(s) in {term}',
+                description=f'{teacher.full_name} entered {subject_name} results for {saved_count} student(s) in {term} (Skipped {skipped_count} empty records)',
                 performed_by_type='teacher',
                 performed_by_name=teacher.full_name
             )
             
-            messages.success(request, f'✅ Results saved for {saved_count} student(s) in {subject_name}!')
+            # ✅ BETTER SUCCESS MESSAGE
+            if saved_count > 0:
+                messages.success(request, f'✅ Results saved for {saved_count} student(s) in {subject_name}!')
+            else:
+                messages.warning(request, f'⚠️ No results saved. Please enter at least one score for at least one student.')
             
             # ✅ REDIRECT BACK TO THE SAME PAGE WITH ALL PARAMETERS
             redirect_url = f'/make-result/subject-teacher/?class_name={selected_class}&subject_name={subject_name}&term={term}&academic_year={academic_year}'
@@ -608,11 +622,14 @@ def subject_teacher_entry(request):
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     selected_class = request.GET.get('class_name')
     department = request.GET.get('department', '')
+    subject_name = request.GET.get('subject_name', '').upper()
+    term = request.GET.get('term', 'First Term')
     
     students = []
     is_senior_class = False
     
-    if selected_class:
+    # ✅ CRITICAL FIX: Only load students if BOTH class AND subject are selected
+    if selected_class and subject_name:  # Must have BOTH!
         class_upper = selected_class.upper()
         is_senior_class = (
             class_upper in ['SS1', 'SS2', 'SS3'] or 
@@ -629,9 +646,6 @@ def subject_teacher_entry(request):
         elif not is_senior_class:
             students = Student.objects.filter(class_name=selected_class).order_by('full_name')
     
-    subject_name = request.GET.get('subject_name', '').upper()
-    term = request.GET.get('term', 'First Term')
-    
     departments = ['Science', 'Art', 'Commercial']
     
     # ✅ FETCH EXISTING RESULTS
@@ -647,11 +661,10 @@ def subject_teacher_entry(request):
                 )
                 existing_results[student.id] = result
                 
-                # ✅ DEBUG: Print to confirm data exists
-                print(f"✅ Found existing result for {student.full_name}: Test A={result.test_a}, Grade={result.grade}")
+                # ✅ DEBUG: Confirm data exists
+                print(f"✅ LOADED: {student.full_name} - Test A: {result.test_a}, Grade: {result.grade}")
                 
             except SubjectResult.DoesNotExist:
-                print(f"❌ No existing result for {student.full_name}")
                 pass
     
     # Get all recorded results by this teacher

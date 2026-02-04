@@ -35,6 +35,7 @@
         .dept-section { background: #fff8e1; border: 2px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .dept-section h3 { color: #f57c00; margin-bottom: 10px; }
         input[type="text"]#subject-input { text-transform: uppercase !important; }
+        .required { color: red; }
         
         /* Modal Styles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
@@ -58,7 +59,9 @@
     <div class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-success">{{ message }}</div>
+                <div class="alert {% if 'warning' in message.tags %}alert-warning{% else %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
             {% endfor %}
         {% endif %}
         
@@ -67,8 +70,8 @@
             <form method="GET">
                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
                     <div class="form-group">
-                        <label>Select Class:</label>
-                        <select name="class_name" required onchange="this.form.submit()">
+                        <label>Select Class: <span class="required">*</span></label>
+                        <select name="class_name" required>
                             <option value="">-- Select Class --</option>
                             {% for class in classes %}
                             <option value="{{ class }}" {% if class == selected_class %}selected{% endif %}>{{ class }}</option>
@@ -79,8 +82,8 @@
                     <!-- ✅ DEPARTMENT FILTER (Only for SS1-3) -->
                     {% if selected_class and is_senior_class %}
                     <div class="form-group">
-                        <label>Department: <span style="color: red;">*</span></label>
-                        <select name="department" required onchange="this.form.submit()">
+                        <label>Department: <span class="required">*</span></label>
+                        <select name="department" required>
                             <option value="">-- Select Department --</option>
                             {% for dept in departments %}
                             <option value="{{ dept }}" {% if dept == department %}selected{% endif %}>{{ dept }}</option>
@@ -90,13 +93,13 @@
                     {% endif %}
                     
                     <div class="form-group">
-                        <label>Subject Name:</label>
+                        <label>Subject Name: <span class="required">*</span></label>
                         <input type="text" name="subject_name" id="subject-input" value="{{ subject_name }}" 
                                placeholder="e.g., ENGLISH LANGUAGE" required 
                                style="text-transform: uppercase;">
                     </div>
                     <div class="form-group">
-                        <label>Select Term:</label>
+                        <label>Select Term: <span class="required">*</span></label>
                         <select name="term" required>
                             <option value="First Term" {% if term == "First Term" %}selected{% endif %}>First Term</option>
                             <option value="Second Term" {% if term == "Second Term" %}selected{% endif %}>Second Term</option>
@@ -116,6 +119,12 @@
                 ⚠️ <strong>Please select a department</strong> to view students for this senior class ({{ selected_class }}).
             </div>
             {% endif %}
+            
+            {% if selected_class and not subject_name %}
+            <div class="alert alert-warning" style="margin-top: 20px;">
+                ⚠️ <strong>Please enter the subject name</strong> before loading students.
+            </div>
+            {% endif %}
         </div>
         
         {% if students %}
@@ -128,6 +137,11 @@
             {% endif %}
             
             <h2>Step 2: Enter Results for {{ selected_class }}{% if department %} - {{ department }}{% endif %} - {{ subject_name }} ({{ term }})</h2>
+            
+            <div class="alert alert-warning" style="margin-bottom: 20px;">
+                <strong>💡 TIP:</strong> Only students with actual scores entered will be saved. Students with all zeros will be skipped automatically.
+            </div>
+            
             <form method="POST">
                 {% csrf_token %}
                 <input type="hidden" name="subject_name" value="{{ subject_name }}">
@@ -167,17 +181,17 @@
                             <td>
                                 <input type="number" name="test_a_{{ student.id }}" class="test-input"
                                        value="{% if existing %}{{ existing.test_a }}{% else %}0{% endif %}" 
-                                       min="0" max="100" step="0.01" required>
+                                       min="0" max="100" step="0.01">
                             </td>
                             <td>
                                 <input type="number" name="test_b_{{ student.id }}" class="test-input"
                                        value="{% if existing %}{{ existing.test_b }}{% else %}0{% endif %}" 
-                                       min="0" max="100" step="0.01" required>
+                                       min="0" max="100" step="0.01">
                             </td>
                             <td>
                                 <input type="number" name="test_c_{{ student.id }}" class="test-input"
                                        value="{% if existing %}{{ existing.test_c }}{% else %}0{% endif %}" 
-                                       min="0" max="100" step="0.01" required>
+                                       min="0" max="100" step="0.01">
                             </td>
                             <td>
                                 <input type="text" class="avg1-display readonly" readonly 
@@ -186,7 +200,7 @@
                             <td>
                                 <input type="number" name="exam_{{ student.id }}" class="exam-input"
                                        value="{% if existing %}{{ existing.exam }}{% else %}0{% endif %}" 
-                                       min="0" max="100" step="0.01" required>
+                                       min="0" max="100" step="0.01">
                             </td>
                             <td>
                                 <input type="text" class="avg2-display readonly" readonly 
@@ -217,7 +231,7 @@
                                        value="{% if existing %}{{ existing.grade_remark }}{% endif %}">
                             </td>
                             <td>
-                                <!-- ✅ ALWAYS SHOW BUTTONS - Enable/Disable based on data existence -->
+                                <!-- ✅ ALWAYS SHOW BUTTONS -->
                                 <button type="button" class="btn-delete" 
                                         data-student-id="{{ student.id }}"
                                         data-student-name="{{ student.full_name }}"
@@ -294,7 +308,6 @@
             const cumDisplay = row.querySelector('.cum-display');
             const gradeDisplay = row.querySelector('.grade-display');
             const remarkDisplay = row.querySelector('.remark-display');
-            const deleteBtn = row.querySelector('.btn-delete');
             
             function calculate() {
                 const testA = parseFloat(testInputs[0].value) || 0;
@@ -365,7 +378,6 @@
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 
-                // Check if button is disabled (no data)
                 if (this.disabled) {
                     noDataModal.style.display = 'block';
                     return;
@@ -379,7 +391,6 @@
                 
                 deleteDetails.textContent = `Student: ${studentName} | Subject: ${subject}`;
                 
-                // Create a form for deletion
                 deleteForm = document.createElement('form');
                 deleteForm.method = 'POST';
                 deleteForm.action = `/make-result/subject-teacher/delete/${studentId}/${encodeURIComponent(subject)}/${encodeURIComponent(term)}/${encodeURIComponent(year)}/`;
@@ -411,7 +422,6 @@
             noDataModal.style.display = 'none';
         });
         
-        // Close modals when clicking outside
         window.addEventListener('click', function(e) {
             if (e.target === deleteModal) {
                 deleteModal.style.display = 'none';
