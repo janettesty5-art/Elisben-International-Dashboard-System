@@ -1273,12 +1273,15 @@ def class_teacher_start_result(request):
     }
     return render(request, 'result/class_teacher_start_result.html', context)
 
-# ============= CLASS TEACHER EDIT RESULT (FULL ACCESS) =============
 @login_required
 def class_teacher_edit_result(request, result_id):
     """
-    Edit student result - Class Teacher has FULL ACCESS to edit ANY part
-    including subject results that were entered by subject teachers
+    COMPLETE Class Teacher Edit Result View
+    - Full editing access to ALL fields
+    - Can add new subject records
+    - Can delete existing subject records
+    - Real-time auto-calculations
+    - Dropdown comments
     """
     try:
         teacher = Teacher.objects.get(user=request.user)
@@ -1289,46 +1292,95 @@ def class_teacher_edit_result(request, result_id):
     
     if request.method == 'POST':
         try:
-            # ✅ Get all subject results for this student
-            subject_results = SubjectResult.objects.filter(
-                student=result.student,
-                term=result.term,
-                academic_year=result.academic_year
-            )
+            # ✅ HANDLE SUBJECT DELETIONS
+            delete_subject_ids = request.POST.getlist('delete_subject_id')
+            for subject_id in delete_subject_ids:
+                try:
+                    SubjectResult.objects.get(id=subject_id).delete()
+                except:
+                    pass
             
-            # ✅ UPDATE SUBJECT RESULTS (Class teacher can edit these!)
-            for subject in subject_results:
-                # Update subject name
-                subject_name_key = f'subject_name_{subject.id}'
-                if subject_name_key in request.POST:
-                    subject.subject_name = request.POST.get(subject_name_key, subject.subject_name).upper()
+            # ✅ UPDATE EXISTING SUBJECT RESULTS
+            existing_subject_ids = request.POST.getlist('existing_subject_id')
+            for subject_id in existing_subject_ids:
+                try:
+                    subject = SubjectResult.objects.get(id=subject_id)
+                    
+                    # Update subject name
+                    subject_name_key = f'subject_name_{subject_id}'
+                    if subject_name_key in request.POST:
+                        subject.subject_name = request.POST.get(subject_name_key, subject.subject_name).upper()
+                    
+                    # Update scores
+                    test_a_key = f'test_a_{subject_id}'
+                    test_b_key = f'test_b_{subject_id}'
+                    test_c_key = f'test_c_{subject_id}'
+                    exam_key = f'exam_{subject_id}'
+                    ltcum_key = f'ltcum_{subject_id}'
+                    position_key = f'position_{subject_id}'
+                    
+                    if test_a_key in request.POST:
+                        subject.test_a = float(request.POST.get(test_a_key, subject.test_a))
+                    if test_b_key in request.POST:
+                        subject.test_b = float(request.POST.get(test_b_key, subject.test_b))
+                    if test_c_key in request.POST:
+                        subject.test_c = float(request.POST.get(test_c_key, subject.test_c))
+                    if exam_key in request.POST:
+                        subject.exam = float(request.POST.get(exam_key, subject.exam))
+                    
+                    if ltcum_key in request.POST and result.term in ['Second Term', 'Third Term']:
+                        subject.ltcum = float(request.POST.get(ltcum_key, subject.ltcum or 0))
+                    
+                    if position_key in request.POST:
+                        pos_val = request.POST.get(position_key)
+                        subject.position_ranking = int(pos_val) if pos_val and pos_val.strip() else None
+                    
+                    # Save (auto-calculates grades)
+                    subject.save()
+                except Exception as e:
+                    print(f"Error updating subject {subject_id}: {e}")
+                    continue
+            
+            # ✅ ADD NEW SUBJECT RECORDS
+            # Find all new subject entries
+            post_keys = list(request.POST.keys())
+            new_subject_numbers = set()
+            for key in post_keys:
+                if key.startswith('new_subject_name_'):
+                    num = key.replace('new_subject_name_', '')
+                    new_subject_numbers.add(num)
+            
+            for num in new_subject_numbers:
+                subject_name = request.POST.get(f'new_subject_name_{num}', '').upper().strip()
+                if not subject_name:
+                    continue  # Skip empty subject names
                 
-                # Update scores
-                test_a_key = f'test_a_{subject.id}'
-                test_b_key = f'test_b_{subject.id}'
-                test_c_key = f'test_c_{subject.id}'
-                exam_key = f'exam_{subject.id}'
-                ltcum_key = f'ltcum_{subject.id}'
-                position_key = f'position_{subject.id}'
+                test_a = float(request.POST.get(f'new_test_a_{num}', 0))
+                test_b = float(request.POST.get(f'new_test_b_{num}', 0))
+                test_c = float(request.POST.get(f'new_test_c_{num}', 0))
+                exam = float(request.POST.get(f'new_exam_{num}', 0))
                 
-                if test_a_key in request.POST:
-                    subject.test_a = float(request.POST.get(test_a_key, subject.test_a))
-                if test_b_key in request.POST:
-                    subject.test_b = float(request.POST.get(test_b_key, subject.test_b))
-                if test_c_key in request.POST:
-                    subject.test_c = float(request.POST.get(test_c_key, subject.test_c))
-                if exam_key in request.POST:
-                    subject.exam = float(request.POST.get(exam_key, subject.exam))
+                ltcum = 0
+                if result.term in ['Second Term', 'Third Term']:
+                    ltcum = float(request.POST.get(f'new_ltcum_{num}', 0))
                 
-                if ltcum_key in request.POST and result.term in ['Second Term', 'Third Term']:
-                    subject.ltcum = float(request.POST.get(ltcum_key, subject.ltcum or 0))
+                position = request.POST.get(f'new_position_{num}')
+                position_value = int(position) if position and position.strip() else None
                 
-                if position_key in request.POST:
-                    pos_val = request.POST.get(position_key)
-                    subject.position_ranking = int(pos_val) if pos_val and pos_val.strip() else None
-                
-                # Save will automatically recalculate grades via model's save method
-                subject.save()
+                # Create new subject result
+                SubjectResult.objects.create(
+                    student=result.student,
+                    subject_name=subject_name,
+                    term=result.term,
+                    academic_year=result.academic_year,
+                    test_a=test_a,
+                    test_b=test_b,
+                    test_c=test_c,
+                    exam=exam,
+                    ltcum=ltcum if result.term in ['Second Term', 'Third Term'] else None,
+                    position_ranking=position_value,
+                    entered_by=teacher,
+                )
             
             # ✅ UPDATE ATTENDANCE
             result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
@@ -1406,7 +1458,7 @@ def class_teacher_edit_result(request, result_id):
             # ✅ LOG ACTIVITY
             ResultActivityLog.objects.create(
                 action='result_edited',
-                description=f'Class teacher {teacher.full_name} edited full result for {result.student.full_name} (including subject scores)',
+                description=f'Class teacher {teacher.full_name} edited complete result for {result.student.full_name} (including subject modifications)',
                 performed_by_type='class_teacher',
                 performed_by_name=teacher.full_name
             )

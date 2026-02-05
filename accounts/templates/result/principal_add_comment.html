@@ -18,8 +18,9 @@
         .info-value { font-size: 18px; font-weight: 600; color: #333; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
-        textarea { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; resize: vertical; min-height: 120px; font-family: Arial, sans-serif; }
-        textarea:focus { outline: none; border-color: #8e44ad; }
+        select, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+        select:focus, textarea:focus { outline: none; border-color: #8e44ad; }
+        textarea { resize: vertical; min-height: 120px; font-family: Arial, sans-serif; }
         .btn { padding: 12px 30px; background: #8e44ad; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; text-decoration: none; display: inline-block; margin-right: 10px; }
         .btn:hover { background: #663399; }
         .btn-back { background: #95a5a6; }
@@ -29,6 +30,7 @@
         .comment-box { background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 20px; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
+        .comment-dropdown { margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -100,7 +102,7 @@
                         <td>{{ subject.test_b|floatformat:0 }}</td>
                         <td>{{ subject.test_c|floatformat:0 }}</td>
                         <td>{{ subject.exam|floatformat:0 }}</td>
-                        <td><strong>{{ subject.avg_2|floatformat:2 }}</strong></td>
+                        <td><strong>{{ subject.cum|floatformat:2 }}</strong></td>
                         <td><strong>{{ subject.grade }}</strong></td>
                         <td>{{ subject.grade_remark }}</td>
                     </tr>
@@ -118,14 +120,52 @@
             </div>
         </div>
         
-        <!-- Principal's Comment Form -->
+        <!-- Principal's Comment Form with DROPDOWN -->
         <div class="card">
             <div class="section-title">👔 Principal's Comment</div>
             <form method="POST">
                 {% csrf_token %}
+                
                 <div class="form-group">
-                    <label>Your Comment as Principal:</label>
-                    <textarea name="principal_comment" required placeholder="Enter your comment about this student's overall performance...">{{ result.principal_comment }}</textarea>
+                    <label>Quick Select Comment:</label>
+                    <select class="comment-dropdown" id="principalCommentDropdown" onchange="selectPrincipalComment()">
+                        <option value="">-- Select a comment template --</option>
+                        <optgroup label="Excellent Result">
+                            <option value="Exceptional results. A model of excellence.">Exceptional results. A model of excellence.</option>
+                            <option value="Top of the class. Outstanding academic achievement.">Top of the class. Outstanding academic achievement.</option>
+                            <option value="Perfect scores demonstrate mastery. Remarkable.">Perfect scores demonstrate mastery. Remarkable.</option>
+                            <option value="Consistently brilliant performance. Very proud.">Consistently brilliant performance. Very proud.</option>
+                        </optgroup>
+                        <optgroup label="Good Result">
+                            <option value="Very good results. Solid understanding shown.">Very good results. Solid understanding shown.</option>
+                            <option value="Strong performance across all subjects. Well done.">Strong performance across all subjects. Well done.</option>
+                            <option value="Good marks. Shows consistent effort.">Good marks. Shows consistent effort.</option>
+                            <option value="Steady and reliable academic work. Keep it up.">Steady and reliable academic work. Keep it up.</option>
+                        </optgroup>
+                        <optgroup label="Fair/Moderate Result">
+                            <option value="Satisfactory results. There is room for growth.">Satisfactory results. There is room for growth.</option>
+                            <option value="Meets expectations. Focus on improvement.">Meets expectations. Focus on improvement.</option>
+                            <option value="Adequate performance. Let's aim higher.">Adequate performance. Let's aim higher.</option>
+                            <option value="Fair result. Potential is greater than shown.">Fair result. Potential is greater than shown.</option>
+                        </optgroup>
+                        <optgroup label="Poor/Concerning Result">
+                            <option value="Results are concerning. Requires immediate attention.">Results are concerning. Requires immediate attention.</option>
+                            <option value="Performance below grade level. Intervention needed.">Performance below grade level. Intervention needed.</option>
+                            <option value="Significant drop in grades. Please schedule a meeting.">Significant drop in grades. Please schedule a meeting.</option>
+                            <option value="Failing to meet minimum standards. Action plan required.">Failing to meet minimum standards. Action plan required.</option>
+                        </optgroup>
+                        <optgroup label="Failed Result">
+                            <option value="Failed in multiple subjects. Critical review needed.">Failed in multiple subjects. Critical review needed.</option>
+                            <option value="Unsatisfactory results. Mandatory remedial class.">Unsatisfactory results. Mandatory remedial class.</option>
+                            <option value="Failed to achieve passing criteria. Parent conference required.">Failed to achieve passing criteria. Parent conference required.</option>
+                            <option value="Academic failure. Strict monitoring will follow.">Academic failure. Strict monitoring will follow.</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Your Comment as Principal (you can edit):</label>
+                    <textarea name="principal_comment" id="principalCommentTextarea" required placeholder="Enter your comment about this student's overall performance...">{{ result.principal_comment }}</textarea>
                 </div>
                 
                 <div style="text-align: center; margin-top: 30px;">
@@ -135,5 +175,15 @@
             </form>
         </div>
     </div>
+    
+    <script>
+        function selectPrincipalComment() {
+            const dropdown = document.getElementById('principalCommentDropdown');
+            const textarea = document.getElementById('principalCommentTextarea');
+            if (dropdown.value) {
+                textarea.value = dropdown.value;
+            }
+        }
+    </script>
 </body>
 </html>
