@@ -199,7 +199,7 @@ def unified_login(request):
                             'subject_results': subject_results,
                             'published': published_result,
                         }
-                        return render(request, 'student_result_view.html', context)
+                        return render(request, 'result/student_result_view.html', context)
                     except PublishedResult.DoesNotExist:
                         messages.error(request, 'Invalid PIN. Please check your PIN and try again.')
                         return redirect('unified_login')
@@ -233,7 +233,7 @@ def teacher_role_selection(request):
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
     
-    return render(request, 'teacher_role_selection.html', {'teacher': teacher})
+    return render(request, 'result/teacher_role_selection.html', {'teacher': teacher})
 
 # ============= ADMIN VIEWS =============
 @login_required
@@ -493,7 +493,7 @@ def make_result_portal(request):
                 messages.error(request, 'Access denied. Only Teachers, Principals, and Admins can access Make Result.')
                 return redirect('unified_login')
     
-    return render(request, 'make_result_portal.html')
+    return render(request, 'result/make_result_portal.html')
 
 @login_required
 def subject_teacher_entry(request):
@@ -690,7 +690,7 @@ def subject_teacher_entry(request):
         'recorded_results': recorded_results,
     }
     
-    return render(request, 'subject_teacher_entry.html', context)
+    return render(request, 'result/subject_teacher_entry.html', context)
 
 
 def test_subject_teacher(request):
@@ -878,12 +878,11 @@ def edit_subject_result(request, result_id):
     print(f"\n📋 DEBUG: Rendering edit form")
     print(f"📋 DEBUG: Teacher = {teacher.full_name}")
     print(f"📋 DEBUG: Result = {result.subject_name}")
-    
     context = {
         'teacher': teacher,
         'result': result,
     }
-    return render(request, 'edit_subject_result.html', context)
+    return render(request, 'result/edit_subject_result.html', context)
 
 @login_required
 def class_teacher_collate(request):
@@ -983,7 +982,7 @@ def class_teacher_collate(request):
         'is_senior_class': is_senior_class,
     }
     
-    return render(request, 'class_teacher_collate.html', context)
+    return render(request, 'result/class_teacher_collate.html', context)
 
 
 
@@ -1307,7 +1306,7 @@ def class_teacher_start_result(request):
         'academic_year': academic_year,
         'result': None,  # No existing result
     }
-    return render(request, 'class_teacher_start_result.html', context)
+    return render(request, 'result/class_teacher_start_result.html', context)
 
 # ============= CLASS TEACHER EDIT (BULLETPROOF) =============
 @login_required
@@ -1521,7 +1520,7 @@ def class_teacher_edit_result(request, result_id):
         'result': result,
         'subject_results': subject_results,
     }
-    return render(request, 'edit_result.html', context)
+    return render(request, 'result/edit_result.html', context)
     
 
 @login_required
@@ -1654,7 +1653,7 @@ def principal_result_review(request):
         'all_notifications': all_notifications,
         'unread_count': unread_notifications.count(),
     }
-    return render(request, 'principal_review.html', context)
+    return render(request, 'result/principal_review.html', context)
 
 
 # ADD THIS NEW VIEW - Mark notification as read
@@ -1722,7 +1721,7 @@ def principal_add_comment(request, result_id):
         'subject_results': subject_results,
         'principal': principal,
     }
-    return render(request, 'principal_add_comment.html', context)
+    return render(request, 'result/principal_add_comment.html', context)
 
 @login_required
 def send_result_to_admin(request, result_id):
@@ -1834,7 +1833,7 @@ def admin_result_management(request):
         'admin': admin,
         'results_by_class': results_by_class,
     }
-    return render(request, 'admin_management.html', context)
+    return render(request, 'result/admin_management.html', context)
 
 @login_required
 def admin_edit_result(request, result_id):
@@ -1897,7 +1896,7 @@ def admin_edit_result(request, result_id):
         'subject_results': subject_results,
         'admin': admin,
     }
-    return render(request, 'admin_edit_result.html', context)
+    return render(request, 'result/admin_edit_result.html', context)
 
 @login_required
 def admin_add_stamp(request, result_id):
@@ -2021,10 +2020,10 @@ def admin_view_published(request):
         'terms': terms,
         'classes': classes,
     }
-    return render(request, 'admin_published.html', context)
+    return render(request, 'result/admin_published.html', context)
 
 def check_result_portal(request):
-    return render(request, 'check_result_portal.html')
+    return render(request, 'result/check_result_portal.html')
 
 def view_student_result(request):
     if request.method == 'POST':
@@ -2045,7 +2044,7 @@ def view_student_result(request):
                 'subject_results': subject_results,
                 'published': published_result,
             }
-            return render(request, 'student_result_view.html', context)
+            return render(request, 'result/student_result_view.html', context)
             
         except PublishedResult.DoesNotExist:
             messages.error(request, 'Invalid PIN. Please check and try again.')
@@ -2075,7 +2074,7 @@ def print_result(request, result_id):
             'published': published,
             'school_settings': SchoolSettings.objects.first(),
         }
-        return render(request, 'print_result.html', context)
+        return render(request, 'result/print_result.html', context)
         
     except StudentResult.DoesNotExist:
         messages.error(request, 'Result not found.')
