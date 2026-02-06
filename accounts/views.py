@@ -812,44 +812,32 @@ def delete_subject_result(request, student_id, subject_name, term, academic_year
 # ============= SUBJECT TEACHER EDIT (BULLETPROOF) =============
 @login_required
 def edit_subject_result(request, result_id):
-    """Edit a single subject result - Subject Teacher - BULLETPROOF VERSION"""
-    print(f"\n🔍 DEBUG: edit_subject_result called with result_id={result_id}")
-    print(f"🔍 DEBUG: User = {request.user}")
-    
+    """Edit a single subject result - Subject Teacher"""
     try:
         # Get the teacher
         teacher = Teacher.objects.get(user=request.user)
-        print(f"✅ DEBUG: Found teacher = {teacher.full_name}")
     except Teacher.DoesNotExist:
-        print("❌ DEBUG: Teacher not found")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('subject_teacher_entry')
     
     try:
-        # Get the result - TRY WITHOUT entered_by filter first
+        # Get the result
         result = SubjectResult.objects.get(id=result_id)
-        print(f"✅ DEBUG: Found result = {result.subject_name} for {result.student.full_name}")
-        print(f"🔍 DEBUG: Result entered_by = {result.entered_by}")
         
-        # Check if this teacher can edit (either entered by them OR they're class teacher)
-        if result.entered_by != teacher:
-            print(f"⚠️ DEBUG: Teacher {teacher.full_name} did not enter this result")
-            print(f"⚠️ DEBUG: Result was entered by {result.entered_by}")
-            # Allow edit anyway for now - you can add stricter check later
+        # Optional: Check if this teacher can edit
+        # Uncomment the following lines if you want strict permission checking:
+        # if result.entered_by != teacher:
+        #     messages.error(request, 'You can only edit results you entered.')
+        #     return redirect('subject_teacher_entry')
     
     except SubjectResult.DoesNotExist:
-        print(f"❌ DEBUG: SubjectResult with id={result_id} does not exist")
         messages.error(request, 'Result not found.')
         return redirect('subject_teacher_entry')
     except Exception as e:
-        print(f"❌ DEBUG: Unexpected error getting result: {e}")
-        import traceback
-        print(traceback.format_exc())
         messages.error(request, f'Error loading result: {str(e)}')
         return redirect('subject_teacher_entry')
     
     if request.method == 'POST':
-        print("\n📝 DEBUG: Processing POST request")
         try:
             result.subject_name = request.POST.get('subject_name', result.subject_name).upper()
             result.test_a = float(request.POST.get('test_a', result.test_a))
@@ -858,31 +846,41 @@ def edit_subject_result(request, result_id):
             result.exam = float(request.POST.get('exam', result.exam))
             
             if result.term in ['Second Term', 'Third Term']:
-                result.ltcum = float(request.POST.get('ltcum', result.ltcum or 0))
+                ltcum_value = request.POST.get('ltcum', '0')
+                result.ltcum = float(ltcum_value) if ltcum_value else 0
             
             position = request.POST.get('position')
             result.position_ranking = int(position) if position and position.strip() else None
             
             result.save()
-            print(f"✅ DEBUG: Result saved successfully")
             
             messages.success(request, f'✅ Result updated for {result.student.full_name}!')
             return redirect('subject_teacher_entry')
         except Exception as e:
-            print(f"❌ DEBUG: Error saving result: {e}")
-            import traceback
-            print(traceback.format_exc())
             messages.error(request, f'Error updating result: {str(e)}')
     
     # GET request - show the form
-    print(f"\n📋 DEBUG: Rendering edit form")
-    print(f"📋 DEBUG: Teacher = {teacher.full_name}")
-    print(f"📋 DEBUG: Result = {result.subject_name}")
     context = {
         'teacher': teacher,
         'result': result,
     }
-    return render(request, 'result/edit_subject_result.html', context)
+    
+    # Try multiple template paths for compatibility
+    template_paths = [
+        'result/edit_subject_result.html',
+        'edit_subject_result.html',
+        'accounts/templates/result/edit_subject_result.html'
+    ]
+    
+    for template_path in template_paths:
+        try:
+            return render(request, template_path, context)
+        except:
+            continue
+    
+    # If all template paths fail
+    messages.error(request, 'Template not found. Please contact administrator.')
+    return redirect('subject_teacher_entry')
 
 @login_required
 def class_teacher_collate(request):
@@ -1311,58 +1309,43 @@ def class_teacher_start_result(request):
 # ============= CLASS TEACHER EDIT (BULLETPROOF) =============
 @login_required
 def class_teacher_edit_result(request, result_id):
-    """Class Teacher Edit - FULL CONTROL - BULLETPROOF VERSION"""
-    print(f"\n🔍 DEBUG: class_teacher_edit_result called with result_id={result_id}")
-    print(f"🔍 DEBUG: User = {request.user}")
-    
+    """Class Teacher Edit - FULL CONTROL"""
     try:
         # Get the teacher
         teacher = Teacher.objects.get(user=request.user)
-        print(f"✅ DEBUG: Found teacher = {teacher.full_name}")
     except Teacher.DoesNotExist:
-        print("❌ DEBUG: Teacher not found")
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('class_teacher_collate')
     
     try:
-        # Get the result - TRY WITHOUT class_teacher filter first
+        # Get the result
         result = StudentResult.objects.get(id=result_id)
-        print(f"✅ DEBUG: Found result for {result.student.full_name}")
-        print(f"🔍 DEBUG: Result class_teacher = {result.class_teacher}")
         
-        # Check if this teacher can edit
-        if result.class_teacher != teacher:
-            print(f"⚠️ DEBUG: Teacher {teacher.full_name} is not the class teacher")
-            print(f"⚠️ DEBUG: Class teacher is {result.class_teacher}")
-            # Allow edit anyway for now - you can add stricter check later
+        # Optional: Check if this teacher can edit
+        # Uncomment the following lines if you want strict permission checking:
+        # if result.class_teacher != teacher:
+        #     messages.error(request, 'You can only edit results for your class.')
+        #     return redirect('class_teacher_collate')
     
     except StudentResult.DoesNotExist:
-        print(f"❌ DEBUG: StudentResult with id={result_id} does not exist")
         messages.error(request, 'Result not found.')
         return redirect('class_teacher_collate')
     except Exception as e:
-        print(f"❌ DEBUG: Unexpected error getting result: {e}")
-        import traceback
-        print(traceback.format_exc())
         messages.error(request, f'Error loading result: {str(e)}')
         return redirect('class_teacher_collate')
     
     if request.method == 'POST':
-        print("\n📝 DEBUG: Processing POST request")
         try:
             # Handle subject deletions
             delete_subject_ids = request.POST.getlist('delete_subject_id')
-            print(f"🗑️ DEBUG: Deleting {len(delete_subject_ids)} subjects")
             for subject_id in delete_subject_ids:
                 try:
                     SubjectResult.objects.get(id=subject_id).delete()
-                    print(f"✅ DEBUG: Deleted subject {subject_id}")
-                except Exception as e:
-                    print(f"❌ DEBUG: Error deleting subject {subject_id}: {e}")
+                except:
+                    pass
             
             # Update existing subjects
             existing_subject_ids = request.POST.getlist('existing_subject_id')
-            print(f"✏️ DEBUG: Updating {len(existing_subject_ids)} existing subjects")
             for subject_id in existing_subject_ids:
                 try:
                     subject = SubjectResult.objects.get(id=subject_id)
@@ -1374,15 +1357,15 @@ def class_teacher_edit_result(request, result_id):
                     subject.exam = float(request.POST.get(f'exam_{subject_id}', subject.exam))
                     
                     if result.term in ['Second Term', 'Third Term']:
-                        subject.ltcum = float(request.POST.get(f'ltcum_{subject_id}', subject.ltcum or 0))
+                        ltcum_val = request.POST.get(f'ltcum_{subject_id}', '0')
+                        subject.ltcum = float(ltcum_val) if ltcum_val else 0
                     
                     pos_val = request.POST.get(f'position_{subject_id}')
                     subject.position_ranking = int(pos_val) if pos_val and pos_val.strip() else None
                     
                     subject.save()
-                    print(f"✅ DEBUG: Updated subject {subject.subject_name}")
                 except Exception as e:
-                    print(f"❌ DEBUG: Error updating subject {subject_id}: {e}")
+                    messages.warning(request, f'Error updating a subject: {str(e)}')
             
             # Add new subjects
             post_keys = list(request.POST.keys())
@@ -1392,7 +1375,6 @@ def class_teacher_edit_result(request, result_id):
                     num = key.replace('new_subject_name_', '')
                     new_subject_numbers.add(num)
             
-            print(f"➕ DEBUG: Adding {len(new_subject_numbers)} new subjects")
             for num in new_subject_numbers:
                 subject_name = request.POST.get(f'new_subject_name_{num}', '').upper().strip()
                 if not subject_name:
@@ -1410,38 +1392,52 @@ def class_teacher_edit_result(request, result_id):
                 position = request.POST.get(f'new_position_{num}')
                 position_value = int(position) if position and position.strip() else None
                 
-                SubjectResult.objects.create(
-                    student=result.student,
-                    subject_name=subject_name,
-                    term=result.term,
-                    academic_year=result.academic_year,
-                    test_a=test_a,
-                    test_b=test_b,
-                    test_c=test_c,
-                    exam=exam,
-                    ltcum=ltcum if result.term in ['Second Term', 'Third Term'] else None,
-                    position_ranking=position_value,
-                    entered_by=teacher,
-                )
-                print(f"✅ DEBUG: Added new subject {subject_name}")
+                try:
+                    SubjectResult.objects.create(
+                        student=result.student,
+                        subject_name=subject_name,
+                        term=result.term,
+                        academic_year=result.academic_year,
+                        test_a=test_a,
+                        test_b=test_b,
+                        test_c=test_c,
+                        exam=exam,
+                        ltcum=ltcum if result.term in ['Second Term', 'Third Term'] else None,
+                        position_ranking=position_value,
+                        entered_by=teacher,
+                    )
+                except Exception as e:
+                    messages.warning(request, f'Error adding new subject {subject_name}: {str(e)}')
             
             # Update other fields
             result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
             result.times_present = int(request.POST.get('times_present', result.times_present))
             result.times_absent = int(request.POST.get('times_absent', result.times_absent))
             
+            # Update dates
             from datetime import datetime
             vac_date = request.POST.get('vacation_date')
             res_date = request.POST.get('resumption_date')
             
             if vac_date:
-                result.vacation_date = datetime.strptime(vac_date, '%Y-%m-%d').date()
+                try:
+                    result.vacation_date = datetime.strptime(vac_date, '%Y-%m-%d').date()
+                except:
+                    pass
             if res_date:
-                result.resumption_date = datetime.strptime(res_date, '%Y-%m-%d').date()
+                try:
+                    result.resumption_date = datetime.strptime(res_date, '%Y-%m-%d').date()
+                except:
+                    pass
             
-            result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
-            result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
+            # Update fees
+            try:
+                result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
+                result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
+            except:
+                pass
             
+            # Update affective domain
             result.affective_punctuality = request.POST.get('aff_punctuality', result.affective_punctuality)
             result.affective_neatness = request.POST.get('aff_neatness', result.affective_neatness)
             result.affective_politeness = request.POST.get('aff_politeness', result.affective_politeness)
@@ -1450,6 +1446,7 @@ def class_teacher_edit_result(request, result_id):
             result.affective_self_control = request.POST.get('aff_self_control', result.affective_self_control)
             result.affective_attentiveness = request.POST.get('aff_attentiveness', result.affective_attentiveness)
             
+            # Update psychomotor domain
             result.psycho_handwriting = request.POST.get('psycho_handwriting', result.psycho_handwriting)
             result.psycho_sports = request.POST.get('psycho_sports', result.psycho_sports)
             result.psycho_handling_tools = request.POST.get('psycho_tools', result.psycho_handling_tools)
@@ -1457,6 +1454,7 @@ def class_teacher_edit_result(request, result_id):
             result.psycho_games = request.POST.get('psycho_games', result.psycho_games)
             result.psycho_drawing = request.POST.get('psycho_drawing', result.psycho_drawing)
             
+            # Update comment
             result.class_teacher_comment = request.POST.get('class_teacher_comment', result.class_teacher_comment)
             
             # Recalculate statistics
@@ -1467,9 +1465,14 @@ def class_teacher_edit_result(request, result_id):
             )
             
             result.total_subjects = subject_results_fresh.count()
-            result.score_gained = sum(float(sr.cum) for sr in subject_results_fresh)
-            result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
+            if result.total_subjects > 0:
+                result.score_gained = sum(float(sr.cum) for sr in subject_results_fresh)
+                result.average_score = result.score_gained / result.total_subjects
+            else:
+                result.score_gained = 0
+                result.average_score = 0
             
+            # Calculate position
             results_in_class = StudentResult.objects.filter(
                 term=result.term,
                 academic_year=result.academic_year,
@@ -1486,41 +1489,54 @@ def class_teacher_edit_result(request, result_id):
             result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
             
             result.save()
-            print(f"✅ DEBUG: All changes saved successfully")
             
-            ResultActivityLog.objects.create(
-                action='result_edited',
-                description=f'Class teacher {teacher.full_name} edited result for {result.student.full_name}',
-                performed_by_type='class_teacher',
-                performed_by_name=teacher.full_name
-            )
+            # Log activity
+            try:
+                ResultActivityLog.objects.create(
+                    action='result_edited',
+                    description=f'Class teacher {teacher.full_name} edited result for {result.student.full_name}',
+                    student_result=result,
+                    performed_by_type='class_teacher',
+                    performed_by_name=teacher.full_name
+                )
+            except:
+                pass
             
             messages.success(request, f'✅ Result updated successfully for {result.student.full_name}!')
             return redirect('class_teacher_collate')
             
         except Exception as e:
-            print(f"❌ DEBUG: Error saving changes: {e}")
-            import traceback
-            print(traceback.format_exc())
             messages.error(request, f'Error updating result: {str(e)}')
     
     # GET request - show the form
-    print(f"\n📋 DEBUG: Rendering edit form")
-    
     subject_results = SubjectResult.objects.filter(
         student=result.student,
         term=result.term,
         academic_year=result.academic_year
     ).order_by('subject_name')
     
-    print(f"📋 DEBUG: Found {subject_results.count()} subjects")
-    
     context = {
         'teacher': teacher,
         'result': result,
         'subject_results': subject_results,
     }
-    return render(request, 'result/edit_result.html', context)
+    
+    # Try multiple template paths for compatibility
+    template_paths = [
+        'result/edit_result.html',
+        'edit_result.html',
+        'accounts/templates/result/edit_result.html'
+    ]
+    
+    for template_path in template_paths:
+        try:
+            return render(request, template_path, context)
+        except:
+            continue
+    
+    # If all template paths fail
+    messages.error(request, 'Template not found. Please contact administrator.')
+    return redirect('class_teacher_collate')
     
 
 @login_required
