@@ -878,7 +878,7 @@ def edit_subject_result(request, result_id):
     print(f"\n📋 DEBUG: Rendering edit form")
     print(f"📋 DEBUG: Teacher = {teacher.full_name}")
     print(f"📋 DEBUG: Result = {result.subject_name}")
-    def class_teacher_edit_result(request, result_id):
+    
     context = {
         'teacher': teacher,
         'result': result,
