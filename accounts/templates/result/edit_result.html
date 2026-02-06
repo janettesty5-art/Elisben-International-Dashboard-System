@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class Teacher - Edit Student Result (COMPLETE)</title>
+    <title>Class Teacher - Edit Result (SAFE VERSION)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -17,25 +17,16 @@
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; }
         input, select, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #e67e22; }
-        textarea { resize: vertical; min-height: 120px; }
-        .btn { padding: 12px 30px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+        textarea { resize: vertical; min-height: 120px; font-family: Arial, sans-serif; }
+        .btn { padding: 12px 30px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; text-decoration: none; display: inline-block; }
         .btn:hover { background: #d35400; }
         .btn-back { background: #95a5a6; }
-        .btn-add { background: #27ae60; margin-bottom: 15px; }
-        .btn-delete-row { background: #e74c3c; padding: 8px 15px; font-size: 13px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table th, table td { border: 1px solid #ddd; padding: 10px; }
+        table th, table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
         table th { background: #f8f9fa; font-weight: 600; text-align: left; font-size: 13px; }
-        table input { padding: 8px; }
-        table input[type="text"] { width: 150px; }
-        table input[type="number"] { width: 80px; }
+        .readonly-cell { background: #e8f5e9; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
-        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
-        .editable-cell { background: #fffbf0; }
-        .readonly-cell { background: #e8f5e9; }
-        .readonly-cell input { background: #e8f5e9; font-weight: 600; }
-       .new-row { background: #e3f2fd; }
         .comment-dropdown { margin-bottom: 10px; }
     </style>
 </head>
@@ -51,11 +42,7 @@
             {% endfor %}
         {% endif %}
         
-        <div class="alert alert-warning">
-            <strong>⚠️ FULL EDIT MODE:</strong> You can edit EVERYTHING - subject names, scores, add new subjects, delete subjects, etc. Auto-calculated fields update in real-time.
-        </div>
-        
-        <form method="POST" id="mainForm">
+        <form method="POST">
             {% csrf_token %}
             
             <!-- Student Info -->
@@ -64,125 +51,62 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Student Name:</label>
-                        <input type="text" value="{{ result.student.full_name }}" readonly style="background: #f0f0f0;">
+                        <input type="text" value="{{ result.student.full_name }}" style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label>Class:</label>
-                        <input type="text" value="{{ result.class_name }}" readonly style="background: #f0f0f0;">
+                        <input type="text" value="{{ result.class_name }}" style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label>Term:</label>
-                        <input type="text" value="{{ result.term }}" readonly style="background: #f0f0f0;">
+                        <input type="text" value="{{ result.term }}" style="background: #f0f0f0;">
                     </div>
                 </div>
             </div>
             
-            <!-- Subject Results (FULLY EDITABLE + ADD/DELETE) -->
+            <!-- Subject Results -->
             <div class="card">
-                <div class="section-title">📚 Subject Results (Fully Editable)</div>
-                <button type="button" class="btn btn-add" onclick="addSubjectRow()">➕ Add Subject Record</button>
-                
-                <table id="subjectsTable">
+                <div class="section-title">📚 Subject Results (Read-Only - Contact Subject Teachers to Edit)</div>
+                <table>
                     <thead>
                         <tr>
                             <th>Subject Name</th>
-                            <th>Test A (100)</th>
-                            <th>Test B (100)</th>
-                            <th>Test C (100)</th>
-                            <th>AVG-1 (Auto)</th>
-                            <th>Exam (100)</th>
-                            <th>AVG-2 (Auto)</th>
+                            <th>Test A</th>
+                            <th>Test B</th>
+                            <th>Test C</th>
+                            <th>AVG-1</th>
+                            <th>Exam</th>
+                            <th>AVG-2</th>
                             {% if result.term != "First Term" %}
-                            <th>LTCUM (100)</th>
+                            <th>LTCUM</th>
                             {% endif %}
-                            <th>CUM (Auto)</th>
-                            <th>Grade (Auto)</th>
-                            <th>Remark (Auto)</th>
+                            <th>CUM</th>
+                            <th>Grade</th>
+                            <th>Remark</th>
                             <th>Position</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for subject in subject_results %}
-                        <tr data-subject-id="{{ subject.id }}" class="existing-row">
-                            <td class="editable-cell">
-                                <input type="text" name="subject_name_{{ subject.id }}" 
-                                       value="{{ subject.subject_name }}" 
-                                       style="text-transform: uppercase; width: 150px;">
-                                <input type="hidden" name="existing_subject_id" value="{{ subject.id }}">
-                            </td>
-                            <td class="editable-cell">
-                                <input type="number" name="test_a_{{ subject.id }}" 
-                                       class="score-input" data-row="{{ subject.id }}"
-                                       value="{{ subject.test_a }}" 
-                                       min="0" max="100" step="0.01">
-                            </td>
-                            <td class="editable-cell">
-                                <input type="number" name="test_b_{{ subject.id }}" 
-                                       class="score-input" data-row="{{ subject.id }}"
-                                       value="{{ subject.test_b }}" 
-                                       min="0" max="100" step="0.01">
-                            </td>
-                            <td class="editable-cell">
-                                <input type="number" name="test_c_{{ subject.id }}" 
-                                       class="score-input" data-row="{{ subject.id }}"
-                                       value="{{ subject.test_c }}" 
-                                       min="0" max="100" step="0.01">
-                            </td>
-                            <td class="readonly-cell">
-                                <input type="text" id="avg1_{{ subject.id }}" 
-                                       value="{{ subject.avg_1|floatformat:2 }}" 
-                                       readonly>
-                            </td>
-                            <td class="editable-cell">
-                                <input type="number" name="exam_{{ subject.id }}" 
-                                       class="score-input" data-row="{{ subject.id }}"
-                                       value="{{ subject.exam }}" 
-                                       min="0" max="100" step="0.01">
-                            </td>
-                            <td class="readonly-cell">
-                                <input type="text" id="avg2_{{ subject.id }}" 
-                                       value="{{ subject.avg_2|floatformat:2 }}" 
-                                       readonly>
-                            </td>
+                        <tr>
+                            <td><strong>{{ subject.subject_name }}</strong></td>
+                            <td class="readonly-cell">{{ subject.test_a|floatformat:0 }}</td>
+                            <td class="readonly-cell">{{ subject.test_b|floatformat:0 }}</td>
+                            <td class="readonly-cell">{{ subject.test_c|floatformat:0 }}</td>
+                            <td class="readonly-cell">{{ subject.avg_1|floatformat:2 }}</td>
+                            <td class="readonly-cell">{{ subject.exam|floatformat:0 }}</td>
+                            <td class="readonly-cell">{{ subject.avg_2|floatformat:2 }}</td>
                             {% if result.term != "First Term" %}
-                            <td class="editable-cell">
-                                <input type="number" name="ltcum_{{ subject.id }}" 
-                                       class="score-input" data-row="{{ subject.id }}"
-                                       value="{{ subject.ltcum|default:0 }}" 
-                                       min="0" max="100" step="0.01">
-                            </td>
+                            <td class="readonly-cell">{{ subject.ltcum|floatformat:2|default:"—" }}</td>
                             {% endif %}
-                            <td class="readonly-cell">
-                                <input type="text" id="cum_{{ subject.id }}" 
-                                       value="{{ subject.cum|floatformat:2 }}" 
-                                       readonly>
-                            </td>
-                            <td class="readonly-cell">
-                                <input type="text" id="grade_{{ subject.id }}" 
-                                       value="{{ subject.grade }}" 
-                                       readonly style="width: 50px;">
-                            </td>
-                            <td class="readonly-cell">
-                                <input type="text" id="remark_{{ subject.id }}" 
-                                       value="{{ subject.grade_remark }}" 
-                                       readonly style="width: 100px;">
-                            </td>
-                            <td class="editable-cell">
-                                <input type="number" name="position_{{ subject.id }}" 
-                                       value="{{ subject.position_ranking|default:'' }}" 
-                                       min="1" style="width: 60px;">
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-delete-row" 
-                                        onclick="deleteSubject({{ subject.id }}, '{{ subject.subject_name }}', this)">
-                                    🗑️ Delete
-                                </button>
-                            </td>
+                            <td class="readonly-cell">{{ subject.cum|floatformat:2 }}</td>
+                            <td class="readonly-cell"><strong>{{ subject.grade }}</strong></td>
+                            <td class="readonly-cell">{{ subject.grade_remark }}</td>
+                            <td class="readonly-cell">{{ subject.position_ranking|default:"—" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="13" style="text-align: center; color: #999;">No subject results yet. Click "Add Subject Record" to add subjects.</td>
+                            <td colspan="12" style="text-align: center; color: #999;">No subject results available</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -415,17 +339,13 @@
             
             <!-- Submit -->
             <div style="text-align: center; margin-top: 30px;">
-                <button type="submit" class="btn">💾 Save All Changes</button>
+                <button type="submit" class="btn">💾 Save Changes</button>
                 <a href="{% url 'class_teacher_collate' %}" class="btn btn-back">← Back</a>
             </div>
         </form>
     </div>
     
     <script>
-        let newRowCounter = 0;
-        const isTerm2or3 = {{ result.term|lower == "second term" or result.term|lower == "third term"|yesno:"true,false" }};
-        
-        // ✅ Comment dropdown function
         function selectComment() {
             const dropdown = document.getElementById('commentDropdown');
             const textarea = document.getElementById('commentTextarea');
@@ -433,171 +353,6 @@
                 textarea.value = dropdown.value;
             }
         }
-        
-        // ✅ Add new subject row
-        function addSubjectRow() {
-            newRowCounter++;
-            const table = document.getElementById('subjectsTable').getElementsByTagName('tbody')[0];
-            const newRow = table.insertRow();
-            newRow.className = 'new-row';
-            newRow.id = `new-row-${newRowCounter}`;
-            
-            let ltcumCell = '';
-            if (isTerm2or3) {
-                ltcumCell = `
-                    <td class="editable-cell">
-                        <input type="number" name="new_ltcum_${newRowCounter}" 
-                               class="score-input" data-row="new-${newRowCounter}"
-                               value="0" min="0" max="100" step="0.01">
-                    </td>
-                `;
-            }
-            
-            newRow.innerHTML = `
-                <td class="editable-cell">
-                    <input type="text" name="new_subject_name_${newRowCounter}" 
-                           placeholder="SUBJECT NAME" 
-                           style="text-transform: uppercase; width: 150px;" required>
-                </td>
-                <td class="editable-cell">
-                    <input type="number" name="new_test_a_${newRowCounter}" 
-                           class="score-input" data-row="new-${newRowCounter}"
-                           value="0" min="0" max="100" step="0.01">
-                </td>
-                <td class="editable-cell">
-                    <input type="number" name="new_test_b_${newRowCounter}" 
-                           class="score-input" data-row="new-${newRowCounter}"
-                           value="0" min="0" max="100" step="0.01">
-                </td>
-                <td class="editable-cell">
-                    <input type="number" name="new_test_c_${newRowCounter}" 
-                           class="score-input" data-row="new-${newRowCounter}"
-                           value="0" min="0" max="100" step="0.01">
-                </td>
-                <td class="readonly-cell">
-                    <input type="text" id="avg1_new-${newRowCounter}" 
-                           value="0.00" readonly>
-                </td>
-                <td class="editable-cell">
-                    <input type="number" name="new_exam_${newRowCounter}" 
-                           class="score-input" data-row="new-${newRowCounter}"
-                           value="0" min="0" max="100" step="0.01">
-                </td>
-                <td class="readonly-cell">
-                    <input type="text" id="avg2_new-${newRowCounter}" 
-                           value="0.00" readonly>
-                </td>
-                ${ltcumCell}
-                <td class="readonly-cell">
-                    <input type="text" id="cum_new-${newRowCounter}" 
-                           value="0.00" readonly>
-                </td>
-                <td class="readonly-cell">
-                    <input type="text" id="grade_new-${newRowCounter}" 
-                           value="F" readonly style="width: 50px;">
-                </td>
-                <td class="readonly-cell">
-                    <input type="text" id="remark_new-${newRowCounter}" 
-                           value="FAIL" readonly style="width: 100px;">
-                </td>
-                <td class="editable-cell">
-                    <input type="number" name="new_position_${newRowCounter}" 
-                           min="1" style="width: 60px;">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-delete-row" 
-                            onclick="cancelNewRow('new-row-${newRowCounter}')">
-                        ❌ Cancel
-                    </button>
-                </td>
-            `;
-            
-            // Add event listeners for new row
-            attachCalculationListeners(newRow, `new-${newRowCounter}`);
-        }
-        
-        // ✅ Cancel new row
-        function cancelNewRow(rowId) {
-            const row = document.getElementById(rowId);
-            if (row) {
-                row.remove();
-            }
-        }
-        
-        // ✅ Delete existing subject
-        function deleteSubject(subjectId, subjectName, button) {
-            if (confirm(`⚠️ Are you sure you want to DELETE ${subjectName}? This cannot be undone!`)) {
-                // Add hidden input to mark for deletion
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'delete_subject_id';
-                input.value = subjectId;
-                document.getElementById('mainForm').appendChild(input);
-                
-                // Remove the row visually
-                button.closest('tr').remove();
-            }
-        }
-        
-        // ✅ Calculation function
-        function calculateRow(rowId) {
-            const inputs = document.querySelectorAll(`[data-row="${rowId}"]`);
-            if (inputs.length === 0) return;
-            
-            let testA = 0, testB = 0, testC = 0, exam = 0, ltcum = 0;
-            
-            inputs.forEach(input => {
-                const name = input.name;
-                const value = parseFloat(input.value) || 0;
-                
-                if (name.includes('test_a')) testA = value;
-                if (name.includes('test_b')) testB = value;
-                if (name.includes('test_c')) testC = value;
-                if (name.includes('exam')) exam = value;
-                if (name.includes('ltcum')) ltcum = value;
-            });
-            
-            const avg1 = (testA + testB + testC) / 3;
-            const avg2 = (avg1 + exam) / 2;
-            let cum = ltcum > 0 ? (avg2 + ltcum) / 2 : avg2;
-            
-            // Update displays
-            const avg1El = document.getElementById(`avg1_${rowId}`);
-            const avg2El = document.getElementById(`avg2_${rowId}`);
-            const cumEl = document.getElementById(`cum_${rowId}`);
-            const gradeEl = document.getElementById(`grade_${rowId}`);
-            const remarkEl = document.getElementById(`remark_${rowId}`);
-            
-            if (avg1El) avg1El.value = avg1.toFixed(2);
-            if (avg2El) avg2El.value = avg2.toFixed(2);
-            if (cumEl) cumEl.value = cum.toFixed(2);
-            
-            let grade, remark;
-            if (cum >= 70) { grade = 'A'; remark = 'EXCELLENT'; }
-            else if (cum >= 60) { grade = 'B'; remark = 'VERY GOOD'; }
-            else if (cum >= 50) { grade = 'C'; remark = 'GOOD'; }
-            else if (cum >= 45) { grade = 'D'; remark = 'PASS'; }
-            else if (cum >= 40) { grade = 'E'; remark = 'POOR'; }
-            else { grade = 'F'; remark = 'FAIL'; }
-            
-            if (gradeEl) gradeEl.value = grade;
-            if (remarkEl) remarkEl.value = remark;
-        }
-        
-        // ✅ Attach calculation listeners
-        function attachCalculationListeners(row, rowId) {
-            const inputs = row.querySelectorAll('.score-input');
-            inputs.forEach(input => {
-                input.addEventListener('input', () => calculateRow(rowId));
-            });
-            calculateRow(rowId);
-        }
-        
-        // ✅ Initialize existing rows
-        document.querySelectorAll('[data-subject-id]').forEach(row => {
-            const rowId = row.dataset.subjectId;
-            attachCalculationListeners(row, rowId);
-        });
     </script>
 </body>
 </html>
