@@ -812,7 +812,7 @@ def delete_subject_result(request, student_id, subject_name, term, academic_year
 # ============= EDIT SUBJECT RESULT (SUBJECT TEACHER) =============
 @login_required
 def edit_subject_result(request, result_id):
-    """Edit a single subject result"""
+    """Edit a single subject result - Subject Teacher"""
     try:
         teacher = Teacher.objects.get(user=request.user)
         result = SubjectResult.objects.get(id=result_id, entered_by=teacher)
@@ -822,9 +822,7 @@ def edit_subject_result(request, result_id):
     
     if request.method == 'POST':
         try:
-            # ✅ Allow editing subject name
             result.subject_name = request.POST.get('subject_name', result.subject_name).upper()
-            
             result.test_a = float(request.POST.get('test_a', result.test_a))
             result.test_b = float(request.POST.get('test_b', result.test_b))
             result.test_c = float(request.POST.get('test_c', result.test_c))
@@ -1275,14 +1273,7 @@ def class_teacher_start_result(request):
 
 @login_required
 def class_teacher_edit_result(request, result_id):
-    """
-    COMPLETE Class Teacher Edit Result View
-    - Full editing access to ALL fields
-    - Can add new subject records
-    - Can delete existing subject records
-    - Real-time auto-calculations
-    - Dropdown comments
-    """
+    """Class Teacher Edit - FULL CONTROL with Add/Delete subjects"""
     try:
         teacher = Teacher.objects.get(user=request.user)
         result = StudentResult.objects.get(id=result_id, class_teacher=teacher)
@@ -1306,43 +1297,24 @@ def class_teacher_edit_result(request, result_id):
                 try:
                     subject = SubjectResult.objects.get(id=subject_id)
                     
-                    # Update subject name
-                    subject_name_key = f'subject_name_{subject_id}'
-                    if subject_name_key in request.POST:
-                        subject.subject_name = request.POST.get(subject_name_key, subject.subject_name).upper()
+                    subject.subject_name = request.POST.get(f'subject_name_{subject_id}', subject.subject_name).upper()
+                    subject.test_a = float(request.POST.get(f'test_a_{subject_id}', subject.test_a))
+                    subject.test_b = float(request.POST.get(f'test_b_{subject_id}', subject.test_b))
+                    subject.test_c = float(request.POST.get(f'test_c_{subject_id}', subject.test_c))
+                    subject.exam = float(request.POST.get(f'exam_{subject_id}', subject.exam))
                     
-                    # Update scores
-                    test_a_key = f'test_a_{subject_id}'
-                    test_b_key = f'test_b_{subject_id}'
-                    test_c_key = f'test_c_{subject_id}'
-                    exam_key = f'exam_{subject_id}'
-                    ltcum_key = f'ltcum_{subject_id}'
-                    position_key = f'position_{subject_id}'
+                    if result.term in ['Second Term', 'Third Term']:
+                        subject.ltcum = float(request.POST.get(f'ltcum_{subject_id}', subject.ltcum or 0))
                     
-                    if test_a_key in request.POST:
-                        subject.test_a = float(request.POST.get(test_a_key, subject.test_a))
-                    if test_b_key in request.POST:
-                        subject.test_b = float(request.POST.get(test_b_key, subject.test_b))
-                    if test_c_key in request.POST:
-                        subject.test_c = float(request.POST.get(test_c_key, subject.test_c))
-                    if exam_key in request.POST:
-                        subject.exam = float(request.POST.get(exam_key, subject.exam))
+                    pos_val = request.POST.get(f'position_{subject_id}')
+                    subject.position_ranking = int(pos_val) if pos_val and pos_val.strip() else None
                     
-                    if ltcum_key in request.POST and result.term in ['Second Term', 'Third Term']:
-                        subject.ltcum = float(request.POST.get(ltcum_key, subject.ltcum or 0))
-                    
-                    if position_key in request.POST:
-                        pos_val = request.POST.get(position_key)
-                        subject.position_ranking = int(pos_val) if pos_val and pos_val.strip() else None
-                    
-                    # Save (auto-calculates grades)
-                    subject.save()
+                    subject.save()  # Auto-calculates grades
                 except Exception as e:
                     print(f"Error updating subject {subject_id}: {e}")
                     continue
             
             # ✅ ADD NEW SUBJECT RECORDS
-            # Find all new subject entries
             post_keys = list(request.POST.keys())
             new_subject_numbers = set()
             for key in post_keys:
@@ -1353,7 +1325,7 @@ def class_teacher_edit_result(request, result_id):
             for num in new_subject_numbers:
                 subject_name = request.POST.get(f'new_subject_name_{num}', '').upper().strip()
                 if not subject_name:
-                    continue  # Skip empty subject names
+                    continue
                 
                 test_a = float(request.POST.get(f'new_test_a_{num}', 0))
                 test_b = float(request.POST.get(f'new_test_b_{num}', 0))
@@ -1367,7 +1339,6 @@ def class_teacher_edit_result(request, result_id):
                 position = request.POST.get(f'new_position_{num}')
                 position_value = int(position) if position and position.strip() else None
                 
-                # Create new subject result
                 SubjectResult.objects.create(
                     student=result.student,
                     subject_name=subject_name,
@@ -1432,7 +1403,6 @@ def class_teacher_edit_result(request, result_id):
             result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
             
             # Calculate position in class
-            class_students = Student.objects.filter(class_name=result.class_name)
             results_in_class = StudentResult.objects.filter(
                 term=result.term,
                 academic_year=result.academic_year,
@@ -1446,24 +1416,19 @@ def class_teacher_edit_result(request, result_id):
                     break
             
             result.position_in_class = f"{position}/{results_in_class.count()}"
-            
-            # Determine promotion status
-            if result.average_score >= 50:
-                result.status_promotion = "PROMOTED"
-            else:
-                result.status_promotion = "REPEAT"
+            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
             
             result.save()
             
             # ✅ LOG ACTIVITY
             ResultActivityLog.objects.create(
                 action='result_edited',
-                description=f'Class teacher {teacher.full_name} edited complete result for {result.student.full_name} (including subject modifications)',
+                description=f'Class teacher {teacher.full_name} edited result for {result.student.full_name} (full control mode)',
                 performed_by_type='class_teacher',
                 performed_by_name=teacher.full_name
             )
             
-            messages.success(request, f'✅ Result updated successfully for {result.student.full_name}! All changes saved.')
+            messages.success(request, f'✅ Result updated successfully for {result.student.full_name}!')
             return redirect('class_teacher_collate')
             
         except Exception as e:
@@ -1471,7 +1436,7 @@ def class_teacher_edit_result(request, result_id):
             import traceback
             print("ERROR:", traceback.format_exc())
     
-    # GET request - show form
+    # GET request
     subject_results = SubjectResult.objects.filter(
         student=result.student,
         term=result.term,

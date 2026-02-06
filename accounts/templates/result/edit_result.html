@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class Teacher - Edit Result (SAFE VERSION)</title>
+    <title>Class Teacher - Full Edit Access</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
         .navbar { background: #e67e22; color: white; padding: 20px 40px; }
         .navbar h1 { font-size: 24px; }
-        .container { max-width: 1600px; margin: 40px auto; padding: 0 20px; }
+        .container { max-width: 1800px; margin: 40px auto; padding: 0 20px; }
         .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
         .section-title { background: #e67e22; color: white; padding: 12px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 18px; }
         .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
@@ -18,21 +18,44 @@
         input, select, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #e67e22; }
         textarea { resize: vertical; min-height: 120px; font-family: Arial, sans-serif; }
-        .btn { padding: 12px 30px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; text-decoration: none; display: inline-block; }
+        .btn { padding: 12px 30px; background: #e67e22; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-right: 10px; }
         .btn:hover { background: #d35400; }
         .btn-back { background: #95a5a6; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        table th, table td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        table th { background: #f8f9fa; font-weight: 600; text-align: left; font-size: 13px; }
+        .btn-add { background: #27ae60; margin-bottom: 15px; font-size: 15px; padding: 10px 25px; }
+        .btn-delete-row { background: #e74c3c; padding: 6px 12px; font-size: 12px; }
+        .btn-cancel-row { background: #95a5a6; padding: 6px 12px; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        table th, table td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        table th { background: #e67e22; color: white; font-size: 11px; font-weight: 600; }
+        table input[type="text"] { width: 140px; padding: 6px; font-size: 13px; }
+        table input[type="number"] { width: 70px; padding: 6px; text-align: center; font-size: 13px; }
+        .editable-cell { background: #fffbf0; }
         .readonly-cell { background: #e8f5e9; }
+        .readonly-cell input { background: #e8f5e9; font-weight: 600; border: 1px solid #c8e6c9; }
+        .new-row { background: #e3f2fd !important; }
+        .new-row td { background: #e3f2fd !important; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
+        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
         .comment-dropdown { margin-bottom: 10px; }
+        
+        /* Delete Confirmation Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 15% auto; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px; text-align: center; }
+        .modal-icon { font-size: 60px; margin-bottom: 20px; }
+        .modal-message { font-size: 18px; font-weight: 600; margin-bottom: 10px; color: #333; }
+        .modal-sub { font-size: 14px; color: #666; margin-bottom: 20px; }
+        .modal-buttons { display: flex; justify-content: center; gap: 15px; margin-top: 25px; }
+        .modal-btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        .modal-btn-yes { background: #e74c3c; color: white; }
+        .modal-btn-yes:hover { background: #c0392b; }
+        .modal-btn-no { background: #95a5a6; color: white; }
+        .modal-btn-no:hover { background: #7f8c8d; }
     </style>
 </head>
 <body>
     <div class="navbar">
-        <h1>✏️ Class Teacher - Edit Student Result</h1>
+        <h1>✏️ Class Teacher - Full Edit Access</h1>
     </div>
     
     <div class="container">
@@ -42,7 +65,11 @@
             {% endfor %}
         {% endif %}
         
-        <form method="POST">
+        <div class="alert alert-warning">
+            <strong>⚠️ FULL CONTROL MODE:</strong> You can ADD new subjects, DELETE any subject (including duplicates), EDIT all scores and details. All changes auto-calculate in real-time.
+        </div>
+        
+        <form method="POST" id="mainForm">
             {% csrf_token %}
             
             <!-- Student Info -->
@@ -51,23 +78,25 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>Student Name:</label>
-                        <input type="text" value="{{ result.student.full_name }}" style="background: #f0f0f0;">
+                        <input type="text" value="{{ result.student.full_name }}" readonly style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label>Class:</label>
-                        <input type="text" value="{{ result.class_name }}" style="background: #f0f0f0;">
+                        <input type="text" value="{{ result.class_name }}" readonly style="background: #f0f0f0;">
                     </div>
                     <div class="form-group">
                         <label>Term:</label>
-                        <input type="text" value="{{ result.term }}" style="background: #f0f0f0;">
+                        <input type="text" value="{{ result.term }}" readonly style="background: #f0f0f0;">
                     </div>
                 </div>
             </div>
             
-            <!-- Subject Results -->
+            <!-- Subject Results - FULL CONTROL -->
             <div class="card">
-                <div class="section-title">📚 Subject Results (Read-Only - Contact Subject Teachers to Edit)</div>
-                <table>
+                <div class="section-title">📚 Subject Results - FULL EDIT ACCESS (Add/Delete/Modify)</div>
+                <button type="button" class="btn btn-add" onclick="addSubjectRow()">➕ Add Subject Record</button>
+                
+                <table id="subjectsTable">
                     <thead>
                         <tr>
                             <th>Subject Name</th>
@@ -84,29 +113,92 @@
                             <th>Grade</th>
                             <th>Remark</th>
                             <th>Position</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for subject in subject_results %}
-                        <tr>
-                            <td><strong>{{ subject.subject_name }}</strong></td>
-                            <td class="readonly-cell">{{ subject.test_a|floatformat:0 }}</td>
-                            <td class="readonly-cell">{{ subject.test_b|floatformat:0 }}</td>
-                            <td class="readonly-cell">{{ subject.test_c|floatformat:0 }}</td>
-                            <td class="readonly-cell">{{ subject.avg_1|floatformat:2 }}</td>
-                            <td class="readonly-cell">{{ subject.exam|floatformat:0 }}</td>
-                            <td class="readonly-cell">{{ subject.avg_2|floatformat:2 }}</td>
+                        <tr data-subject-id="{{ subject.id }}" class="existing-row">
+                            <td class="editable-cell">
+                                <input type="text" name="subject_name_{{ subject.id }}" 
+                                       value="{{ subject.subject_name }}" 
+                                       style="text-transform: uppercase; width: 150px;" required>
+                                <input type="hidden" name="existing_subject_id" value="{{ subject.id }}">
+                            </td>
+                            <td class="editable-cell">
+                                <input type="number" name="test_a_{{ subject.id }}" 
+                                       class="score-input" data-row="{{ subject.id }}"
+                                       value="{{ subject.test_a }}" 
+                                       min="0" max="100" step="0.01" required>
+                            </td>
+                            <td class="editable-cell">
+                                <input type="number" name="test_b_{{ subject.id }}" 
+                                       class="score-input" data-row="{{ subject.id }}"
+                                       value="{{ subject.test_b }}" 
+                                       min="0" max="100" step="0.01" required>
+                            </td>
+                            <td class="editable-cell">
+                                <input type="number" name="test_c_{{ subject.id }}" 
+                                       class="score-input" data-row="{{ subject.id }}"
+                                       value="{{ subject.test_c }}" 
+                                       min="0" max="100" step="0.01" required>
+                            </td>
+                            <td class="readonly-cell">
+                                <input type="text" id="avg1_{{ subject.id }}" 
+                                       value="{{ subject.avg_1|floatformat:2 }}" 
+                                       readonly>
+                            </td>
+                            <td class="editable-cell">
+                                <input type="number" name="exam_{{ subject.id }}" 
+                                       class="score-input" data-row="{{ subject.id }}"
+                                       value="{{ subject.exam }}" 
+                                       min="0" max="100" step="0.01" required>
+                            </td>
+                            <td class="readonly-cell">
+                                <input type="text" id="avg2_{{ subject.id }}" 
+                                       value="{{ subject.avg_2|floatformat:2 }}" 
+                                       readonly>
+                            </td>
                             {% if result.term != "First Term" %}
-                            <td class="readonly-cell">{{ subject.ltcum|floatformat:2|default:"—" }}</td>
+                            <td class="editable-cell">
+                                <input type="number" name="ltcum_{{ subject.id }}" 
+                                       class="score-input" data-row="{{ subject.id }}"
+                                       value="{{ subject.ltcum|default:0 }}" 
+                                       min="0" max="100" step="0.01">
+                            </td>
                             {% endif %}
-                            <td class="readonly-cell">{{ subject.cum|floatformat:2 }}</td>
-                            <td class="readonly-cell"><strong>{{ subject.grade }}</strong></td>
-                            <td class="readonly-cell">{{ subject.grade_remark }}</td>
-                            <td class="readonly-cell">{{ subject.position_ranking|default:"—" }}</td>
+                            <td class="readonly-cell">
+                                <input type="text" id="cum_{{ subject.id }}" 
+                                       value="{{ subject.cum|floatformat:2 }}" 
+                                       readonly>
+                            </td>
+                            <td class="readonly-cell">
+                                <input type="text" id="grade_{{ subject.id }}" 
+                                       value="{{ subject.grade }}" 
+                                       readonly style="width: 50px;">
+                            </td>
+                            <td class="readonly-cell">
+                                <input type="text" id="remark_{{ subject.id }}" 
+                                       value="{{ subject.grade_remark }}" 
+                                       readonly style="width: 100px;">
+                            </td>
+                            <td class="editable-cell">
+                                <input type="number" name="position_{{ subject.id }}" 
+                                       value="{{ subject.position_ranking|default:'' }}" 
+                                       min="1" style="width: 60px;">
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-delete-row" 
+                                        onclick="confirmDelete({{ subject.id }}, '{{ subject.subject_name }}')">
+                                    🗑️ Delete
+                                </button>
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="12" style="text-align: center; color: #999;">No subject results available</td>
+                            <td colspan="13" style="text-align: center; color: #999; padding: 20px;">
+                                No subject results yet. Click "Add Subject Record" to add subjects.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -339,13 +431,32 @@
             
             <!-- Submit -->
             <div style="text-align: center; margin-top: 30px;">
-                <button type="submit" class="btn">💾 Save Changes</button>
+                <button type="submit" class="btn">💾 Save All Changes</button>
                 <a href="{% url 'class_teacher_collate' %}" class="btn btn-back">← Back</a>
             </div>
         </form>
     </div>
     
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-icon">⚠️</div>
+            <div class="modal-message">Delete Subject Record?</div>
+            <div class="modal-sub" id="deleteSubjectName"></div>
+            <p style="color: #e74c3c; margin: 15px 0;">This will permanently delete this subject record. This cannot be undone!</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-yes" id="confirmDeleteBtn">Yes, Delete Permanently</button>
+                <button class="modal-btn modal-btn-no" id="cancelDeleteBtn">No, Cancel</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
+        let newRowCounter = 0;
+        const isTerm2or3 = {{ result.term|lower == "second term" or result.term|lower == "third term"|yesno:"true,false" }};
+        let subjectToDelete = null;
+        
+        // Comment dropdown
         function selectComment() {
             const dropdown = document.getElementById('commentDropdown');
             const textarea = document.getElementById('commentTextarea');
@@ -353,6 +464,209 @@
                 textarea.value = dropdown.value;
             }
         }
+        
+        // Add new subject row
+        function addSubjectRow() {
+            newRowCounter++;
+            const table = document.getElementById('subjectsTable').getElementsByTagName('tbody')[0];
+            
+            // Remove "no results" row if it exists
+            const emptyRow = table.querySelector('tr td[colspan]');
+            if (emptyRow) {
+                emptyRow.parentElement.remove();
+            }
+            
+            const newRow = table.insertRow();
+            newRow.className = 'new-row';
+            newRow.id = `new-row-${newRowCounter}`;
+            
+            let ltcumCell = '';
+            if (isTerm2or3) {
+                ltcumCell = `
+                    <td class="editable-cell">
+                        <input type="number" name="new_ltcum_${newRowCounter}" 
+                               class="score-input" data-row="new-${newRowCounter}"
+                               value="0" min="0" max="100" step="0.01">
+                    </td>
+                `;
+            }
+            
+            newRow.innerHTML = `
+                <td class="editable-cell">
+                    <input type="text" name="new_subject_name_${newRowCounter}" 
+                           placeholder="ENTER SUBJECT NAME" 
+                           style="text-transform: uppercase; width: 150px;" required>
+                </td>
+                <td class="editable-cell">
+                    <input type="number" name="new_test_a_${newRowCounter}" 
+                           class="score-input" data-row="new-${newRowCounter}"
+                           value="0" min="0" max="100" step="0.01" required>
+                </td>
+                <td class="editable-cell">
+                    <input type="number" name="new_test_b_${newRowCounter}" 
+                           class="score-input" data-row="new-${newRowCounter}"
+                           value="0" min="0" max="100" step="0.01" required>
+                </td>
+                <td class="editable-cell">
+                    <input type="number" name="new_test_c_${newRowCounter}" 
+                           class="score-input" data-row="new-${newRowCounter}"
+                           value="0" min="0" max="100" step="0.01" required>
+                </td>
+                <td class="readonly-cell">
+                    <input type="text" id="avg1_new-${newRowCounter}" 
+                           value="0.00" readonly>
+                </td>
+                <td class="editable-cell">
+                    <input type="number" name="new_exam_${newRowCounter}" 
+                           class="score-input" data-row="new-${newRowCounter}"
+                           value="0" min="0" max="100" step="0.01" required>
+                </td>
+                <td class="readonly-cell">
+                    <input type="text" id="avg2_new-${newRowCounter}" 
+                           value="0.00" readonly>
+                </td>
+                ${ltcumCell}
+                <td class="readonly-cell">
+                    <input type="text" id="cum_new-${newRowCounter}" 
+                           value="0.00" readonly>
+                </td>
+                <td class="readonly-cell">
+                    <input type="text" id="grade_new-${newRowCounter}" 
+                           value="F" readonly style="width: 50px;">
+                </td>
+                <td class="readonly-cell">
+                    <input type="text" id="remark_new-${newRowCounter}" 
+                           value="FAIL" readonly style="width: 100px;">
+                </td>
+                <td class="editable-cell">
+                    <input type="number" name="new_position_${newRowCounter}" 
+                           min="1" style="width: 60px;">
+                </td>
+                <td>
+                    <button type="button" class="btn btn-cancel-row" 
+                            onclick="cancelNewRow('new-row-${newRowCounter}')">
+                        ❌ Cancel
+                    </button>
+                </td>
+            `;
+            
+            attachCalculationListeners(newRow, `new-${newRowCounter}`);
+        }
+        
+        // Cancel new row
+        function cancelNewRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.remove();
+                
+                // If no rows left, show empty message
+                const tbody = document.getElementById('subjectsTable').getElementsByTagName('tbody')[0];
+                if (tbody.rows.length === 0) {
+                    const emptyRow = tbody.insertRow();
+                    emptyRow.innerHTML = '<td colspan="13" style="text-align: center; color: #999; padding: 20px;">No subject results yet. Click "Add Subject Record" to add subjects.</td>';
+                }
+            }
+        }
+        
+        // Delete existing subject
+        function confirmDelete(subjectId, subjectName) {
+            subjectToDelete = subjectId;
+            document.getElementById('deleteSubjectName').textContent = `Subject: ${subjectName}`;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+        
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            if (subjectToDelete) {
+                // Add hidden input to mark for deletion
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'delete_subject_id';
+                input.value = subjectToDelete;
+                document.getElementById('mainForm').appendChild(input);
+                
+                // Remove the row visually
+                const row = document.querySelector(`tr[data-subject-id="${subjectToDelete}"]`);
+                if (row) {
+                    row.remove();
+                }
+                
+                // Close modal
+                document.getElementById('deleteModal').style.display = 'none';
+                subjectToDelete = null;
+            }
+        });
+        
+        document.getElementById('cancelDeleteBtn').addEventListener('click', function() {
+            document.getElementById('deleteModal').style.display = 'none';
+            subjectToDelete = null;
+        });
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', function(e) {
+            const modal = document.getElementById('deleteModal');
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                subjectToDelete = null;
+            }
+        });
+        
+        // Calculation function
+        function calculateRow(rowId) {
+            const inputs = document.querySelectorAll(`[data-row="${rowId}"]`);
+            if (inputs.length === 0) return;
+            
+            let testA = 0, testB = 0, testC = 0, exam = 0, ltcum = 0;
+            
+            inputs.forEach(input => {
+                const name = input.name;
+                const value = parseFloat(input.value) || 0;
+                
+                if (name.includes('test_a')) testA = value;
+                if (name.includes('test_b')) testB = value;
+                if (name.includes('test_c')) testC = value;
+                if (name.includes('exam')) exam = value;
+                if (name.includes('ltcum')) ltcum = value;
+            });
+            
+            const avg1 = (testA + testB + testC) / 3;
+            const avg2 = (avg1 + exam) / 2;
+            let cum = (isTerm2or3 && ltcum > 0) ? (avg2 + ltcum) / 2 : avg2;
+            
+            const avg1El = document.getElementById(`avg1_${rowId}`);
+            const avg2El = document.getElementById(`avg2_${rowId}`);
+            const cumEl = document.getElementById(`cum_${rowId}`);
+            const gradeEl = document.getElementById(`grade_${rowId}`);
+            const remarkEl = document.getElementById(`remark_${rowId}`);
+            
+            if (avg1El) avg1El.value = avg1.toFixed(2);
+            if (avg2El) avg2El.value = avg2.toFixed(2);
+            if (cumEl) cumEl.value = cum.toFixed(2);
+            
+            let grade, remark;
+            if (cum >= 70) { grade = 'A'; remark = 'EXCELLENT'; }
+            else if (cum >= 60) { grade = 'B'; remark = 'VERY GOOD'; }
+            else if (cum >= 50) { grade = 'C'; remark = 'GOOD'; }
+            else if (cum >= 45) { grade = 'D'; remark = 'PASS'; }
+            else if (cum >= 40) { grade = 'E'; remark = 'POOR'; }
+            else { grade = 'F'; remark = 'FAIL'; }
+            
+            if (gradeEl) gradeEl.value = grade;
+            if (remarkEl) remarkEl.value = remark;
+        }
+        
+        function attachCalculationListeners(row, rowId) {
+            const inputs = row.querySelectorAll('.score-input');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => calculateRow(rowId));
+            });
+            calculateRow(rowId);
+        }
+        
+        // Initialize existing rows
+        document.querySelectorAll('[data-subject-id]').forEach(row => {
+            const rowId = row.dataset.subjectId;
+            attachCalculationListeners(row, rowId);
+        });
     </script>
 </body>
 </html>
