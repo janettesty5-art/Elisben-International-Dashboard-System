@@ -840,6 +840,8 @@ def edit_subject_result(request, result_id):
             return redirect('subject_teacher_entry')
         except Exception as e:
             messages.error(request, f'Error updating result: {str(e)}')
+            import traceback
+            print("EDIT ERROR:", traceback.format_exc())
     
     context = {
         'teacher': teacher,
@@ -1271,6 +1273,7 @@ def class_teacher_start_result(request):
     }
     return render(request, 'result/class_teacher_start_result.html', context)
 
+# ============= CLASS TEACHER EDIT (FIXED) =============
 @login_required
 def class_teacher_edit_result(request, result_id):
     """Class Teacher Edit - FULL CONTROL with Add/Delete subjects"""
@@ -1423,7 +1426,7 @@ def class_teacher_edit_result(request, result_id):
             # ✅ LOG ACTIVITY
             ResultActivityLog.objects.create(
                 action='result_edited',
-                description=f'Class teacher {teacher.full_name} edited result for {result.student.full_name} (full control mode)',
+                description=f'Class teacher {teacher.full_name} edited result for {result.student.full_name}',
                 performed_by_type='class_teacher',
                 performed_by_name=teacher.full_name
             )
@@ -1434,7 +1437,7 @@ def class_teacher_edit_result(request, result_id):
         except Exception as e:
             messages.error(request, f'Error updating result: {str(e)}')
             import traceback
-            print("ERROR:", traceback.format_exc())
+            print("EDIT ERROR:", traceback.format_exc())
     
     # GET request
     subject_results = SubjectResult.objects.filter(
