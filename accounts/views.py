@@ -1507,9 +1507,9 @@ def class_teacher_edit_result(request, result_id):
     return render(request, 'result/edit_result.html', context)
     
 
-    @login_required
-    def delete_subject_result_post(request):
-        """Delete a student's subject result via POST - Subject Teacher only"""
+@login_required
+def delete_subject_result_post(request):
+    """Delete a student's subject result via POST - Subject Teacher only"""
     if request.method != 'POST':
         messages.error(request, 'Invalid request method.')
         return redirect('subject_teacher_entry')
