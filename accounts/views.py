@@ -814,22 +814,13 @@ def delete_subject_result(request, student_id, subject_name, term, academic_year
 def edit_subject_result(request, result_id):
     """Edit a single subject result - Subject Teacher"""
     try:
-        # Get the teacher
         teacher = Teacher.objects.get(user=request.user)
     except Teacher.DoesNotExist:
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('subject_teacher_entry')
     
     try:
-        # Get the result
         result = SubjectResult.objects.get(id=result_id)
-        
-        # Optional: Check if this teacher can edit
-        # Uncomment the following lines if you want strict permission checking:
-        # if result.entered_by != teacher:
-        #     messages.error(request, 'You can only edit results you entered.')
-        #     return redirect('subject_teacher_entry')
-    
     except SubjectResult.DoesNotExist:
         messages.error(request, 'Result not found.')
         return redirect('subject_teacher_entry')
@@ -865,22 +856,8 @@ def edit_subject_result(request, result_id):
         'result': result,
     }
     
-    # Try multiple template paths for compatibility
-    template_paths = [
-        'result/edit_subject_result.html',
-        'edit_subject_result.html',
-        'accounts/templates/result/edit_subject_result.html'
-    ]
-    
-    for template_path in template_paths:
-        try:
-            return render(request, template_path, context)
-        except:
-            continue
-    
-    # If all template paths fail
-    messages.error(request, 'Template not found. Please contact administrator.')
-    return redirect('subject_teacher_entry')
+    # ✅ USE THE CORRECT TEMPLATE PATH (based on your project structure)
+    return render(request, 'result/edit_subject_result.html', context)
 
 @login_required
 def class_teacher_collate(request):
@@ -1311,22 +1288,13 @@ def class_teacher_start_result(request):
 def class_teacher_edit_result(request, result_id):
     """Class Teacher Edit - FULL CONTROL"""
     try:
-        # Get the teacher
         teacher = Teacher.objects.get(user=request.user)
     except Teacher.DoesNotExist:
         messages.error(request, 'Access denied. Teachers only.')
         return redirect('class_teacher_collate')
     
     try:
-        # Get the result
         result = StudentResult.objects.get(id=result_id)
-        
-        # Optional: Check if this teacher can edit
-        # Uncomment the following lines if you want strict permission checking:
-        # if result.class_teacher != teacher:
-        #     messages.error(request, 'You can only edit results for your class.')
-        #     return redirect('class_teacher_collate')
-    
     except StudentResult.DoesNotExist:
         messages.error(request, 'Result not found.')
         return redirect('class_teacher_collate')
@@ -1365,7 +1333,7 @@ def class_teacher_edit_result(request, result_id):
                     
                     subject.save()
                 except Exception as e:
-                    messages.warning(request, f'Error updating a subject: {str(e)}')
+                    messages.warning(request, f'Error updating subject: {str(e)}')
             
             # Add new subjects
             post_keys = list(request.POST.keys())
@@ -1407,7 +1375,7 @@ def class_teacher_edit_result(request, result_id):
                         entered_by=teacher,
                     )
                 except Exception as e:
-                    messages.warning(request, f'Error adding new subject {subject_name}: {str(e)}')
+                    messages.warning(request, f'Error adding new subject: {str(e)}')
             
             # Update other fields
             result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
@@ -1431,11 +1399,8 @@ def class_teacher_edit_result(request, result_id):
                     pass
             
             # Update fees
-            try:
-                result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
-                result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
-            except:
-                pass
+            result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee or 0))
+            result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee or 0))
             
             # Update affective domain
             result.affective_punctuality = request.POST.get('aff_punctuality', result.affective_punctuality)
@@ -1521,22 +1486,8 @@ def class_teacher_edit_result(request, result_id):
         'subject_results': subject_results,
     }
     
-    # Try multiple template paths for compatibility
-    template_paths = [
-        'result/edit_result.html',
-        'edit_result.html',
-        'accounts/templates/result/edit_result.html'
-    ]
-    
-    for template_path in template_paths:
-        try:
-            return render(request, template_path, context)
-        except:
-            continue
-    
-    # If all template paths fail
-    messages.error(request, 'Template not found. Please contact administrator.')
-    return redirect('class_teacher_collate')
+    # ✅ USE THE CORRECT TEMPLATE PATH (based on your project structure)
+    return render(request, 'result/edit_result.html', context)
     
 
 @login_required
