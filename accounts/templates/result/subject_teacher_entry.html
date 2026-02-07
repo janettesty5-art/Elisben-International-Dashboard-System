@@ -393,6 +393,7 @@
                 
               deleteForm = document.createElement('form');
 deleteForm.method = 'POST';
+deleteForm.action = '{% url "delete_subject_result_post" %}';
 // ✅ FIXED: Use proper URL encoding for Django
 const encodedSubject = encodeURIComponent(subject).replace(/%20/g, '+');
 const encodedTerm = encodeURIComponent(term).replace(/%20/g, '+');

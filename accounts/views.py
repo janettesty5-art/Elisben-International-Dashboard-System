@@ -1507,6 +1507,57 @@ def class_teacher_edit_result(request, result_id):
     return render(request, 'result/edit_result.html', context)
     
 
+    @login_required
+def delete_subject_result_post(request):
+    """Delete a student's subject result via POST - Subject Teacher only"""
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method.')
+        return redirect('subject_teacher_entry')
+    
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        student_id = request.POST.get('student_id')
+        subject_name = request.POST.get('subject_name')
+        term = request.POST.get('term')
+        academic_year = request.POST.get('academic_year')
+        
+        student = Student.objects.get(id=student_id)
+        
+        result = SubjectResult.objects.get(
+            student=student,
+            subject_name=subject_name,
+            term=term,
+            academic_year=academic_year
+        )
+        
+        # Check if teacher has permission
+        if result.entered_by != teacher and student.class_teacher != teacher:
+            messages.error(request, 'You do not have permission to delete this result.')
+            return redirect('subject_teacher_entry')
+        
+        result.delete()
+        
+        ResultActivityLog.objects.create(
+            action='subject_result_deleted',
+            description=f'Subject result deleted: {subject_name} for {student.full_name}',
+            performed_by_type='teacher',
+            performed_by_name=teacher.full_name
+        )
+        
+        messages.success(request, f'✅ {subject_name} result for {student.full_name} deleted successfully!')
+        
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied. Teachers only.')
+    except Student.DoesNotExist:
+        messages.error(request, 'Student not found.')
+    except SubjectResult.DoesNotExist:
+        messages.error(request, 'Result not found.')
+    except Exception as e:
+        messages.error(request, f'Error deleting result: {str(e)}')
+    
+    return redirect('subject_teacher_entry')
+    
+
 @login_required
 def send_result_to_principal(request, result_id):
     try:
