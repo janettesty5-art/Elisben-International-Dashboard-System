@@ -846,7 +846,16 @@ def edit_subject_result(request, result_id):
             result.save()
             
             messages.success(request, f'✅ Result updated for {result.student.full_name}!')
-            return redirect('subject_teacher_entry')
+
+            # Redirect back to the same class/subject/term
+            from urllib.parse import urlencode
+            params = {
+                'class_name': result.student.class_name,
+                'subject_name': result.subject_name,
+                'term': result.term,
+                'academic_year': result.academic_year
+            }
+            return redirect(f'/make-result/subject-teacher/?{urlencode(params)}')
         except Exception as e:
             messages.error(request, f'Error updating result: {str(e)}')
     
@@ -1468,7 +1477,15 @@ def class_teacher_edit_result(request, result_id):
                 pass
             
             messages.success(request, f'✅ Result updated successfully for {result.student.full_name}!')
-            return redirect('class_teacher_collate')
+
+            # Redirect back to the same class/term
+            from urllib.parse import urlencode
+            params = {
+                'class_name': result.class_name,
+                'term': result.term,
+                'academic_year': result.academic_year
+            }
+            return redirect(f'/make-result/class-teacher/?{urlencode(params)}')
             
         except Exception as e:
             messages.error(request, f'Error updating result: {str(e)}')

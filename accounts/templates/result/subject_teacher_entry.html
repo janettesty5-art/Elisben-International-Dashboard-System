@@ -391,10 +391,13 @@
                 
                 deleteDetails.textContent = `Student: ${studentName} | Subject: ${subject}`;
                 
-                deleteForm = document.createElement('form');
-                deleteForm.method = 'POST';
-                deleteForm.action = `/make-result/subject-teacher/delete/${studentId}/${encodeURIComponent(subject)}/${encodeURIComponent(term)}/${encodeURIComponent(year)}/`;
-                
+              deleteForm = document.createElement('form');
+deleteForm.method = 'POST';
+// ✅ FIXED: Use proper URL encoding for Django
+const encodedSubject = encodeURIComponent(subject).replace(/%20/g, '+');
+const encodedTerm = encodeURIComponent(term).replace(/%20/g, '+');
+const encodedYear = encodeURIComponent(year).replace(/%20/g, '+');
+deleteForm.action = `/make-result/subject-teacher/delete/${studentId}/${encodedSubject}/${encodedTerm}/${encodedYear}/`;
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
                 const csrfInput = document.createElement('input');
                 csrfInput.type = 'hidden';
