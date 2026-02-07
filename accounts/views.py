@@ -1508,8 +1508,8 @@ def class_teacher_edit_result(request, result_id):
     
 
     @login_required
-def delete_subject_result_post(request):
-    """Delete a student's subject result via POST - Subject Teacher only"""
+    def delete_subject_result_post(request):
+        """Delete a student's subject result via POST - Subject Teacher only"""
     if request.method != 'POST':
         messages.error(request, 'Invalid request method.')
         return redirect('subject_teacher_entry')
@@ -1556,7 +1556,7 @@ def delete_subject_result_post(request):
         messages.error(request, f'Error deleting result: {str(e)}')
     
     return redirect('subject_teacher_entry')
-    
+
 
 @login_required
 def send_result_to_principal(request, result_id):
