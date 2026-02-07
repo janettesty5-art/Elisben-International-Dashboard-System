@@ -174,14 +174,17 @@
     </div>
     
     <script>
-        const isTerm2or3 = {{ result.term|lower == "second term" or result.term|lower == "third term"|yesno:"true,false" }};
+        // ✅ FIXED: Proper way to check term in JavaScript
+        const currentTerm = "{{ result.term }}";
+        const isTerm2or3 = (currentTerm === "Second Term" || currentTerm === "Third Term");
         
         function calculate() {
             const testA = parseFloat(document.getElementById('testA').value) || 0;
             const testB = parseFloat(document.getElementById('testB').value) || 0;
             const testC = parseFloat(document.getElementById('testC').value) || 0;
             const exam = parseFloat(document.getElementById('exam').value) || 0;
-            const ltcum = isTerm2or3 ? (parseFloat(document.getElementById('ltcum')?.value) || 0) : 0;
+            const ltcumInput = document.getElementById('ltcum');
+            const ltcum = (isTerm2or3 && ltcumInput) ? (parseFloat(ltcumInput.value) || 0) : 0;
             
             // AVG-1: Average of 3 tests
             const avg1 = (testA + testB + testC) / 3;
@@ -231,8 +234,10 @@
         document.getElementById('testB').addEventListener('input', calculate);
         document.getElementById('testC').addEventListener('input', calculate);
         document.getElementById('exam').addEventListener('input', calculate);
-        if (isTerm2or3 && document.getElementById('ltcum')) {
-            document.getElementById('ltcum').addEventListener('input', calculate);
+        
+        const ltcumInput = document.getElementById('ltcum');
+        if (ltcumInput) {
+            ltcumInput.addEventListener('input', calculate);
         }
         
         // Calculate on page load

@@ -453,7 +453,8 @@
     
     <script>
         let newRowCounter = 0;
-        const isTerm2or3 = {{ result.term|lower == "second term" or result.term|lower == "third term"|yesno:"true,false" }};
+        const currentTerm = "{{ result.term }}";
+        const isTerm2or3 = (currentTerm === "Second Term" || currentTerm === "Third Term");
         let subjectToDelete = null;
         
         // Comment dropdown
