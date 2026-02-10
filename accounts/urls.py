@@ -81,6 +81,7 @@ urlpatterns = [
     path('make-result/admin/publish/<int:result_id>/', views.admin_publish_result, name='admin_publish_result'),
     path('make-result/admin/publish-batch/', views.admin_publish_batch, name='admin_publish_batch'),
     path('make-result/admin/published/', views.admin_view_published, name='admin_view_published'),
+    path('admin/wipe-results/', views.admin_wipe_all_results, name='admin_wipe_results'),
     
     # Check Result Portal
     path('check-result/', views.check_result_portal, name='check_result_portal'),
