@@ -1560,7 +1560,6 @@ def delete_subject_result_post(request):
     @login_required
 def admin_wipe_all_results(request):
     """Admin-only: Wipe all result records"""
-    # Check if user is admin/superuser
     if not request.user.is_superuser:
         messages.error(request, 'Access denied. Admins only.')
         return redirect('unified_login')
@@ -1569,12 +1568,10 @@ def admin_wipe_all_results(request):
         confirm = request.POST.get('confirm')
         if confirm == 'DELETE ALL RESULTS':
             try:
-                # Count before deleting
                 subject_count = SubjectResult.objects.count()
                 student_count = StudentResult.objects.count()
                 log_count = ResultActivityLog.objects.count()
                 
-                # Delete all
                 SubjectResult.objects.all().delete()
                 StudentResult.objects.all().delete()
                 ResultActivityLog.objects.all().delete()
@@ -1586,7 +1583,6 @@ def admin_wipe_all_results(request):
         else:
             messages.error(request, 'Incorrect confirmation text.')
     
-    # Get current counts
     context = {
         'subject_count': SubjectResult.objects.count(),
         'student_count': StudentResult.objects.count(),
