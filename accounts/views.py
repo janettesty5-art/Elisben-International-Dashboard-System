@@ -1557,7 +1557,7 @@ def delete_subject_result_post(request):
     
     return redirect('subject_teacher_entry')
 
-    @login_required
+@login_required
 def admin_wipe_all_results(request):
     """Admin-only: Wipe all result records"""
     if not request.user.is_superuser:
