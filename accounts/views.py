@@ -1151,7 +1151,7 @@ def edit_student(request, student_id):
             
             # Handle department for SS1-3
             class_name_upper = student.class_name.upper()
-            if any(cls in class_name_upper for cls in ['SS1', 'SS2', 'SS3']):
+            if class_name_upper in ['SS1', 'SS2', 'SS3']:
                 department = request.POST.get('department', '')
                 if not department:
                     messages.error(request, 'Department is required for SS1, SS2, and SS3 students!')
@@ -2196,7 +2196,7 @@ def register_student(request):
             
             # Validate department for SS1-3
             class_name_upper = class_name.upper()
-            if any(cls in class_name_upper for cls in ['SS1', 'SS2', 'SS3']):
+            if class_name_upper in ['SS1', 'SS2', 'SS3']:
                 if not department:
                     messages.error(request, '⚠️ Department is required for SS1, SS2, and SS3 students!')
                     return redirect('register_student')
