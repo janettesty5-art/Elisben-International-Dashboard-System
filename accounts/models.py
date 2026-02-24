@@ -178,6 +178,8 @@ class Exam(models.Model):
     # ===== ADD THESE 3 NEW FIELDS =====
     is_published = models.BooleanField(default=False)  # NEW: Publishing system
     updated_at = models.DateTimeField(auto_now=True)  # NEW: Track updates
+    # ✅ ADD THIS NEW FIELD:
+    version = models.IntegerField(default=1)  # Track re-publishes
     # Note: created_at already exists above
     # ===================================
 
@@ -218,8 +220,11 @@ class ExamSubmission(models.Model):
     total_questions = models.IntegerField()
     correct_answers = models.IntegerField()
 
+    # ✅ ADD THIS NEW FIELD:
+    exam_version = models.IntegerField(default=1)  # Track which version they took
+
     class Meta:
-        unique_together = ['student', 'exam']
+        unique_together = ['student', 'exam', 'exam_version']
 
     def __str__(self):
         return f"{self.student.full_name} - {self.exam.title}: {self.score}%"

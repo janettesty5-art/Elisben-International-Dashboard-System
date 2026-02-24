@@ -247,10 +247,19 @@ def toggle_exam_publish(request, exam_id):
     
     if request.method == 'POST':
         try:
-            exam.is_published = not exam.is_published
-            exam.save()
-            
-            status = "published ✅" if exam.is_published else "unpublished (moved to drafts) 📝"
+            if exam.is_published:
+                # Unpublishing
+                exam.is_published = False
+                exam.save()
+                status = "unpublished (moved to drafts) 📝"
+            else:
+                # Publishing or RE-publishing
+                if exam.version > 1:
+                    # This is a re-publish! Increment version so students can retake
+                    exam.version += 1
+                exam.is_published = True
+                exam.save()
+                status = f"published ✅ (Version {exam.version})"
             
             ActivityLog.objects.create(
                 action='exam_edited',
@@ -358,14 +367,25 @@ def student_dashboard(request):
     
     submissions = ExamSubmission.objects.filter(student=student).order_by('-submitted_at')
     
-    available_exams = Exam.objects.filter(
+    # ✅ UPDATED: Get all published exams for student's class
+    available_exams_all = Exam.objects.filter(
         class_name=student.class_name, 
         is_active=True,
         is_published=True
     )
     
-    taken_exam_ids = submissions.values_list('exam_id', flat=True)
-    available_exams = available_exams.exclude(id__in=taken_exam_ids)
+    # ✅ UPDATED: Filter out exams where student already submitted CURRENT version
+    available_exams = []
+    for exam in available_exams_all:
+        # Check if student has submission for THIS VERSION
+        already_taken = ExamSubmission.objects.filter(
+            student=student,
+            exam=exam,
+            exam_version=exam.version
+        ).exists()
+        
+        if not already_taken:
+            available_exams.append(exam)
     
     context = {
         'student': student,
@@ -406,8 +426,9 @@ def take_exam(request, exam_id):
         messages.error(request, 'Invalid exam or access denied.')
         return redirect('student_dashboard')
     
-    if ExamSubmission.objects.filter(student=student, exam=exam).exists():
-        messages.error(request, 'You have already taken this exam.')
+    # ✅ UPDATED: Check if already taken THIS VERSION
+    if ExamSubmission.objects.filter(student=student, exam=exam, exam_version=exam.version).exists():
+        messages.error(request, 'You have already taken this version of the exam.')
         return redirect('student_dashboard')
     
     questions = list(exam.questions.all())
@@ -416,9 +437,11 @@ def take_exam(request, exam_id):
     
     if request.method == 'POST':
         try:
+            # ✅ UPDATED: Save exam version with submission
             submission = ExamSubmission.objects.create(
                 student=student,
                 exam=exam,
+                exam_version=exam.version,  # ← NEW: Save which version
                 total_questions=len(questions),
                 correct_answers=0,
                 score=0
@@ -447,7 +470,7 @@ def take_exam(request, exam_id):
             
             ActivityLog.objects.create(
                 action='exam_submitted',
-                description=f'{student.full_name} submitted {exam.title} - Score: {score}%',
+                description=f'{student.full_name} submitted {exam.title} (v{exam.version}) - Score: {score}%',
                 performed_by_type='student',
                 performed_by_name=student.full_name
             )
@@ -2777,6 +2800,7 @@ def add_questions(request, exam_id):
     }
     return render(request, 'add_questions.html', context)
 
+
 @login_required
 def edit_question(request, question_id):
     try:
@@ -2795,6 +2819,13 @@ def edit_question(request, question_id):
             question.option_d = request.POST.get('option_d')
             question.correct_answer = request.POST.get('correct_answer')
             question.save()
+            
+            # ✅ NEW: Increment exam version when question is edited
+            exam = question.exam
+            if exam.is_published:
+                exam.version += 1
+                exam.save()
+                messages.info(request, f'Exam version updated to v{exam.version}. Students can now retake.')
             
             messages.success(request, 'Question updated successfully!')
             return redirect('add_questions', exam_id=question.exam.id)
