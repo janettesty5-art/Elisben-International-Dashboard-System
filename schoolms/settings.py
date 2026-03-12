@@ -167,7 +167,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Add these lines at the very end
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+# ADD THESE LINES:
+WHITENOISE_AUTOREFRESH = True
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_ROOT = MEDIA_ROOT
 
 # Static files configuration
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
