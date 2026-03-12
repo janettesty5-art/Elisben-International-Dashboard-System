@@ -106,3 +106,6 @@ urlpatterns = [
     path('bursar/delete-all-payments/<str:student_id>/', views.delete_all_student_payments, name='delete_all_student_payments'),  # ✅ NEW LINE
     path('make-result/subject-teacher/delete-post/', views.delete_subject_result_post, name='delete_subject_result_post'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
