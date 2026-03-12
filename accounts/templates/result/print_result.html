@@ -44,7 +44,6 @@
                 page-break-inside: avoid !important;
             }
             
-            /* Make table section grow to fill available space */
             .table-section {
                 flex: 1;
                 display: flex;
@@ -72,7 +71,6 @@
             }
         }
         
-        /* Header - COMPACT */
         .header {
             border: 3px solid #000;
             padding: 8px;
@@ -100,7 +98,6 @@
             line-height: 1.2;
         }
         
-        /* Logo */
         .school-logo {
             width: 80px;
             height: 80px;
@@ -144,7 +141,6 @@
             flex-shrink: 0;
         }
         
-        /* Table Section - GROWS TO FILL SPACE */
         .table-section {
             margin-bottom: 5px;
         }
@@ -174,7 +170,6 @@
             font-weight: bold;
         }
         
-        /* Bottom Section - COMPACT */
         .bottom-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -217,7 +212,6 @@
             line-height: 1.2;
         }
         
-        /* Stamp */
         .stamp {
             position: absolute;
             bottom: 80px;
@@ -256,7 +250,6 @@
 </head>
 <body>
     <div class="result-sheet">
-        <!-- Header -->
         <div class="header">
             <div>
                 {% if result.student.profile_picture %}
@@ -279,9 +272,8 @@
                 <p><strong>SESSION:</strong> {{ result.academic_year }}</p>
             </div>
             
-            <!-- Logo -->
             <div class="school-logo">
-                <img src="/media/Elisben Logo.png" alt="School Logo" onerror="this.onerror=null; this.src='/media/Elisben Logo.png'; this.onerror=null; this.src='/media/Elisben Logo.png';">
+                <img src="/media/Elisben Logo.png" alt="School Logo">
             </div>
             
             <div class="school-name">
@@ -295,7 +287,6 @@
         
         <div class="report-title">📚 TERMLY ACADEMIC REPORT 📚</div>
         
-        <!-- Results Table - AUTO GROWS TO FILL SPACE -->
         <div class="table-section">
             <table>
                 <thead>
@@ -347,7 +338,6 @@
             </table>
         </div>
         
-        <!-- Bottom Info -->
         <div class="bottom-section">
             <div>
                 <div class="info-box">
@@ -412,7 +402,6 @@
             </div>
         </div>
         
-        <!-- Remarks -->
         <div class="remarks-section">
             <h4>📝 Class Teacher's Remarks:</h4>
             <p>{{ result.class_teacher_comment|default:"Keep trying! Continue to work hard." }}</p>
@@ -423,9 +412,8 @@
             <p>{{ result.principal_comment|default:"Very good result! Keep it up." }}</p>
         </div>
         
-        <!-- Stamp -->
         {% if result.has_stamp %}
-        <img src="/media/stamp.jpeg" class="stamp" alt="School Stamp" onerror="this.onerror=null; this.src='/media/stamp.jpeg'; this.onerror=null; this.src='/media/stamp.jpeg';">
+        <img src="/media/stamp.jpeg" class="stamp" alt="School Stamp">
         {% endif %}
         
         <p class="footer-text">
@@ -433,7 +421,6 @@
         </p>
     </div>
     
-    <!-- Print Button -->
     <div class="no-print">
         <button onclick="window.print()" class="btn">🖨️ Print Result</button>
         <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
