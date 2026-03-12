@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Termly Academic Report - {{ result.student.full_name }}</title>
+    {% load static %}
     <style>
         @media print {
             @page { 
@@ -273,7 +274,7 @@
             </div>
             
             <div class="school-logo">
-                <img src="/media/Elisben_Logo.png" alt="School Logo">
+                <img src="{% static 'images/Elisben_Logo.png' %}" alt="School Logo">
             </div>
             
             <div class="school-name">
@@ -413,7 +414,7 @@
         </div>
         
         {% if result.has_stamp %}
-        <img src="/media/stamp.jpeg" class="stamp" alt="School Stamp">
+        <img src="{% static 'images/stamp.jpeg' %}" class="stamp" alt="School Stamp">
         {% endif %}
         
         <p class="footer-text">
