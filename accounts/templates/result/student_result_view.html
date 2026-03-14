@@ -464,12 +464,10 @@
         </p>
     </div>
     
-  <div class="no-print">
-    <a href="{% url 'download_student_result_pdf' published.pin %}" class="btn download-btn" style="text-decoration: none; display: inline-block;">📥 Download PDF</a>
+<div class="no-print">
+    <button onclick="window.print()" class="btn download-btn">📥 Download PDF</button>
     <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
 </div>
-
-<!-- DELETE THE SCRIPT - NOT NEEDED ANYMORE -->
 
 </body>
 </html>
