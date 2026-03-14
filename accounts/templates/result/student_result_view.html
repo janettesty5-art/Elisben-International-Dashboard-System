@@ -3,153 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Academic Result</title>
+    <title>My Academic Result - {{ result.student.full_name }}</title>
+    {% load static %}
     <style>
         @media print {
-            @page { margin: 0.5cm; }
-            body { margin: 0; }
-            .no-print { display: none; }
+            @page { 
+                size: A4;
+                margin: 0;
+            }
+            body { 
+                margin: 0;
+                padding: 0;
+            }
+            .no-print { display: none !important; }
+            html, body {
+                height: 100%;
+                overflow: hidden;
+            }
         }
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        
+        html, body {
+            height: 100%;
             font-family: Arial, sans-serif;
-            padding: 20px;
             background: #f5f5f5;
         }
-        .result-sheet {
-            background: white;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            position: relative;
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .result-sheet {
+                height: 100vh;
+                max-height: 297mm;
+                display: flex;
+                flex-direction: column;
+                padding: 8mm;
+                box-shadow: none !important;
+                page-break-inside: avoid !important;
+            }
+            
+            .table-section {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+            
+            .table-section table {
+                flex: 1;
+            }
+            
+            .table-section tbody {
+                display: table-row-group;
+            }
         }
         
-        /* Header */
+        @media screen {
+            .result-sheet {
+                background: white;
+                max-width: 900px;
+                margin: 20px auto;
+                padding: 20px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.1);
+                position: relative;
+            }
+        }
+        
+        /* MOBILE RESPONSIVE */
+        @media screen and (max-width: 768px) {
+            .result-sheet {
+                margin: 0;
+                padding: 10px;
+                box-shadow: none;
+            }
+            
+            .header {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .student-photo {
+                width: 60px !important;
+                height: 60px !important;
+            }
+            
+            .school-logo {
+                width: 60px !important;
+                height: 60px !important;
+            }
+            
+            .school-name h2 {
+                font-size: 14px !important;
+            }
+            
+            .school-name p {
+                font-size: 7px !important;
+            }
+            
+            table {
+                font-size: 7px !important;
+            }
+            
+            .bottom-section {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
+        
         .header {
             border: 3px solid #000;
-            padding: 15px;
+            padding: 8px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
         }
         .student-photo {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             border: 2px solid #000;
             border-radius: 50%;
             object-fit: cover;
+            flex-shrink: 0;
         }
         .student-info {
             flex: 1;
-            margin-left: 20px;
+            margin-left: 12px;
         }
         .student-info p {
-            margin: 5px 0;
-            font-size: 13px;
+            margin: 2px 0;
+            font-size: 10px;
+            line-height: 1.2;
         }
+        
         .school-logo {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            flex-shrink: 0;
+            margin: 0 8px;
         }
+        .school-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
         .school-name {
             text-align: center;
             flex: 1;
+            padding: 0 8px;
         }
         .school-name h2 {
             color: #000080;
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            margin-bottom: 2px;
         }
         .school-name p {
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 8px;
+            line-height: 1.2;
         }
         
         .report-title {
             background: #000080;
             color: white;
-            padding: 8px;
+            padding: 5px;
             text-align: center;
-            font-size: 16px;
+            font-size: 13px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
         }
         
-        /* Results Table */
+        .table-section {
+            margin-bottom: 5px;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 11px;
-            margin-bottom: 15px;
+            font-size: 9px;
         }
         table th, table td {
             border: 1px solid #000;
-            padding: 6px 4px;
+            padding: 3px 2px;
             text-align: center;
         }
         table th {
             background: #e8e8e8;
             font-weight: bold;
+            font-size: 8px;
+            line-height: 1.1;
         }
         .subject-col {
             text-align: left !important;
-            padding-left: 8px;
+            padding-left: 5px !important;
+            font-size: 8px;
         }
         .grade-col {
             font-weight: bold;
         }
         
-        /* Bottom Section */
         .bottom-section {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            font-size: 11px;
+            gap: 6px;
+            font-size: 8px;
+            flex-shrink: 0;
+            margin-bottom: 5px;
         }
         .info-box {
             border: 1px solid #000;
-            padding: 8px;
+            padding: 4px;
         }
         .info-box p {
-            margin: 5px 0;
+            margin: 2px 0;
+            line-height: 1.2;
         }
         
         .remarks-section {
             border: 1px solid #000;
-            padding: 10px;
-            margin-top: 15px;
+            padding: 5px;
+            margin-bottom: 5px;
+            flex-shrink: 0;
         }
         .remarks-section h4 {
-            margin-bottom: 8px;
-            font-size: 12px;
+            margin-bottom: 3px;
+            font-size: 9px;
         }
         .remarks-section p {
-            font-size: 11px;
-            line-height: 1.6;
+            font-size: 8px;
+            line-height: 1.3;
             font-style: italic;
         }
         
         .grading-scale {
-            font-size: 10px;
-            margin: 10px 0;
-            padding: 8px;
+            font-size: 7px;
+            margin: 3px 0;
+            padding: 3px;
             background: #f5f5f5;
             border: 1px solid #ccc;
+            line-height: 1.2;
         }
         
-        /* Stamp */
         .stamp {
             position: absolute;
-            bottom: 150px;
-            right: 100px;
-            opacity: 0.3;
-            width: 250px;
+            bottom: 80px;
+            right: 70px;
+            opacity: 0.2;
+            width: 180px;
             height: auto;
             transform: rotate(-15deg);
             pointer-events: none;
+            z-index: 10;
+            mix-blend-mode: multiply;
+        }
+        
+        .footer-text {
+            text-align: center;
+            font-size: 7px;
+            margin-top: 3px;
+            flex-shrink: 0;
         }
         
         .no-print {
@@ -165,163 +287,169 @@
             cursor: pointer;
             font-size: 16px;
             margin: 0 10px;
-            text-decoration: none;
-            display: inline-block;
         }
-        .btn:hover {
-            background: #000060;
+        .download-btn {
+            background: #28a745;
         }
     </style>
 </head>
 <body>
     <div class="result-sheet">
-        <!-- Header -->
         <div class="header">
             <div>
                 {% if result.student.profile_picture %}
                 <img src="{{ result.student.profile_picture.url }}" class="student-photo" alt="Student Photo">
                 {% else %}
-                <div class="student-photo" style="background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 40px;">
+                <div class="student-photo" style="background: #ccc; display: flex; align-items: center; justify-content: center; font-size: 32px;">
                     {{ result.student.full_name.0 }}
                 </div>
                 {% endif %}
             </div>
             
             <div class="student-info">
-                <p><strong>{{ result.academic_year|default:"2024/ST/EIC259" }}</strong></p>
+                <p><strong>{{ result.student.student_id|default:"2024/ST/EIC259" }}</strong></p>
                 <p><strong>{{ result.student.full_name|upper }}</strong></p>
                 <p><strong>GENDER:</strong> {{ result.student.gender|default:"N/A" }}</p>
-                <p><strong>AGE:</strong> {{ result.student.age|default:"N/A" }}</p>
+                <p><strong>AGE:</strong> {{ result.student.date_of_birth|date:"Y-m-d"|default:"N/A" }}</p>
                 <p><strong>CLASS:</strong> {{ result.class_name }}</p>
-                <p><strong>RANK:</strong> {{ result.position_in_class|default:"STUDENT" }}</p>
+                <p><strong>RANK:</strong> {{ result.position_in_class }}</p>
                 <p><strong>TERM:</strong> {{ result.term }}</p>
-                <p><strong>ACADEMIC SESSION:</strong> {{ result.academic_year }}</p>
+                <p><strong>SESSION:</strong> {{ result.academic_year }}</p>
+            </div>
+            
+            <div class="school-logo">
+                <img src="{% static 'images/Elisben_Logo.png' %}" alt="School Logo">
             </div>
             
             <div class="school-name">
                 <h2>Elisben International College</h2>
                 <p><strong>CRECHE, NURSERY, PRIMARY, SECONDARY</strong></p>
                 <p>Surulere Quarters, Oke Osum Ikere Ekiti, Nigeria.</p>
-                <p>Email: elisbeninternational1@gmail.com | Web: elisbeninternational.com</p>
+                <p>Email: info@elisbencollege.com | Web: https://elisbeninternational.com/</p>
                 <p>(Call or Whatsapp: +234 803 634 3681)</p>
             </div>
         </div>
         
-        <div class="report-title">📚 TERMLY ACADEMIC REPORT - {{ result.student.full_name|upper }}</div>
+        <div class="report-title">📚 TERMLY ACADEMIC REPORT 📚</div>
         
-        <!-- Results Table -->
-        <table>
-            <thead>
-                <tr>
-                    <th rowspan="2">#</th>
-                    <th rowspan="2">SUBJECTS</th>
-                    <th colspan="3">CONTINUOUS ASSESSMENT</th>
-                    <th rowspan="2">AVG-1</th>
-                    <th rowspan="2">EXAM<br>100%</th>
-                    <th rowspan="2">AVG-2<br>100%</th>
-                    <th rowspan="2">LTCUM</th>
-                    <th rowspan="2">ATCUM</th>
-                    <th rowspan="2">GRADE</th>
-                    <th rowspan="2">POSITION</th>
-                    <th rowspan="2">CLASS AVG</th>
-                    <th rowspan="2">REMARK</th>
-                </tr>
-                <tr>
-                    <th>TEST A</th>
-                    <th>TEST B</th>
-                    <th>TEST C</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for subject in subject_results %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td class="subject-col">{{ subject.subject_name|upper }}</td>
-                    <td>{{ subject.test_a|floatformat:0 }}</td>
-                    <td>{{ subject.test_b|floatformat:0 }}</td>
-                    <td>{{ subject.test_c|floatformat:0 }}</td>
-                    <td>{{ subject.avg_1|floatformat:0 }}</td>
-                    <td>{{ subject.exam|floatformat:0 }}</td>
-                    <td>{{ subject.avg_2|floatformat:2 }}</td>
-                    <td>{{ subject.ltcum|floatformat:2 }}</td>
-                    <td>{{ subject.atcum|floatformat:2 }}</td>
-                    <td class="grade-col">{{ subject.grade }}</td>
-                    <td>{{ subject.position_ranking|default:"-" }}</td>
-                    <td>{{ subject.class_average|floatformat:2 }}</td>
-                    <td>{{ subject.grade_remark }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-section">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2">=</th>
+                        <th rowspan="2">SUBJECTS</th>
+                        <th colspan="3">A 100%</th>
+                        <th>B</th>
+                        <th>C</th>
+                        <th>D</th>
+                        <th>E</th>
+                        <th>F</th>
+                        <th rowspan="2">=</th>
+                        <th rowspan="2">POS</th>
+                        <th rowspan="2">AVG</th>
+                        <th rowspan="2">GRD</th>
+                    </tr>
+                    <tr>
+                        <th>T1</th>
+                        <th>T2</th>
+                        <th>T3</th>
+                        <th>A1</th>
+                        <th>EX</th>
+                        <th>A2</th>
+                        <th>LT</th>
+                        <th>CM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subject_results %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td class="subject-col">{{ subject.subject_name|upper }}</td>
+                        <td>{{ subject.test_a|floatformat:0 }}</td>
+                        <td>{{ subject.test_b|floatformat:0 }}</td>
+                        <td>{{ subject.test_c|floatformat:0 }}</td>
+                        <td>{{ subject.avg_1|floatformat:0 }}</td>
+                        <td>{{ subject.exam|floatformat:0 }}</td>
+                        <td>{{ subject.avg_2|floatformat:1 }}</td>
+                        <td>{{ subject.ltcum|floatformat:1|default:"-" }}</td>
+                        <td>{{ subject.cum|floatformat:1 }}</td>
+                        <td class="grade-col">{{ subject.grade }}</td>
+                        <td>{{ subject.position_ranking|default:"-" }}</td>
+                        <td>{{ subject.cum|floatformat:1 }}</td>
+                        <td style="font-size: 7px;">{{ subject.grade_remark }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         
-        <!-- Bottom Info -->
         <div class="bottom-section">
             <div>
                 <div class="info-box">
-                    <p><strong>Vacation:</strong> {{ result.vacation_date|date:"jS F Y" }}</p>
-                    <p><strong>Resumption:</strong> {{ result.resumption_date|date:"jS F Y" }}</p>
-                    <p><strong>Next Term PTA:</strong> ₦{{ result.next_term_pta_fee|floatformat:2 }}</p>
-                    <p><strong>Next Term Fees:</strong> ₦{{ result.next_term_school_fee|floatformat:2 }}</p>
+                    <p><strong>Vacation:</strong> {{ result.vacation_date|date:"j/n/Y"|default:"TBA" }}</p>
+                    <p><strong>Resumption:</strong> {{ result.resumption_date|date:"j/n/Y"|default:"TBA" }}</p>
+                    <p><strong>PTA Fee:</strong> ₦{{ result.next_term_pta_fee|floatformat:0|default:"0" }}</p>
+                    <p><strong>School Fee:</strong> ₦{{ result.next_term_school_fee|floatformat:0|default:"0" }}</p>
                 </div>
                 
-                <div class="info-box" style="margin-top: 10px;">
-                    <p><strong>Subjects Offered:</strong> {{ result.total_subjects }}</p>
-                    <p><strong>Score Gained:</strong> {{ result.score_gained|floatformat:1 }}</p>
-                    <p><strong>Avg. Score:</strong> {{ result.average_score|floatformat:1 }}</p>
-                    <p><strong>Status:</strong> <strong style="font-size: 14px;">{{ result.position_in_class }}</strong> - <strong>{{ result.status_promotion }}</strong></p>
+                <div class="info-box" style="margin-top: 4px;">
+                    <p><strong>Subjects:</strong> {{ result.total_subjects }}</p>
+                    <p><strong>Score:</strong> {{ result.score_gained|floatformat:1 }}</p>
+                    <p><strong>Average:</strong> {{ result.average_score|floatformat:1 }}%</p>
+                    <p><strong>Position:</strong> {{ result.position_in_class }}</p>
+                    <p><strong>Status:</strong> <strong>{{ result.status_promotion }}</strong></p>
                 </div>
             </div>
             
             <div>
                 <div class="info-box">
                     <p style="text-align: center;"><strong>CRITERIA FOR PASSING</strong></p>
-                    <p>✓ Compulsory Subjects: <strong>Maths and English</strong></p>
+                    <p>✓ Compulsory: <strong>Maths & English</strong></p>
                     <p>✓ Promotion Score: <strong>PASS (50%)</strong></p>
                 </div>
                 
                 <div class="grading-scale">
                     <strong>GRADING:</strong><br>
-                    (70 - 100 = A - Excellent) | (60 - 69 = B - Very Good)<br>
-                    (50 - 59 = C - Good) | (45 - 49 = D - Pass)<br>
-                    (40 - 44 = E - Poor) | (0 - 39 = F - Fail)
+                    70-100=A (Excellent) | 60-69=B (V.Good)<br>
+                    50-59=C (Good) | 45-49=D (Pass)<br>
+                    40-44=E (Poor) | 0-39=F (Fail)
                 </div>
                 
                 <div class="info-box">
-                    <p><strong>AFFECTIVE & PSYCHOMOTOR DOMAINS</strong></p>
-                    <table style="font-size: 10px; margin-top: 5px;">
+                    <p><strong>AFFECTIVE & PSYCHOMOTOR</strong></p>
+                    <table style="font-size: 7px; margin-top: 2px; width: 100%;">
                         <tr>
-                            <td style="text-align: left;">Punctuality</td>
-                            <td>{{ result.affective_punctuality|default:"✓" }}</td>
-                            <td style="text-align: left;">Handwriting</td>
-                            <td>{{ result.psycho_handwriting|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Punctuality</td>
+                            <td style="padding: 1px;">{{ result.affective_punctuality|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Handwriting</td>
+                            <td style="padding: 1px;">{{ result.psycho_handwriting|default:"✓" }}</td>
                         </tr>
                         <tr>
-                            <td style="text-align: left;">Neatness</td>
-                            <td>{{ result.affective_neatness|default:"✓" }}</td>
-                            <td style="text-align: left;">Sports</td>
-                            <td>{{ result.psycho_sports|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Neatness</td>
+                            <td style="padding: 1px;">{{ result.affective_neatness|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Sports</td>
+                            <td style="padding: 1px;">{{ result.psycho_sports|default:"✓" }}</td>
                         </tr>
                         <tr>
-                            <td style="text-align: left;">Honesty</td>
-                            <td>{{ result.affective_honesty|default:"✓" }}</td>
-                            <td style="text-align: left;">Tools</td>
-                            <td>{{ result.psycho_handling_tools|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Honesty</td>
+                            <td style="padding: 1px;">{{ result.affective_honesty|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Tools</td>
+                            <td style="padding: 1px;">{{ result.psycho_handling_tools|default:"✓" }}</td>
                         </tr>
                         <tr>
-                            <td style="text-align: left;">Relationship</td>
-                            <td>{{ result.affective_relationship|default:"✓" }}</td>
-                            <td style="text-align: left;">Fluency</td>
-                            <td>{{ result.psycho_verbal_fluency|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Relationship</td>
+                            <td style="padding: 1px;">{{ result.affective_relationship|default:"✓" }}</td>
+                            <td style="text-align: left; padding: 1px;">Fluency</td>
+                            <td style="padding: 1px;">{{ result.psycho_verbal_fluency|default:"✓" }}</td>
                         </tr>
                     </table>
                 </div>
             </div>
         </div>
         
-        <!-- Remarks -->
         <div class="remarks-section">
             <h4>📝 Class Teacher's Remarks:</h4>
-            <p>{{ result.class_teacher_comment|default:"Keep trying! You have shown effort in various activities this term." }}</p>
+            <p>{{ result.class_teacher_comment|default:"Keep trying! Continue to work hard." }}</p>
         </div>
         
         <div class="remarks-section">
@@ -329,20 +457,26 @@
             <p>{{ result.principal_comment|default:"Very good result! Keep it up." }}</p>
         </div>
         
-        <!-- Stamp (if published) -->
-        {% if result.has_stamp %}
-        <img src="/media/student_profiles/school_stamp.jpg" class="stamp" alt="School Stamp">
-        {% endif %}
+        <img src="{% static 'images/stamp.jpeg' %}" class="stamp" alt="School Stamp">
         
-        <p style="text-align: center; font-size: 10px; margin-top: 20px;">
-            🎓 Elisben International College. All rights reserved ©2025
+        <p class="footer-text">
+            🎓 Elisben International College. All rights reserved ©2026
         </p>
     </div>
     
-    <!-- Print/Back Buttons -->
     <div class="no-print">
-        <button onclick="window.print()" class="btn">🖨️ Print Result</button>
-        <a href="{% url 'check_result_portal' %}" class="btn" style="background: #666;">← Check Another Result</a>
+        <button onclick="downloadPDF()" class="btn download-btn">📥 Download PDF</button>
+        <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
     </div>
+
+    <script>
+    function downloadPDF() {
+        document.querySelector('.no-print').style.display = 'none';
+        window.print();
+        setTimeout(function() {
+            document.querySelector('.no-print').style.display = 'block';
+        }, 1000);
+    }
+    </script>
 </body>
 </html>

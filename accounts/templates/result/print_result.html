@@ -280,8 +280,8 @@
             <div class="school-name">
                 <h2>Elisben International College</h2>
                 <p><strong>CRECHE, NURSERY, PRIMARY, SECONDARY</strong></p>
-                <p>Surulere Quarters, Oke Osum Ikere Ekiti, Nigeria.</p>
-                <p>Email: info@elisbencollege.com | Web: elisbencollege.com</p>
+                <p>Surulere Quarters, Oke Osun Ikere Ekiti, Nigeria.</p>
+                <p>Email: info@elisbencollege.com | Web: https://elisbeninternational.com/</p>
                 <p>(Call or Whatsapp: +234 803 634 3681)</p>
             </div>
         </div>
@@ -422,9 +422,20 @@
         </p>
     </div>
     
-    <div class="no-print">
-        <button onclick="window.print()" class="btn">🖨️ Print Result</button>
-        <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
-    </div>
+   <div class="no-print">
+    <button onclick="downloadPDF()" class="btn" style="background: #28a745;">📥 Download PDF</button>
+    <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
+</div>
+
+<script>
+function downloadPDF() {
+    document.querySelector('.no-print').style.display = 'none';
+    window.print();
+    setTimeout(function() {
+        document.querySelector('.no-print').style.display = 'block';
+    }, 1000);
+}
+</script>
+
 </body>
 </html>
