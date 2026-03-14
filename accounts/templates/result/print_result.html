@@ -421,17 +421,13 @@
             🎓 Elisben International College. All rights reserved ©2026
         </p>
     </div>
-    
-   <div class="no-print">
-    <button onclick="downloadPDF()" class="btn" style="background: #28a745;">📥 Download PDF</button>
+
+ <div class="no-print">
+    <a href="{% url 'download_result_pdf' result.id %}" class="btn" style="background: #28a745; text-decoration: none; display: inline-block;">📥 Download PDF</a>
     <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
 </div>
 
-<script>
-function downloadPDF() {
-    window.print();
-}
-</script>
+<!-- DELETE THE SCRIPT - NOT NEEDED ANYMORE -->
 
 </body>
 </html>
