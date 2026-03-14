@@ -429,23 +429,7 @@
 
 <script>
 function downloadPDF() {
-    // Set document title for PDF filename
-    const studentName = '{{ result.student.full_name|escapejs }}';
-    const term = '{{ result.term|escapejs }}';
-    const originalTitle = document.title;
-    document.title = `${studentName}_${term}_Result`;
-    
-    // Hide buttons
-    document.querySelector('.no-print').style.display = 'none';
-    
-    // Trigger print (browser will show "Save as PDF" option)
     window.print();
-    
-    // Restore
-    setTimeout(function() {
-        document.querySelector('.no-print').style.display = 'block';
-        document.title = originalTitle;
-    }, 1000);
 }
 </script>
 
