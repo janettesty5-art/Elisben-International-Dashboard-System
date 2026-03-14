@@ -2906,75 +2906,42 @@ def delete_student(request, student_id):
 
 
 #new pdf thing
-from django.template.loader import render_to_string
-from xhtml2pdf import pisa
-from django.http import HttpResponse
-from io import BytesIO
+from django_weasyprint import WeasyTemplateResponseMixin
+from django.views.generic import DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
-@login_required
-def download_result_pdf(request, result_id):
-    """Generate and download PDF directly - ADMIN VERSION"""
-    try:
-        result = StudentResult.objects.get(id=result_id)
-        
-        subject_results = SubjectResult.objects.filter(
+class DownloadResultPDF(LoginRequiredMixin, WeasyTemplateResponseMixin, DetailView):
+    """Admin PDF Download"""
+    model = StudentResult
+    template_name = 'result/print_result.html'
+    pk_url_kwarg = 'result_id'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        result = self.get_object()
+        context['subject_results'] = SubjectResult.objects.filter(
             student=result.student,
             term=result.term,
             academic_year=result.academic_year
         ).order_by('subject_name')
-        
-        # Render HTML
-        html_string = render_to_string('result/print_result.html', {
-            'result': result,
-            'subject_results': subject_results,
-        })
-        
-        # Generate PDF
-        result_pdf = BytesIO()
-        pisa.CreatePDF(BytesIO(html_string.encode("UTF-8")), dest=result_pdf)
-        
-        # Return as download
-        response = HttpResponse(result_pdf.getvalue(), content_type='application/pdf')
-        filename = f"{result.student.full_name}_{result.term}_Result.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        return response
-        
-    except Exception as e:
-        messages.error(request, f'Error generating PDF: {str(e)}')
-        return redirect('admin_result_management')
+        return context
 
 
-def download_student_result_pdf(request, pin):
-    """Generate and download PDF - STUDENT VERSION"""
-    try:
-        published_result = PublishedResult.objects.get(pin=pin)
-        result = published_result.result
-        
-        subject_results = SubjectResult.objects.filter(
-            student=result.student,
-            term=result.term,
-            academic_year=result.academic_year
+class DownloadStudentResultPDF(WeasyTemplateResponseMixin, DetailView):
+    """Student PDF Download"""
+    model = PublishedResult
+    template_name = 'result/student_result_view.html'
+    slug_field = 'pin'
+    slug_url_kwarg = 'pin'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        published = self.get_object()
+        context['result'] = published.result
+        context['published'] = published
+        context['subject_results'] = SubjectResult.objects.filter(
+            student=published.result.student,
+            term=published.result.term,
+            academic_year=published.result.academic_year
         ).order_by('subject_name')
-        
-        # Render HTML
-        html_string = render_to_string('result/student_result_view.html', {
-            'result': result,
-            'subject_results': subject_results,
-            'published': published_result,
-        })
-        
-        # Generate PDF
-        result_pdf = BytesIO()
-        pisa.CreatePDF(BytesIO(html_string.encode("UTF-8")), dest=result_pdf)
-        
-        # Return as download
-        response = HttpResponse(result_pdf.getvalue(), content_type='application/pdf')
-        filename = f"{result.student.full_name}_{result.term}_Result.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        return response
-        
-    except PublishedResult.DoesNotExist:
-        messages.error(request, 'Invalid PIN.')
-        return redirect('check_result_portal')
+        return context

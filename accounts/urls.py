@@ -106,6 +106,6 @@ urlpatterns = [
     path('bursar/delete-all-payments/<str:student_id>/', views.delete_all_student_payments, name='delete_all_student_payments'),  # ✅ NEW LINE
     path('make-result/subject-teacher/delete-post/', views.delete_subject_result_post, name='delete_subject_result_post'),
     #pdf thing
-    path('result/download-pdf/<int:result_id>/', views.download_result_pdf, name='download_result_pdf'),
-    path('result/student-download-pdf/<str:pin>/', views.download_student_result_pdf, name='download_student_result_pdf'),
+    path('result/download-pdf/<int:result_id>/', views.DownloadResultPDF.as_view(), name='download_result_pdf'),
+    path('result/student-download-pdf/<str:pin>/', views.DownloadStudentResultPDF.as_view(), name='download_student_result_pdf'),
 ]
