@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIN List - {{ term }} {{ academic_year }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        /* ── Top action bar (hidden when printing) ── */
+        .action-bar {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .action-bar h2 { color: #667eea; font-size: 20px; }
+        .btn {
+            padding: 10px 25px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .btn-print { background: #667eea; color: white; }
+        .btn-back  { background: #95a5a6; color: white; }
+        .btn:hover { opacity: 0.85; }
+
+        /* ── Printable document area ── */
+        .document {
+            background: white;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* School header */
+        .school-header {
+            text-align: center;
+            border-bottom: 3px double #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+        .school-header h1 {
+            font-size: 22px;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .school-header p {
+            color: #666;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .school-header .doc-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Class section */
+        .class-section {
+            margin-bottom: 35px;
+            page-break-inside: avoid;
+        }
+        .class-heading {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0;
+        }
+
+        /* PIN table */
+        .pin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .pin-table th {
+            background: #f0f0f0;
+            color: #444;
+            padding: 10px 15px;
+            text-align: left;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #ddd;
+        }
+        .pin-table th:first-child  { width: 60px;  text-align: center; }
+        .pin-table th:last-child   { width: 220px; text-align: center; }
+
+        .pin-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+        }
+        .pin-table td:first-child  { text-align: center; color: #999; font-size: 13px; }
+        .pin-table td:last-child   { text-align: center; }
+
+        .pin-table tr:nth-child(even) { background: #fafafa; }
+        .pin-table tr:hover { background: #f0f4ff; }
+
+        .student-name { font-weight: 600; color: #333; }
+
+        .pin-value {
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            font-weight: bold;
+            color: #667eea;
+            background: #f0f4ff;
+            padding: 5px 12px;
+            border-radius: 5px;
+            letter-spacing: 2px;
+            display: inline-block;
+        }
+
+        /* Class count badge */
+        .class-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 6px 20px;
+            font-size: 12px;
+            color: #888;
+            border-left: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            margin-bottom: 0;
+        }
+
+        /* Document footer */
+        .doc-footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        /* ══════════════════════════════
+           PRINT STYLES
+        ══════════════════════════════ */
+        @media print {
+            body        { background: white; padding: 0; }
+            .action-bar { display: none !important; }
+            .document   { box-shadow: none; border-radius: 0; padding: 20px; max-width: 100%; }
+            .class-section { page-break-inside: avoid; }
+
+            /* Force a page break between classes if the list is long */
+            .class-section + .class-section { page-break-before: auto; }
+
+            .pin-table tr:hover { background: inherit; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Action Bar (screen only) -->
+    <div class="action-bar">
+        <h2>🖨️ PIN List Preview — {{ filter_desc }}</h2>
+        <div>
+            <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+            <a href="{% url 'admin_view_published' %}" class="btn btn-back">← Back</a>
+        </div>
+    </div>
+
+    <!-- Printable Document -->
+    <div class="document">
+
+        <!-- School Header -->
+        <div class="school-header">
+            <h1>Elisben International College</h1>
+            <p>Excellence in Education &nbsp;|&nbsp; Surulere Quarters, Oke Osun Ikere Ekiti, Nigeria</p>
+            <div class="doc-title">📌 Student Result PINs</div>
+            <p style="margin-top:8px; color:#555; font-size:13px;">
+                <strong>{{ term }}</strong> &nbsp;|&nbsp; <strong>{{ academic_year }}</strong>
+                &nbsp;|&nbsp; Generated: {% now "F j, Y" %}
+            </p>
+        </div>
+
+        {% if pins_by_class %}
+            {% for class_name, pins in pins_by_class.items %}
+            <div class="class-section">
+
+                <!-- Class heading -->
+                <div class="class-heading">📚 PINS FOR {{ class_name|upper }}</div>
+
+                <!-- Meta row -->
+                <div class="class-meta">
+                    <span>{{ pins|length }} student{{ pins|length|pluralize }}</span>
+                    <span>{{ term }} &nbsp;·&nbsp; {{ academic_year }}</span>
+                </div>
+
+                <!-- PIN table -->
+                <table class="pin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student Name</th>
+                            <th>PIN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pub in pins %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="student-name">{{ pub.result.student.full_name }}</td>
+                            <td><span class="pin-value">{{ pub.pin }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+            </div>
+            {% endfor %}
+
+        {% else %}
+            <div class="empty-state">
+                <p style="font-size:48px;">📭</p>
+                <p style="font-size:18px; margin-top:15px;">No published results found for the selected filters.</p>
+                <p style="margin-top:8px;">Go back and adjust your filters.</p>
+            </div>
+        {% endif %}
+
+        <!-- Document Footer -->
+        <div class="doc-footer">
+            <p>This document is confidential. Distribute PINs only to the respective students.</p>
+            <p style="margin-top:4px;">Generated by Elisben School Management System &nbsp;|&nbsp; {% now "F j, Y \a\t H:i" %}</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

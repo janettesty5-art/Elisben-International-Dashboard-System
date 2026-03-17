@@ -2903,3 +2903,54 @@ def delete_student(request, student_id):
         return redirect('admin_dashboard')
 
     return render(request, 'admin/delete_student_confirm.html', {'student': student})
+
+
+@login_required
+def download_pins(request):
+    """Download PINs as a printable HTML page grouped by class"""
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+    
+    # Apply same filters as the published results page
+    academic_year = request.GET.get('academic_year')
+    term = request.GET.get('term')
+    class_name = request.GET.get('class_name')
+    
+    published = PublishedResult.objects.all().order_by('class_name', 'result__student__full_name')
+    
+    if academic_year:
+        published = published.filter(academic_year=academic_year)
+    if term:
+        published = published.filter(term=term)
+    if class_name:
+        published = published.filter(class_name=class_name)
+    
+    # Group by class
+    from collections import OrderedDict
+    pins_by_class = OrderedDict()
+    for pub in published:
+        cls = pub.class_name
+        if cls not in pins_by_class:
+            pins_by_class[cls] = []
+        pins_by_class[cls].append(pub)
+    
+    # Build filter description for the header
+    filter_info = []
+    if academic_year:
+        filter_info.append(f"Year: {academic_year}")
+    if term:
+        filter_info.append(f"Term: {term}")
+    if class_name:
+        filter_info.append(f"Class: {class_name}")
+    filter_desc = " | ".join(filter_info) if filter_info else "All Records"
+    
+    context = {
+        'pins_by_class': pins_by_class,
+        'filter_desc': filter_desc,
+        'academic_year': academic_year or 'All Years',
+        'term': term or 'All Terms',
+    }
+    return render(request, 'result/download_pins.html', context)

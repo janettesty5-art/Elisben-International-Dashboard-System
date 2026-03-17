@@ -155,9 +155,14 @@
             {% endif %}
         </div>
         
-        <div style="text-align: center;">
-            <a href="{% url 'admin_result_management' %}" class="btn btn-back">← Back to Management</a>
-        </div>
+        <div style="text-align: center; margin-top: 20px;">
+    <a href="{% url 'admin_result_management' %}" class="btn btn-back">← Back to Management</a>
+    <a href="{% url 'download_pins' %}?academic_year={{ request.GET.academic_year }}&term={{ request.GET.term }}&class_name={{ request.GET.class_name }}" 
+       class="btn btn-publish" 
+       target="_blank">
+        📌 Download PINs
+    </a>
+</div>
     </div>
     
     <script>

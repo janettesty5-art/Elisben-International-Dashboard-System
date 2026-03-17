@@ -105,4 +105,5 @@ urlpatterns = [
     path('make-result/class-teacher/delete/<int:result_id>/', views.delete_student_result, name='delete_student_result'),  # ✅ NEW
     path('bursar/delete-all-payments/<str:student_id>/', views.delete_all_student_payments, name='delete_all_student_payments'),  # ✅ NEW LINE
     path('make-result/subject-teacher/delete-post/', views.delete_subject_result_post, name='delete_subject_result_post'),
+    path('make-result/admin/download-pins/', views.download_pins, name='download_pins'),
 ]
