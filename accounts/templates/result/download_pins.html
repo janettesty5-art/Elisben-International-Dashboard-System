@@ -5,160 +5,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PIN List - {{ term }} {{ academic_year }}</title>
     <style>
+        /* ═══════════════════════════════════════
+           SCREEN STYLES
+        ═══════════════════════════════════════ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             font-family: Arial, sans-serif;
-            background: #f0f0f0;
+            background: #e8eaf0;
             padding: 20px;
         }
 
-        /* ── Top action bar (hidden when printing) ── */
         .action-bar {
             background: white;
-            padding: 15px 30px;
+            padding: 12px 25px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 10px;
+            z-index: 100;
         }
-        .action-bar h2 { color: #667eea; font-size: 20px; }
+        .action-bar h2 { color: #667eea; font-size: 17px; }
         .btn {
-            padding: 10px 25px;
-            border-radius: 8px;
+            padding: 9px 22px;
+            border-radius: 7px;
             border: none;
             cursor: pointer;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             text-decoration: none;
             display: inline-block;
-            margin-left: 10px;
+            margin-left: 8px;
         }
         .btn-print { background: #667eea; color: white; }
         .btn-back  { background: #95a5a6; color: white; }
-        .btn:hover { opacity: 0.85; }
 
-        /* ── Printable document area ── */
-        .document {
+        /* Each class = one A4 sheet on screen too */
+        .page-sheet {
             background: white;
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 30px auto;
+            border-radius: 6px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.15);
+            padding: 14mm 14mm 10mm 14mm;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
 
-        /* School header */
+        /* ── Compact school header ── */
         .school-header {
             text-align: center;
-            border-bottom: 3px double #667eea;
-            padding-bottom: 20px;
-            margin-bottom: 25px;
+            border-bottom: 2.5px double #667eea;
+            padding-bottom: 7px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
         }
         .school-header h1 {
-            font-size: 22px;
-            color: #333;
+            font-size: 13pt;
+            color: #222;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
         }
-        .school-header p {
+        .school-header .sub {
             color: #666;
-            font-size: 14px;
-            margin-top: 4px;
+            font-size: 8pt;
+            margin-top: 2px;
         }
         .school-header .doc-title {
-            font-size: 18px;
+            font-size: 11pt;
             font-weight: bold;
             color: #667eea;
-            margin-top: 12px;
+            margin-top: 5px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
+        }
+        .school-header .meta {
+            font-size: 8pt;
+            color: #555;
+            margin-top: 3px;
         }
 
-        /* Class section */
-        .class-section {
-            margin-bottom: 35px;
-            page-break-inside: avoid;
-        }
+        /* ── Class heading ── */
         .class-heading {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 16px;
+            padding: 6px 14px;
+            border-radius: 5px 5px 0 0;
+            font-size: 11pt;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 0;
+            flex-shrink: 0;
+            margin-top: 4px;
+        }
+        .class-meta-row {
+            background: #f4f5fb;
+            padding: 3px 14px;
+            font-size: 8pt;
+            color: #777;
+            border-left: 1px solid #dde;
+            border-right: 1px solid #dde;
+            display: flex;
+            justify-content: space-between;
+            flex-shrink: 0;
         }
 
-        /* PIN table */
+        /* ── PIN table — fills remaining space ── */
+        .table-wrapper {
+            flex: 1;               /* take ALL remaining vertical space */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
         .pin-table {
             width: 100%;
             border-collapse: collapse;
+            /* Scale font so rows fill the page exactly */
+            font-size: var(--row-font-size, 9.5pt);
+            table-layout: fixed;
         }
         .pin-table th {
-            background: #f0f0f0;
+            background: #eef0fb;
             color: #444;
-            padding: 10px 15px;
+            padding: 5px 10px;
             text-align: left;
-            font-size: 13px;
+            font-size: 7.5pt;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 2px solid #ddd;
+            letter-spacing: 0.4px;
+            border-bottom: 1.5px solid #ccc;
+            position: sticky;
+            top: 0;
         }
-        .pin-table th:first-child  { width: 60px;  text-align: center; }
-        .pin-table th:last-child   { width: 220px; text-align: center; }
+        .pin-table th:first-child { width: 38px; text-align: center; }
+        .pin-table th:last-child  { width: 160px; text-align: center; }
 
         .pin-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
+            padding: 4px 10px;
+            border-bottom: 0.5px solid #eee;
+            vertical-align: middle;
         }
-        .pin-table td:first-child  { text-align: center; color: #999; font-size: 13px; }
-        .pin-table td:last-child   { text-align: center; }
+        .pin-table td:first-child { text-align: center; color: #aaa; font-size: 7.5pt; }
+        .pin-table td:last-child  { text-align: center; }
+        .pin-table tr:nth-child(even) { background: #fafbff; }
 
-        .pin-table tr:nth-child(even) { background: #fafafa; }
-        .pin-table tr:hover { background: #f0f4ff; }
-
-        .student-name { font-weight: 600; color: #333; }
+        .student-name { font-weight: 600; color: #222; }
 
         .pin-value {
             font-family: 'Courier New', monospace;
-            font-size: 15px;
             font-weight: bold;
             color: #667eea;
-            background: #f0f4ff;
-            padding: 5px 12px;
-            border-radius: 5px;
-            letter-spacing: 2px;
+            background: #eef0fb;
+            padding: 2px 8px;
+            border-radius: 4px;
+            letter-spacing: 1.5px;
             display: inline-block;
+            font-size: 0.95em;
         }
 
-        /* Class count badge */
-        .class-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #f8f9fa;
-            padding: 6px 20px;
-            font-size: 12px;
-            color: #888;
-            border-left: 1px solid #ddd;
-            border-right: 1px solid #ddd;
-            margin-bottom: 0;
-        }
-
-        /* Document footer */
-        .doc-footer {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 2px solid #ddd;
+        /* Page footer */
+        .page-footer {
+            margin-top: 6px;
+            padding-top: 5px;
+            border-top: 1px solid #ddd;
             text-align: center;
-            color: #999;
-            font-size: 12px;
+            color: #bbb;
+            font-size: 7pt;
+            flex-shrink: 0;
         }
 
         /* Empty state */
@@ -166,21 +186,68 @@
             text-align: center;
             padding: 60px 20px;
             color: #999;
+            background: white;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: 40px auto;
         }
 
-        /* ══════════════════════════════
-           PRINT STYLES
-        ══════════════════════════════ */
+        /* ═══════════════════════════════════════
+           PRINT STYLES  — each .page-sheet = 1 page
+        ═══════════════════════════════════════ */
         @media print {
-            body        { background: white; padding: 0; }
+            @page {
+                size: A4 portrait;
+                margin: 0;          /* we control all spacing ourselves */
+            }
+
+            html, body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
             .action-bar { display: none !important; }
-            .document   { box-shadow: none; border-radius: 0; padding: 20px; max-width: 100%; }
-            .class-section { page-break-inside: avoid; }
 
-            /* Force a page break between classes if the list is long */
-            .class-section + .class-section { page-break-before: auto; }
+            .page-sheet {
+                width: 210mm;
+                height: 297mm;          /* EXACT A4 height */
+                min-height: unset;
+                margin: 0 !important;
+                padding: 12mm 13mm 8mm 13mm;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                page-break-after: always;
+                page-break-inside: avoid;
+                break-after: page;
+                overflow: hidden;
+            }
 
-            .pin-table tr:hover { background: inherit; }
+            /* Last sheet: no extra blank page */
+            .page-sheet:last-child {
+                page-break-after: avoid;
+                break-after: avoid;
+            }
+
+            /* Let the table stretch to fill available height */
+            .table-wrapper {
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .pin-table {
+                height: 100%;
+            }
+
+            /* Make rows spread evenly inside the fixed height */
+            .pin-table tbody tr {
+                height: calc( (297mm - 85mm) / var(--student-count, 20) );
+            }
+
+            .pin-table td, .pin-table th {
+                padding-top: 0;
+                padding-bottom: 0;
+            }
         }
     </style>
 </head>
@@ -191,38 +258,33 @@
         <h2>🖨️ PIN List Preview — {{ filter_desc }}</h2>
         <div>
             <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-            <a href="{% url 'admin_view_published' %}" class="btn btn-back">← Back</a>
+            <a href="{% url 'admin_view_published' %}?academic_year={{ request.GET.academic_year }}&term={{ request.GET.term }}&class_name={{ request.GET.class_name }}" class="btn btn-back">← Back</a>
         </div>
     </div>
 
-    <!-- Printable Document -->
-    <div class="document">
+    {% if pins_by_class %}
+        {% for class_name, pins in pins_by_class.items %}
 
-        <!-- School Header -->
-        <div class="school-header">
-            <h1>Elisben International College</h1>
-            <p>Excellence in Education &nbsp;|&nbsp; Surulere Quarters, Oke Osun Ikere Ekiti, Nigeria</p>
-            <div class="doc-title">📌 Student Result PINs</div>
-            <p style="margin-top:8px; color:#555; font-size:13px;">
-                <strong>{{ term }}</strong> &nbsp;|&nbsp; <strong>{{ academic_year }}</strong>
-                &nbsp;|&nbsp; Generated: {% now "F j, Y" %}
-            </p>
-        </div>
+        <!-- ONE PAGE PER CLASS -->
+        <div class="page-sheet" style="--student-count: {{ pins|length }};">
 
-        {% if pins_by_class %}
-            {% for class_name, pins in pins_by_class.items %}
-            <div class="class-section">
+            <!-- Compact Header -->
+            <div class="school-header">
+                <h1>Elisben International College</h1>
+                <div class="sub">Excellence in Education &nbsp;|&nbsp; Surulere Quarters, Oke Osum Ikere Ekiti, Nigeria</div>
+                <div class="doc-title">📌 Student Result PINs</div>
+                <div class="meta"><strong>{{ term }}</strong> &nbsp;|&nbsp; <strong>{{ academic_year }}</strong> &nbsp;|&nbsp; Generated: {% now "F j, Y" %}</div>
+            </div>
 
-                <!-- Class heading -->
-                <div class="class-heading">📚 PINS FOR {{ class_name|upper }}</div>
+            <!-- Class heading -->
+            <div class="class-heading">📚 PINS FOR {{ class_name|upper }}</div>
+            <div class="class-meta-row">
+                <span>{{ pins|length }} student{{ pins|length|pluralize }}</span>
+                <span>{{ term }} &nbsp;·&nbsp; {{ academic_year }}</span>
+            </div>
 
-                <!-- Meta row -->
-                <div class="class-meta">
-                    <span>{{ pins|length }} student{{ pins|length|pluralize }}</span>
-                    <span>{{ term }} &nbsp;·&nbsp; {{ academic_year }}</span>
-                </div>
-
-                <!-- PIN table -->
+            <!-- Table fills remaining space -->
+            <div class="table-wrapper">
                 <table class="pin-table">
                     <thead>
                         <tr>
@@ -241,25 +303,25 @@
                         {% endfor %}
                     </tbody>
                 </table>
-
             </div>
-            {% endfor %}
 
-        {% else %}
-            <div class="empty-state">
-                <p style="font-size:48px;">📭</p>
-                <p style="font-size:18px; margin-top:15px;">No published results found for the selected filters.</p>
-                <p style="margin-top:8px;">Go back and adjust your filters.</p>
+            <!-- Footer -->
+            <div class="page-footer">
+                Confidential — Distribute PINs only to respective students &nbsp;|&nbsp;
+                Elisben School Management System &nbsp;|&nbsp; {% now "F j, Y" %}
             </div>
-        {% endif %}
 
-        <!-- Document Footer -->
-        <div class="doc-footer">
-            <p>This document is confidential. Distribute PINs only to the respective students.</p>
-            <p style="margin-top:4px;">Generated by Elisben School Management System &nbsp;|&nbsp; {% now "F j, Y \a\t H:i" %}</p>
+        </div><!-- end .page-sheet -->
+
+        {% endfor %}
+
+    {% else %}
+        <div class="empty-state">
+            <p style="font-size:40px;">📭</p>
+            <p style="font-size:17px; margin-top:12px; color:#666;">No published results found for the selected filters.</p>
+            <p style="margin-top:8px; font-size:13px;">Go back and adjust your filters.</p>
         </div>
-
-    </div>
+    {% endif %}
 
 </body>
 </html>
