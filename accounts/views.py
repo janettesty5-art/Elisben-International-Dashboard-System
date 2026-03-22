@@ -689,6 +689,31 @@ def subject_teacher_entry(request):
                 
             except SubjectResult.DoesNotExist:
                 pass
+
+            # ✅ AUTO-FILL LTCUM FROM PREVIOUS TERM
+    previous_term_results = {}
+    if term in ['Second Term', 'Third Term'] and subject_name and selected_class and students:
+        # Determine previous term
+        if term == 'Second Term':
+            prev_term = 'First Term'
+        else:  # Third Term
+            prev_term = 'Second Term'
+        
+        # Fetch previous term results for same subject
+        for student in students:
+            try:
+                prev_result = SubjectResult.objects.get(
+                    student=student,
+                    subject_name=subject_name,
+                    term=prev_term,
+                    academic_year=academic_year
+                )
+                # Use AVG-2 (avg_2) as LTCUM
+                previous_term_results[student.id] = prev_result.avg_2
+                
+            except SubjectResult.DoesNotExist:
+                # No previous term result found - set to 0
+                previous_term_results[student.id] = 0
     
     # Get all recorded results by this teacher
     recorded_results = SubjectResult.objects.filter(
@@ -711,6 +736,7 @@ def subject_teacher_entry(request):
         'departments': departments,
         'is_senior_class': is_senior_class,
         'recorded_results': recorded_results,
+        'previous_term_results': previous_term_results,
     }
     
     return render(request, 'result/subject_teacher_entry.html', context)

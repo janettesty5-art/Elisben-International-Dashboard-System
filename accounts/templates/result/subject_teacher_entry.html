@@ -209,7 +209,7 @@
                             {% if term == "Second Term" or term == "Third Term" %}
                             <td>
                                 <input type="number" name="ltcum_{{ student.id }}" class="ltcum-input"
-                                       value="{% if existing and existing.ltcum %}{{ existing.ltcum }}{% else %}0{% endif %}" 
+                                       value="{% if existing and existing.ltcum %}{{ existing.ltcum }}{% else %}{{ previous_term_results|get_item:student.id|floatformat:2|default:'0.00' }}{% endif %}" 
                                        min="0" max="100" step="0.01">
                             </td>
                             {% endif %}
