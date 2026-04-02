@@ -1,243 +1,1113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>School Bulletin - Elisben International Schools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --rose:     #e891cc;
+            --rose-lt:  #f3b8e2;
+            --rose-pale:#fdf0f9;
+            --rose-mid: #d45fb5;
+            --plum:     #39105d;
+            --plum-dk:  #220a3a;
+            --plum-lt:  #5a2490;
+            --plum-mid: #4a1a78;
+            --cream:    #fdf8fc;
+            --ink:      #1e0a2e;
+            --muted:    #7a5c8a;
+            --border:   #e8d0f0;
+            --white:    #ffffff;
+
+            
+            --shadow-soft: 0 4px 24px rgba(57,16,93,0.08);
+            --shadow-md:   0 8px 40px rgba(57,16,93,0.13);
+            --shadow-lg:   0 16px 60px rgba(57,16,93,0.18);
+
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-body:    'DM Sans', sans-serif;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
         body {
-            font-family: 'Times New Roman', Times, serif;
-            background: #f5f5f5;
-            padding: 20px;
+            font-family: var(--font-body);
+            background: var(--cream);
+            color: var(--ink);
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-        .container {
-            max-width: 900px;
+
+        /* ═══════════════════════════
+           BACKGROUND TEXTURE
+        ═══════════════════════════ */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 10% 0%, rgba(232,145,204,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 60% at 95% 100%, rgba(57,16,93,0.08) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ═══════════════════════════
+           WRAPPER
+        ═══════════════════════════ */
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
             margin: 0 auto;
-            background: white;
-            padding: 50px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            border-radius: 10px;
+            padding: 24px 16px 60px;
         }
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #2c3e50;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+
+        /* ═══════════════════════════
+           HEADER CARD
+        ═══════════════════════════ */
+        .header-card {
+            background: var(--plum-dk);
+            border-radius: var(--radius-xl);
+            padding: 40px 36px 36px;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
         }
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: -60px; right: -60px;
+            width: 240px; height: 240px;
+            background: radial-gradient(circle, rgba(232,145,204,0.18) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .header-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40px; left: -40px;
+            width: 180px; height: 180px;
+            background: radial-gradient(circle, rgba(90,36,144,0.35) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-inner {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        @media (max-width: 520px) {
+            .header-inner { flex-direction: column; text-align: center; }
+        }
+
+        .logo-ring {
+            flex-shrink: 0;
+            width: 82px; height: 82px;
+            border-radius: 50%;
+            border: 2px solid rgba(232,145,204,0.4);
+            background: rgba(255, 255, 255, 0.96);
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .logo-ring img {
+            width: 58px; height: 58px;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+        .logo-ring .fa-graduation-cap {
+            font-size: 30px;
+            color: var(--rose-lt);
+        }
+
+        .header-text { flex: 1; }
         .school-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2c3e50;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        .bulletin-title {
-            font-size: 18px;
-            color: #e74c3c;
-            font-weight: bold;
-            margin-top: 15px;
-            text-transform: uppercase;
-        }
-        .date {
-            font-size: 14px;
-            color: #7f8c8d;
-            margin-top: 10px;
-        }
-        .content {
-            line-height: 1.8;
-            color: #2c3e50;
-            text-align: justify;
-        }
-        .greeting {
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .section-title {
-            font-weight: bold;
-            color: #2c3e50;
-            margin-top: 25px;
-            margin-bottom: 10px;
-            font-size: 16px;
-        }
-        ul {
-            margin-left: 30px;
-            margin-bottom: 20px;
-        }
-        ul li {
+            font-family: var(--font-display);
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: 700;
+            color: var(--white);
+            letter-spacing: 0.02em;
+            line-height: 1.2;
             margin-bottom: 8px;
         }
-        .important-section {
-            background: #fff3cd;
-            padding: 15px;
-            border-left: 4px solid #ffc107;
-            margin: 20px 0;
-        }
-        .important-section h3 {
-            color: #856404;
+        .bulletin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(232,145,204,0.18);
+            border: 1px solid rgba(232,145,204,0.35);
+            color: var(--rose-lt);
+            font-size: 11.5px;
+            font-weight: 500;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 50px;
             margin-bottom: 10px;
         }
-        .signature {
-            margin-top: 40px;
-            font-weight: bold;
-        }
-        .contact-info {
-            background: #e7f3ff;
-            padding: 15px;
-            margin-top: 30px;
-            border-radius: 5px;
-            border-left: 4px solid #3498db;
-        }
-        .contact-info p {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        .motto {
-            text-align: center;
+        .bulletin-title {
+            font-family: var(--font-display);
+            font-size: clamp(13px, 2.8vw, 16px);
+            color: rgba(255,255,255,0.75);
             font-style: italic;
-            color: #7f8c8d;
-            margin-top: 20px;
-            font-size: 16px;
-            font-weight: bold;
+            line-height: 1.55;
         }
-        .btn-container {
-            text-align: center;
-            margin-top: 40px;
+        .header-date {
+            margin-top: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
         }
-        .btn {
-            display: inline-block;
-            padding: 18px 50px;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            text-decoration: none;
-            border-radius: 50px;
-            font-size: 18px;
+
+        /* ═══════════════════════════
+           CONTENT CARD (base)
+        ═══════════════════════════ */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 32px 28px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border);
+        }
+        @media (max-width: 480px) {
+            .card { padding: 22px 18px; }
+            .header-card { padding: 28px 20px 26px; }
+        }
+
+        /* ═══════════════════════════
+           SECTION LABEL
+        ═══════════════════════════ */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .section-label .icon-wrap {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: var(--rose-pale);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .section-label .icon-wrap i {
+            color: var(--rose-mid);
+            font-size: 15px;
+        }
+        .section-label h2 {
+            font-family: var(--font-display);
+            font-size: clamp(17px, 3.5vw, 21px);
+            font-weight: 700;
+            color: var(--plum);
+        }
+
+        /* ═══════════════════════════
+           BODY TEXT
+        ═══════════════════════════ */
+        .body-text {
+            font-size: 14.5px;
+            line-height: 1.8;
+            color: #3a2050;
+        }
+        .body-text + .body-text { margin-top: 12px; }
+
+        /* ═══════════════════════════
+           HIGHLIGHT LIST
+        ═══════════════════════════ */
+        .highlight-list {
+            list-style: none;
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .highlight-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 14px;
+            line-height: 1.65;
+            color: #3a2050;
+        }
+        .highlight-list li i {
+            color: var(--rose-mid);
+            font-size: 13px;
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        /* ═══════════════════════════
+           DATES STRIP
+        ═══════════════════════════ */
+        .dates-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 14px;
+        }
+        @media (max-width: 420px) { .dates-strip { grid-template-columns: 1fr; } }
+
+        .date-pill {
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.3);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .date-pill .dp-icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: var(--white);
+            border: 1px solid rgba(232,145,204,0.4);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .date-pill .dp-icon i { color: var(--plum); font-size: 15px; }
+        .date-pill .dp-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+        .date-pill .dp-value { font-size: 13.5px; font-weight: 600; color: var(--plum); }
+
+        /* ═══════════════════════════
+           IMPORTANT BANNER
+        ═══════════════════════════ */
+        .info-banner {
+            background: linear-gradient(135deg, rgba(57,16,93,0.05) 0%, rgba(232,145,204,0.08) 100%);
+            border: 1px solid rgba(232,145,204,0.35);
+            border-radius: var(--radius-md);
+            padding: 18px 20px;
+            margin-top: 16px;
+        }
+        .info-banner .ib-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
             font-weight: 600;
-            transition: transform 0.3s, box-shadow 0.3s;
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            color: var(--plum);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 12px;
         }
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.5);
+        .info-banner .ib-title i { color: var(--rose-mid); }
+
+        /* ═══════════════════════════
+           FEES SECTION — CLASS ACCORDION
+        ═══════════════════════════ */
+        .fees-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
         }
+        .fees-header h2 {
+            font-family: var(--font-display);
+            font-size: clamp(18px, 4vw, 23px);
+            font-weight: 700;
+            color: var(--plum);
+        }
+
+        /* Tab selector */
+        .class-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.3);
+            border-radius: var(--radius-md);
+            padding: 6px;
+        }
+        .tab-btn {
+            flex: 1;
+            min-width: 70px;
+            padding: 9px 6px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--muted);
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .tab-btn:hover { background: rgba(232,145,204,0.2); color: var(--plum); }
+        .tab-btn.active {
+            background: var(--plum);
+            color: var(--white);
+            box-shadow: 0 3px 12px rgba(57,16,93,0.25);
+        }
+
+        /* Fee panel */
+        .fee-panel { display: none; animation: fadeUp 0.28s ease; }
+        .fee-panel.active { display: block; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Fee rows */
+        .fee-rows {
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.25);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .fee-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 18px;
+            font-size: 14px;
+            color: #3a2050;
+            border-bottom: 1px solid rgba(232,145,204,0.2);
+            transition: background 0.15s;
+        }
+        .fee-row:last-child { border-bottom: none; }
+        .fee-row:hover { background: rgba(232,145,204,0.12); }
+        .fee-row .fr-name { display: flex; align-items: center; gap: 9px; }
+        .fee-row .fr-name i { color: var(--rose-mid); font-size: 12px; width: 14px; }
+        .fee-row .fr-amt { font-weight: 600; color: var(--plum); font-size: 14px; }
+
+        .fee-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--plum);
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            margin-bottom: 8px;
+        }
+        .fee-total-row .ft-label {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--rose-lt);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .fee-total-row .ft-amt {
+            color: var(--white);
+            font-size: 19px;
+            font-weight: 700;
+            font-family: var(--font-display);
+        }
+
+        /* Saturday lesson note */
+        .lesson-note {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(232,145,204,0.12);
+            border: 1px dashed rgba(232,145,204,0.5);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--plum-lt);
+            margin-top: 6px;
+        }
+        .lesson-note i { color: var(--rose-mid); }
+
+        /* Divider inside fee panel */
+        .fee-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 18px 0;
+        }
+        .fee-sub-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .fee-sub-title i { color: var(--rose-mid); }
+
+        /* ═══════════════════════════
+           PAYMENT SECTION
+        ═══════════════════════════ */
+        .payment-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        @media (max-width: 500px) { .payment-grid { grid-template-columns: 1fr; } }
+
+        .bank-card {
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.3);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .bank-card::before {
+            content: '';
+            position: absolute;
+            top: -20px; right: -20px;
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, rgba(232,145,204,0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+        .bank-card .bc-bank {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .bank-card .bc-bank i { color: var(--rose-mid); }
+        .bank-card .bc-acct {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--plum);
+            letter-spacing: 1.5px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 4px;
+        }
+        .bank-card .bc-name {
+            font-size: 11.5px;
+            color: var(--muted);
+        }
+
+        /* Payment schedule */
+        .schedule-track {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.3);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .schedule-step {
+            flex: 1;
+            padding: 16px 10px;
+            text-align: center;
+            position: relative;
+        }
+        .schedule-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0; top: 20%; bottom: 20%;
+            width: 1px;
+            background: rgba(232,145,204,0.35);
+        }
+        .schedule-step .ss-pct {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--plum);
+            font-family: var(--font-display);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .schedule-step .ss-when {
+            font-size: 11px;
+            color: var(--muted);
+            line-height: 1.35;
+        }
+        .schedule-step .ss-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--rose-mid);
+            margin: 0 auto 6px;
+        }
+
+        .teller-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: linear-gradient(135deg, rgba(57,16,93,0.06), rgba(232,145,204,0.07));
+            border: 1px solid rgba(232,145,204,0.35);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            margin-top: 14px;
+            font-size: 13.5px;
+            color: var(--plum);
+            line-height: 1.6;
+        }
+        .teller-note i { color: var(--rose-mid); margin-top: 2px; flex-shrink: 0; }
+
+        /* ═══════════════════════════
+           REMINDERS
+        ═══════════════════════════ */
+        .reminder-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 6px;
+        }
+        .reminder-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.25);
+            border-radius: var(--radius-sm);
+            padding: 13px 15px;
+            font-size: 13.5px;
+            color: #3a2050;
+            line-height: 1.6;
+        }
+        .reminder-item .ri-num {
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: var(--plum);
+            color: var(--white);
+            font-size: 11px;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* ═══════════════════════════
+           SIGNATURE + CONTACT
+        ═══════════════════════════ */
+        .sign-block {
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+            margin-top: 6px;
+        }
+        .sign-block p {
+            font-size: 14px;
+            color: var(--plum);
+            line-height: 1.8;
+        }
+        .sign-block .sign-name {
+            font-family: var(--font-display);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--plum-dk);
+            margin-top: 4px;
+        }
+
+        .contact-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+        .contact-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.3);
+            border-radius: 50px;
+            padding: 9px 16px;
+            font-size: 13px;
+            color: var(--plum);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .contact-chip:hover {
+            background: var(--plum);
+            color: var(--white);
+            border-color: var(--plum);
+        }
+        .contact-chip i { color: var(--rose-mid); font-size: 13px; }
+        .contact-chip:hover i { color: var(--rose-lt); }
+
+        /* ═══════════════════════════
+           MOTTO FOOTER
+        ═══════════════════════════ */
+        .motto-footer {
+            text-align: center;
+            margin-top: 28px;
+            padding: 22px;
+            background: var(--plum-dk);
+            border-radius: var(--radius-lg);
+        }
+        .motto-footer .mf-quote {
+            font-family: var(--font-display);
+            font-size: clamp(17px, 4vw, 22px);
+            font-style: italic;
+            color: var(--rose-lt);
+            margin-bottom: 6px;
+        }
+        .motto-footer .mf-school {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* ═══════════════════════════
+           CTA BUTTON
+        ═══════════════════════════ */
+        .cta-wrap {
+            text-align: center;
+            margin-top: 28px;
+        }
+        .cta-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--plum);
+            color: var(--white);
+            border: none;
+            border-radius: 50px;
+            padding: 16px 38px;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 24px rgba(57,16,93,0.3);
+            text-decoration: none;
+        }
+        .cta-btn:hover {
+            background: var(--plum-lt);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(57,16,93,0.38);
+        }
+        .cta-btn i { font-size: 14px; color: var(--rose-lt); }
+
+        /* ═══════════════════════════
+           UNIFORM SECTION
+        ═══════════════════════════ */
+        .uniform-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+        @media (max-width: 460px) { .uniform-grid { grid-template-columns: 1fr; } }
+
+        .uniform-card {
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.25);
+            border-radius: var(--radius-md);
+            padding: 14px 12px;
+            text-align: center;
+        }
+        .uniform-card .uc-day {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 6px;
+        }
+        .uniform-card .uc-price {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--plum);
+            font-family: var(--font-display);
+        }
+        .uniform-card .uc-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
         @media print {
-            .btn-container { display: none; }
+            .cta-wrap { display: none; }
+            body { background: white; }
+            body::before { display: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="school-name">Elisben International Schools, Ikere Ekiti</div>
-            <div class="bulletin-title">
-                Bulletin for the End of Second Term 2025/2026 Academic Session<br>
-                and Commencement of Third Term
+<div class="wrapper">
+
+    <!-- ══════ HEADER ══════ -->
+    <div class="header-card">
+        <div class="header-inner">
+            <div class="logo-ring">
+             <img src="{% static 'images/Elisben_Logo.png' %}" alt="Logo"> 
             </div>
-            <div class="date">Date: 1st April, 2026</div>
+            <div class="header-text">
+                <div class="bulletin-badge">
+                    <i class="fa-regular fa-bell"></i> Official School Bulletin
+                </div>
+                <div class="school-name">Elisben International Schools, Ikere Ekiti</div>
+                <div class="bulletin-title">
+                    End of Second Term 2025/2026 Academic Session<br>
+                    &amp; Commencement of Third Term
+                </div>
+                <div class="header-date">
+                    <i class="fa-regular fa-calendar"></i> 1st April, 2026
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ GREETING ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-regular fa-handshake"></i></div>
+            <h2>Dear Parents & Guardians</h2>
+        </div>
+        <p class="body-text">We give thanks to Almighty God for His faithfulness and protection over our students and the entire school community throughout the Second Term of the 2025/2026 Academic Session.</p>
+        <p class="body-text" style="margin-top:12px;">The Second Term came to a successful close on <strong>Thursday, 2nd April, 2026</strong>. We appreciate the commitment of our students, the dedication of our teachers, and the continued support of all parents and guardians.</p>
+    </div>
+
+    <!-- ══════ TERM HIGHLIGHTS ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-solid fa-star"></i></div>
+            <h2>Term Highlights</h2>
+        </div>
+        <ul class="highlight-list">
+            <li><i class="fa-solid fa-circle-check"></i> Successful completion of the Second Term examinations.</li>
+            <li><i class="fa-solid fa-circle-check"></i> Active participation in cultural activities, particularly on Asa Day.</li>
+            <li><i class="fa-solid fa-circle-check"></i> Notable improvement in students' reading culture.</li>
+            <li><i class="fa-solid fa-circle-check"></i> Continued emphasis on moral and spiritual development through weekly devotion and character education classes.</li>
+        </ul>
+    </div>
+
+    <!-- ══════ VACATION DATES ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-regular fa-calendar-days"></i></div>
+            <h2>Vacation &amp; Resumption</h2>
+        </div>
+        <div class="dates-strip">
+            <div class="date-pill">
+                <div class="dp-icon"><i class="fa-solid fa-plane-departure"></i></div>
+                <div>
+                    <div class="dp-label">Vacation begins</div>
+                    <div class="dp-value">Thursday, 2nd April 2026</div>
+                </div>
+            </div>
+            <div class="date-pill">
+                <div class="dp-icon"><i class="fa-solid fa-school"></i></div>
+                <div>
+                    <div class="dp-label">School resumes</div>
+                    <div class="dp-value">Monday, 27th April 2026</div>
+                </div>
+            </div>
         </div>
 
-        <div class="content">
-            <p class="greeting">Dear Parents/Guardians,</p>
-
-            <p>We give thanks to Almighty God for His faithfulness and protection over our students and the entire school community throughout the Second Term of the 2025/2026 Academic Session.</p>
-
-            <p>The Second Term came to a successful close on <strong>Thursday, 2nd April, 2026</strong>.</p>
-
-            <p>We appreciate the commitment of our students/pupils, the dedication of our teachers, and the continued support of all parents and guardians. The term recorded remarkable academic progress, impressive performance in co-curricular activities, and good conduct among the majority of our learners.</p>
-
-            <h3 class="section-title">Key Highlights of the Second Term:</h3>
-            <ul>
-                <li>Successful completion of the Second Term examinations.</li>
-                <li>Active participation in the cultural activities particularly on Asa day.</li>
-                <li>Notable improvement in students' reading culture.</li>
-                <li>Continued emphasis on moral and spiritual development through our weekly devotion and character education classes.</li>
+        <div class="info-banner" style="margin-top:18px;">
+            <div class="ib-title"><i class="fa-solid fa-circle-exclamation"></i> Important — Third Term</div>
+            <ul class="highlight-list">
+                <li><i class="fa-solid fa-clock"></i> Reporting time: <strong>7:20 a.m. prompt</strong> — complete school uniform required.</li>
+                <li><i class="fa-solid fa-calendar-week"></i> Third Term runs for approximately <strong>13 weeks</strong>.</li>
+                <li><i class="fa-solid fa-money-bill-wave"></i> All outstanding Second Term fees must be <strong>fully paid before resumption</strong>. Late payment attracts a penalty.</li>
+                <li><i class="fa-solid fa-book"></i> Students must come with all required textbooks, notebooks, mathematical sets, and learning materials.</li>
+                <li><i class="fa-solid fa-shirt"></i> All students must resume in <strong>clean and complete school uniform</strong>. No fancy wears or accessories.</li>
             </ul>
+        </div>
+    </div>
 
-            <h3 class="section-title">Vacation Period:</h3>
-            <p>Students are to proceed on Second Term Vacation immediately after school hours on <strong>Thursday, 2nd April, 2026</strong>.</p>
-            <p>School resumes for Third Term on <strong>Monday, 27th April, 2026</strong>.</p>
-
-            <div class="important-section">
-                <h3>Important Information for Third Term:</h3>
-                <ul style="margin-left: 20px;">
-                    <li><strong>Resumption Date:</strong> Monday, 27th April, 2026</li>
-                    <li><strong>Reporting Time:</strong> 7:20 a.m. prompt (Students must be in complete school uniform and neat appearance)</li>
-                    <li><strong>Third Term Duration:</strong> The term is expected to run for approximately 13 weeks.</li>
-                    <li><strong>School Fees:</strong> All outstanding Second Term fees must be fully paid before resumption. Third Term school fees are due for payment on or before resumption day. Late payment attracts a penalty.</li>
-                    <li><strong>Books and Materials:</strong> Students are expected to come with all required textbooks, notebooks, mathematical sets, and other learning materials for the new term.</li>
-                    <li><strong>Uniform:</strong> All students must resume in clean and complete school uniforms. No fancy wears or accessories are allowed.</li>
-                </ul>
+    <!-- ══════ FEES SECTION ══════ -->
+    <div class="card">
+        <div class="fees-header">
+            <div class="icon-wrap" style="width:36px;height:36px;border-radius:10px;background:var(--rose-pale);display:flex;align-items:center;justify-content:center;">
+                <i class="fa-solid fa-receipt" style="color:var(--rose-mid);font-size:15px;"></i>
             </div>
-
-            <h3 class="section-title">Important Reminder:</h3>
-            <ul>
-                <li>Parents are advised to monitor their children's activities during the vacation and ensure they engage in meaningful and productive tasks.</li>
-                <li>We encourage continued reading and light revision of Second Term work to prepare adequately for the Third Term.</li>
-                <li>Any health or medical challenges should be properly treated before resumption.</li>
-            </ul>
-
-            <p>We look forward to welcoming our dear students and pupils back stronger, healthier, and more determined to excel in the Third Term.</p>
-
-            <p>Thank you for your continued partnership in the education and upbringing of our children. Together, we shall continue to raise future leaders of excellence, integrity, and godliness.</p>
-
-            <div class="signature">
-                <p>Signed:</p>
-                <p>Proprietor</p>
-                <p>Elisben International Schools</p>
-                <p>Ikere Ekiti</p>
-            </div>
-
-            <div class="contact-info">
-                <p><strong>For enquiries, please contact the school office on:</strong></p>
-                <p><strong>Phone:</strong> 08036343681</p>
-                <p><strong>Email:</strong> elisben2021@gmail.com</p>
-            </div>
-
-            <div class="motto">"Knowledge for self reliance"</div>
+            <h2>Third Term Fees Breakdown</h2>
         </div>
 
-       <div class="btn-container">
-    <a href="#" id="continueBtn" class="btn">📄 Continue to Check Result</a>
-</div>
+        <!-- CLASS TABS -->
+        <div class="class-tabs" role="tablist">
+            <button class="tab-btn active" onclick="switchTab('jss1', this)" role="tab">JSS 1</button>
+            <button class="tab-btn" onclick="switchTab('jss2', this)" role="tab">JSS 2</button>
+            <button class="tab-btn" onclick="switchTab('jss3', this)" role="tab">JSS 3</button>
+            <button class="tab-btn" onclick="switchTab('sss1', this)" role="tab">SSS 1</button>
+            <button class="tab-btn" onclick="switchTab('sss2', this)" role="tab">SSS 2</button>
+            <button class="tab-btn" onclick="switchTab('sss3', this)" role="tab">SSS 3</button>
+        </div>
 
+        <!-- JSS 1 -->
+        <div id="fee-jss1" class="fee-panel active">
+            <div class="fee-rows">
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+            </div>
+            <div class="fee-total-row">
+                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
+                <span class="ft-amt">₦45,500</span>
+            </div>
+        </div>
+
+        <!-- JSS 2 -->
+        <div id="fee-jss2" class="fee-panel">
+            <div class="fee-rows">
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦30,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+            </div>
+            <div class="fee-total-row">
+                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
+                <span class="ft-amt">₦40,500</span>
+            </div>
+        </div>
+
+        <!-- JSS 3 -->
+        <div id="fee-jss3" class="fee-panel">
+            <div class="fee-rows">
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦30,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+            </div>
+            <div class="fee-total-row">
+                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
+                <span class="ft-amt">₦40,500</span>
+            </div>
+            <div class="lesson-note">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                Saturday Lesson: <strong style="margin-left:4px;">₦5,000</strong> &nbsp;(additional)
+            </div>
+        </div>
+
+        <!-- SSS 1 -->
+        <div id="fee-sss1" class="fee-panel">
+            <div class="fee-rows">
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+            </div>
+            <div class="fee-total-row">
+                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
+                <span class="ft-amt">₦45,500</span>
+            </div>
+        </div>
+
+        <!-- SSS 2 -->
+        <div id="fee-sss2" class="fee-panel">
+            <div class="fee-rows">
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+            </div>
+            <div class="fee-total-row">
+                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
+                <span class="ft-amt">₦45,500</span>
+            </div>
+            <div class="lesson-note">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                Saturday Lesson: <strong style="margin-left:4px;">₦5,000</strong> &nbsp;(additional)
+            </div>
+        </div>
+
+        <!-- SSS 3 -->
+        <div id="fee-sss3" class="fee-panel">
+            <div class="fee-rows">
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+            </div>
+            <div class="fee-total-row">
+                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
+                <span class="ft-amt">₦45,500</span>
+            </div>
+            <div class="lesson-note">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                Saturday Lesson: <strong style="margin-left:4px;">₦5,000</strong> &nbsp;(additional)
+            </div>
+        </div>
+
+        <!-- UNIFORM subsection (always visible) -->
+        <div class="fee-divider"></div>
+        <div class="fee-sub-title"><i class="fa-solid fa-shirt"></i> Uniform Fees — All Classes</div>
+        <div class="uniform-grid">
+            <div class="uniform-card">
+                <div class="uc-day"><i class="fa-regular fa-calendar-check"></i> Mon / Tue</div>
+                <div class="uc-price">₦25,000</div>
+                <div class="uc-note">SSS</div>
+                <div class="uc-price" style="margin-top:4px;">₦17,000</div>
+                <div class="uc-note">JSS</div>
+            </div>
+            <div class="uniform-card">
+                <div class="uc-day"><i class="fa-solid fa-person-running"></i> Wednesday</div>
+                <div class="uc-price">₦17,000</div>
+                <div class="uc-note">Sport Wear</div>
+            </div>
+            <div class="uniform-card">
+                <div class="uc-day"><i class="fa-regular fa-calendar"></i> Thu / Fri</div>
+                <div class="uc-price">₦13,000</div>
+                <div class="uc-note">All Classes</div>
+            </div>
+        </div>
+        <div class="lesson-note" style="margin-top:12px;">
+            <i class="fa-solid fa-sock"></i>
+            White and Wine socks to be purchased individually
+        </div>
+    </div>
+
+    <!-- ══════ PAYMENT ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-solid fa-credit-card"></i></div>
+            <h2>Payment Details</h2>
+        </div>
+
+        <div class="payment-grid">
+            <div class="bank-card">
+                <div class="bc-bank"><i class="fa-solid fa-building-columns"></i> Sterling Bank</div>
+                <div class="bc-acct">0092345848</div>
+                <div class="bc-name">ELISBEN INT. COLLEGE, IKERE</div>
+            </div>
+            <div class="bank-card">
+                <div class="bc-bank"><i class="fa-solid fa-building-columns"></i> Access Bank</div>
+                <div class="bc-acct">0027094420</div>
+                <div class="bc-name">DARAMOLA BENJAMIN BANKOLE</div>
+            </div>
+        </div>
+
+        <div class="fee-sub-title" style="margin-top:18px;margin-bottom:12px;">
+            <i class="fa-regular fa-clock"></i> Payment Schedule
+        </div>
+        <div class="schedule-track">
+            <div class="schedule-step">
+                <div class="ss-dot"></div>
+                <div class="ss-pct">40%</div>
+                <div class="ss-when">On or before<br>Resumption</div>
+            </div>
+            <div class="schedule-step">
+                <div class="ss-dot"></div>
+                <div class="ss-pct">30%</div>
+                <div class="ss-when">Before<br>Mid-Term</div>
+            </div>
+            <div class="schedule-step">
+                <div class="ss-dot"></div>
+                <div class="ss-pct">30%</div>
+                <div class="ss-when">Before<br>Examination</div>
+            </div>
+        </div>
+
+        <div class="teller-note">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Present your <strong>bank teller</strong> to the school office to obtain an official <strong>receipt</strong>.
+        </div>
+    </div>
+
+    <!-- ══════ REMINDERS ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-solid fa-lightbulb"></i></div>
+            <h2>Important Reminders</h2>
+        </div>
+        <div class="reminder-grid">
+            <div class="reminder-item">
+                <div class="ri-num">1</div>
+                Parents are advised to monitor their children's activities during vacation and ensure engagement in meaningful and productive tasks.
+            </div>
+            <div class="reminder-item">
+                <div class="ri-num">2</div>
+                We encourage continued reading and light revision of Second Term work to prepare adequately for the Third Term.
+            </div>
+            <div class="reminder-item">
+                <div class="ri-num">3</div>
+                Any health or medical challenges should be properly treated before resumption.
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ CLOSING + CONTACT ══════ -->
+    <div class="card">
+        <p class="body-text">We look forward to welcoming our dear students back stronger, healthier, and more determined to excel in the Third Term.</p>
+        <p class="body-text" style="margin-top:10px;">Thank you for your continued partnership in the education and upbringing of our children. Together, we shall continue to raise future leaders of excellence, integrity, and godliness.</p>
+
+        <div class="sign-block">
+            <p>Signed,</p>
+            <div class="sign-name">The Proprietor</div>
+            <p>Elisben International Schools, Ikere Ekiti</p>
+        </div>
+
+        <div class="contact-row">
+            <a href="tel:08036343681" class="contact-chip">
+                <i class="fa-solid fa-phone"></i> 08036343681
+            </a>
+            <a href="mailto:elisben2021@gmail.com" class="contact-chip">
+                <i class="fa-regular fa-envelope"></i> elisben2021@gmail.com
+            </a>
+        </div>
+    </div>
+
+    <!-- ══════ MOTTO ══════ -->
+    <div class="motto-footer">
+        <div class="mf-quote">"Knowledge for Self Reliance"</div>
+        <div class="mf-school">Elisben International Schools &mdash; Ikere Ekiti</div>
+    </div>
+
+    <!-- ══════ CTA ══════ -->
+    <div class="cta-wrap">
+        <button id="continueBtn" class="cta-btn">
+            <i class="fa-solid fa-file-lines"></i> Continue to Check Result
+        </button>
+    </div>
+
+</div><!-- end .wrapper -->
+
+{% load static %}
 <script>
+    /* ── Tab switcher ── */
+    function switchTab(classId, btn) {
+        document.querySelectorAll('.fee-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('fee-' + classId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    /* ── Continue button ── */
     document.getElementById('continueBtn').addEventListener('click', function(e) {
         e.preventDefault();
-        
-        // Get the stored PIN
         const storedPin = sessionStorage.getItem('result_pin');
-        
         if (storedPin) {
-            // Create a form and submit with the PIN
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = "{% url 'view_student_result' %}";
-            
-            // Add CSRF token
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrfmiddlewaretoken';
-            csrfInput.value = '{{ csrf_token }}';
-            form.appendChild(csrfInput);
-            
-            // Add PIN
-            const pinInput = document.createElement('input');
-            pinInput.type = 'hidden';
-            pinInput.name = 'result_pin';
-            pinInput.value = storedPin;
-            form.appendChild(pinInput);
-            
-            // Submit form
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken';
+            csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            const pin = document.createElement('input');
+            pin.type = 'hidden'; pin.name = 'result_pin'; pin.value = storedPin;
+            form.appendChild(pin);
             document.body.appendChild(form);
             form.submit();
-            
-            // Clear stored PIN
             sessionStorage.removeItem('result_pin');
         } else {
-            // If no PIN stored, go to check result page
             window.location.href = "{% url 'check_result_portal' %}";
         }
     });
 </script>
-    </div>
 </body>
 </html>
