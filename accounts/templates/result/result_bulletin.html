@@ -195,9 +195,49 @@
             <div class="motto">"Knowledge for self reliance"</div>
         </div>
 
-        <div class="btn-container">
-            <a href="{% url 'check_result_portal' %}" class="btn">📄 Continue to Check Result</a>
-        </div>
+       <div class="btn-container">
+    <a href="#" id="continueBtn" class="btn">📄 Continue to Check Result</a>
+</div>
+
+<script>
+    document.getElementById('continueBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Get the stored PIN
+        const storedPin = sessionStorage.getItem('result_pin');
+        
+        if (storedPin) {
+            // Create a form and submit with the PIN
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{% url 'view_student_result' %}";
+            
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';
+            form.appendChild(csrfInput);
+            
+            // Add PIN
+            const pinInput = document.createElement('input');
+            pinInput.type = 'hidden';
+            pinInput.name = 'result_pin';
+            pinInput.value = storedPin;
+            form.appendChild(pinInput);
+            
+            // Submit form
+            document.body.appendChild(form);
+            form.submit();
+            
+            // Clear stored PIN
+            sessionStorage.removeItem('result_pin');
+        } else {
+            // If no PIN stored, go to check result page
+            window.location.href = "{% url 'check_result_portal' %}";
+        }
+    });
+</script>
     </div>
 </body>
 </html>
