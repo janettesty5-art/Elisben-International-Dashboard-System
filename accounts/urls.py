@@ -84,8 +84,9 @@ urlpatterns = [
     # path('admin/wipe-results/', views.admin_wipe_all_results, name='admin_wipe_results'),
 
     # Check Result Portal
-    path('check-result/', views.check_result_portal, name='check_result_portal'),
-    path('check-result/view/', views.view_student_result, name='view_student_result'),
+    # Check Result - Bulletin FIRST, then PIN entry
+    path('check-result/bulletin/', views.result_bulletin, name='result_bulletin'),
+    path('check-result/', views.check_result_portal, name='check_result_portal'),    path('check-result/view/', views.view_student_result, name='view_student_result'),
     path('test-subject/', views.test_subject_teacher, name='test_subject'),
     
     # Result PDF/Print

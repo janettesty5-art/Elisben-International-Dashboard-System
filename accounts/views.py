@@ -2106,6 +2106,10 @@ def admin_view_published(request):
     }
     return render(request, 'result/admin_published.html', context)
 
+def result_bulletin(request):
+    """Show school bulletin before result checking"""
+    return render(request, 'result/result_bulletin.html')
+
 def check_result_portal(request):
     return render(request, 'result/check_result_portal.html')
 
