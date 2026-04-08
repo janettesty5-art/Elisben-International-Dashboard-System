@@ -546,68 +546,6 @@ def make_result_portal(request):
     
     return render(request, 'result/make_result_portal.html')
 
-for student_id in student_ids:
-    student = Student.objects.get(id=student_id)
-    
-    # ✅ Capture class for redirect
-    if not selected_class:
-        selected_class = student.class_name
-        department = student.department if hasattr(student, 'department') else ''
-    
-    # ✅ GET THE SCORES
-    test_a = float(request.POST.get(f'test_a_{student_id}', 0))
-    test_b = float(request.POST.get(f'test_b_{student_id}', 0))
-    test_c = float(request.POST.get(f'test_c_{student_id}', 0))
-    exam = float(request.POST.get(f'exam_{student_id}', 0))
-    
-    # ✅ CRITICAL FIX: Only save if at least ONE score is greater than 0
-    # This prevents saving empty/zero records for all students
-    if test_a == 0 and test_b == 0 and test_c == 0 and exam == 0:
-        skipped_count += 1
-        continue  # Skip this student - no data entered
-    
-    ltcum = 0
-    if term in ['Second Term', 'Third Term']:
-        ltcum = float(request.POST.get(f'ltcum_{student_id}', 0))
-    
-    position = request.POST.get(f'position_{student_id}')
-    position_value = int(position) if position and position.strip() else None
-    
-    # ✅ SAVE THE RESULT (only for students with actual data)
-    result, created = SubjectResult.objects.update_or_create(
-        student=student,
-        subject_name=subject_name,
-        term=term,
-        academic_year=academic_year,
-        defaults={
-            'test_a': test_a,
-            'test_b': test_b,
-            'test_c': test_c,
-            'exam': exam,
-            'ltcum': ltcum if term in ['Second Term', 'Third Term'] else None,
-            'position_ranking': position_value,
-            'entered_by': teacher,
-        }
-    )
-    
-    # ✅ Force recalculation to ensure accuracy
-    result.save()
-    
-    saved_count += 1
-    
-    # ✅ DEBUG LOG
-    print(f"✅ SAVED: {student.full_name} - Test A: {test_a}, Grade: {result.grade}")
-
-# ✅ ADD THIS NEW CODE HERE (after the loop):
-# AUTO-CALCULATE POSITIONS FOR THIS SUBJECT
-if saved_count > 0:
-    calculate_subject_positions(
-        class_name=selected_class,
-        subject_name=subject_name,
-        term=term,
-        academic_year=academic_year
-    )
-    print(f"✅ Positions auto-calculated for {subject_name}")
 
 def test_subject_teacher(request):
     print("🎯 TEST VIEW CALLED!")
