@@ -546,6 +546,178 @@ def make_result_portal(request):
     
     return render(request, 'result/make_result_portal.html')
 
+@login_required
+def subject_teacher_entry(request):
+    from django.db.models import Count, Max
+    
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+    except Teacher.DoesNotExist:
+        messages.error(request, 'Access denied. Teachers only.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        try:
+            subject_name = request.POST.get('subject_name', '').upper()
+            term = request.POST.get('term')
+            academic_year = request.POST.get('academic_year')
+            student_ids = request.POST.getlist('student_id')
+            
+            selected_class = None
+            department = ''
+            saved_count = 0
+            skipped_count = 0
+            
+            for student_id in student_ids:
+                student = Student.objects.get(id=student_id)
+                
+                if not selected_class:
+                    selected_class = student.class_name
+                    department = student.department if hasattr(student, 'department') else ''
+                
+                test_a = float(request.POST.get(f'test_a_{student_id}', 0))
+                test_b = float(request.POST.get(f'test_b_{student_id}', 0))
+                test_c = float(request.POST.get(f'test_c_{student_id}', 0))
+                exam = float(request.POST.get(f'exam_{student_id}', 0))
+                
+                if test_a == 0 and test_b == 0 and test_c == 0 and exam == 0:
+                    skipped_count += 1
+                    continue
+                
+                ltcum = 0
+                if term in ['Second Term', 'Third Term']:
+                    ltcum = float(request.POST.get(f'ltcum_{student_id}', 0))
+                
+                position = request.POST.get(f'position_{student_id}')
+                position_value = int(position) if position and position.strip() else None
+                
+                result, created = SubjectResult.objects.update_or_create(
+                    student=student,
+                    subject_name=subject_name,
+                    term=term,
+                    academic_year=academic_year,
+                    defaults={
+                        'test_a': test_a,
+                        'test_b': test_b,
+                        'test_c': test_c,
+                        'exam': exam,
+                        'ltcum': ltcum if term in ['Second Term', 'Third Term'] else None,
+                        'position_ranking': position_value,
+                        'entered_by': teacher,
+                    }
+                )
+                result.save()
+                saved_count += 1
+                print(f"✅ SAVED: {student.full_name} - Test A: {test_a}, Grade: {result.grade}")
+            
+            # Auto-calculate positions after saving
+            if saved_count > 0 and selected_class:
+                calculate_subject_positions(
+                    class_name=selected_class,
+                    subject_name=subject_name,
+                    term=term,
+                    academic_year=academic_year
+                )
+            
+            ResultActivityLog.objects.create(
+                action='subject_result_entered',
+                description=f'{teacher.full_name} entered {subject_name} results for {saved_count} student(s) in {term} (Skipped {skipped_count} empty records)',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+            
+            if saved_count > 0:
+                messages.success(request, f'✅ Results saved for {saved_count} student(s) in {subject_name}!')
+            else:
+                messages.warning(request, f'⚠️ No results saved. Please enter at least one score for at least one student.')
+            
+            redirect_url = f'/make-result/subject-teacher/?class_name={selected_class}&subject_name={subject_name}&term={term}&academic_year={academic_year}'
+            if department:
+                redirect_url += f'&department={department}'
+            return redirect(redirect_url)
+            
+        except Exception as e:
+            messages.error(request, f'Error saving results: {str(e)}')
+            import traceback
+            print("SAVE ERROR:", traceback.format_exc())
+            return redirect('subject_teacher_entry')
+    
+    # GET REQUEST
+    from datetime import datetime
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    
+    if current_month <= 8:
+        academic_year = f"{current_year - 1}/{current_year}"
+    else:
+        academic_year = f"{current_year}/{current_year + 1}"
+    
+    academic_year = request.GET.get('academic_year', academic_year)
+    classes = Student.objects.values_list('class_name', flat=True).distinct()
+    selected_class = request.GET.get('class_name')
+    department = request.GET.get('department', '')
+    subject_name = request.GET.get('subject_name', '').upper()
+    term = request.GET.get('term', 'First Term')
+    
+    students = []
+    is_senior_class = False
+    
+    if selected_class and subject_name:
+        class_upper = selected_class.upper()
+        is_senior_class = (
+            class_upper in ['SS1', 'SS2', 'SS3'] or
+            class_upper.startswith('SS1') or
+            class_upper.startswith('SS2') or
+            class_upper.startswith('SS3')
+        )
+        
+        if is_senior_class and department:
+            students = Student.objects.filter(
+                class_name=selected_class,
+                department=department
+            ).order_by('full_name')
+        elif not is_senior_class:
+            students = Student.objects.filter(class_name=selected_class).order_by('full_name')
+    
+    departments = ['Science', 'Art', 'Commercial']
+    
+    existing_results = {}
+    if subject_name and term and selected_class and students:
+        for student in students:
+            try:
+                result = SubjectResult.objects.get(
+                    student=student,
+                    subject_name=subject_name,
+                    term=term,
+                    academic_year=academic_year
+                )
+                existing_results[student.id] = result
+            except SubjectResult.DoesNotExist:
+                pass
+    
+    recorded_results = SubjectResult.objects.filter(
+        entered_by=teacher
+    ).values('subject_name', 'term', 'academic_year', 'student__class_name').annotate(
+        student_count=Count('id'),
+        last_updated=Max('updated_at')
+    ).order_by('-last_updated')
+    
+    context = {
+        'teacher': teacher,
+        'classes': classes,
+        'selected_class': selected_class,
+        'students': students,
+        'existing_results': existing_results,
+        'subject_name': subject_name,
+        'term': term,
+        'academic_year': academic_year,
+        'department': department,
+        'departments': departments,
+        'is_senior_class': is_senior_class,
+        'recorded_results': recorded_results,
+    }
+    
+    return render(request, 'result/subject_teacher_entry.html', context)
 
 def test_subject_teacher(request):
     print("🎯 TEST VIEW CALLED!")
