@@ -2155,6 +2155,33 @@ def print_result(request, result_id):
             academic_year=result.academic_year
         ).order_by('subject_name')
         
+        # ✅ AUTO-CALCULATE SUBJECT POSITIONS (same as student view)
+        for subject_result in subject_results:
+            all_results = SubjectResult.objects.filter(
+                subject_name=subject_result.subject_name,
+                term=subject_result.term,
+                academic_year=subject_result.academic_year,
+                student__class_name=result.student.class_name
+            ).order_by('-cum')
+            for idx, sr in enumerate(all_results, start=1):
+                if sr.id == subject_result.id:
+                    subject_result.calculated_position = idx
+                    break
+        
+        # ✅ AUTO-CALCULATE CLASS POSITION if empty
+        display_position = result.position_in_class
+        if not display_position:
+            all_class_results = StudentResult.objects.filter(
+                term=result.term,
+                academic_year=result.academic_year,
+                class_name=result.class_name
+            ).order_by('-average_score')
+            total = all_class_results.count()
+            for idx, r in enumerate(all_class_results, start=1):
+                if r.id == result.id:
+                    display_position = f"{idx}/{total}"
+                    break
+        
         try:
             published = PublishedResult.objects.get(result=result)
         except PublishedResult.DoesNotExist:
@@ -2164,6 +2191,7 @@ def print_result(request, result_id):
             'result': result,
             'subject_results': subject_results,
             'published': published,
+            'display_position': display_position,
             'school_settings': SchoolSettings.objects.first(),
         }
         return render(request, 'result/print_result.html', context)

@@ -268,7 +268,7 @@
                 <p><strong>GENDER:</strong> {{ result.student.gender|default:"N/A" }}</p>
                 <p><strong>AGE:</strong> {{ result.student.date_of_birth|date:"Y-m-d"|default:"N/A" }}</p>
                 <p><strong>CLASS:</strong> {{ result.class_name }}</p>
-                <p><strong>RANK:</strong> {{ result.position_in_class }}</p>
+                <p><strong>RANK:</strong> {{ display_position|default:result.position_in_class|default:"N/A" }}</p>
                 <p><strong>TERM:</strong> {{ result.term }}</p>
                 <p><strong>SESSION:</strong> {{ result.academic_year }}</p>
             </div>
@@ -330,7 +330,7 @@
                         <td>{{ subject.ltcum|floatformat:1|default:"-" }}</td>
                         <td>{{ subject.cum|floatformat:1 }}</td>
                         <td class="grade-col">{{ subject.grade }}</td>
-                        <td>{{ subject.position_ranking|default:"-" }}</td>
+                        <td>{{ subject.calculated_position|default:subject.position_ranking|default:"-" }}</td>
                         <td>{{ subject.cum|floatformat:1 }}</td>
                         <td style="font-size: 7px;">{{ subject.grade_remark }}</td>
                     </tr>
@@ -352,7 +352,7 @@
                     <p><strong>Subjects:</strong> {{ result.total_subjects }}</p>
                     <p><strong>Score:</strong> {{ result.score_gained|floatformat:1 }}</p>
                     <p><strong>Average:</strong> {{ result.average_score|floatformat:1 }}%</p>
-                    <p><strong>Position:</strong> {{ result.position_in_class }}</p>
+                    <p><strong>Position:</strong> {{ display_position|default:result.position_in_class|default:"N/A" }}</p>
                     <p><strong>Status:</strong> <strong>{{ result.status_promotion }}</strong></p>
                 </div>
             </div>
