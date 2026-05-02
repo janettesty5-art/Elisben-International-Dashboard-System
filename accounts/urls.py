@@ -17,6 +17,7 @@ urlpatterns = [
     path('admin/finance/', views.manage_finance, name='manage_finance'),
     path('admin/delete-student-confirm/<int:student_id>/', views.delete_student_confirm, name='delete_student_confirm'),
     path('admin/delete-teacher-confirm/<int:teacher_id>/', views.delete_teacher_confirm, name='delete_teacher_confirm'),
+    path('admin/wipe-all-exams/', views.admin_wipe_all_exams, name='admin_wipe_all_exams'),
     
     # Search functionality
     path('search-students/', views.search_students, name='search_students'),

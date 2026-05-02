@@ -3036,3 +3036,53 @@ def calculate_subject_positions(class_name, subject_name, term, academic_year):
         subject_result.save()
     
     print(f"✅ Positions calculated for {subject_name} in {class_name}")
+
+    from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def admin_wipe_all_exams(request):
+    """
+    Delete ALL exams and questions from the system (Admin only)
+    """
+    # Check if user is admin
+    if request.session.get('role') != 'admin':
+        messages.error(request, 'Unauthorized access.')
+        return redirect('unified_login')
+    
+    if request.method == 'POST':
+        confirmation = request.POST.get('confirmation')
+        
+        if confirmation == 'DELETE ALL EXAMS':
+            # Count before deletion
+            exam_count = Exam.objects.count()
+            question_count = Question.objects.count()
+            submission_count = ExamSubmission.objects.count()
+            
+            # Delete everything
+            ExamSubmission.objects.all().delete()
+            Question.objects.all().delete()
+            Exam.objects.all().delete()
+            
+            # Log the action
+            ResultActivityLog.objects.create(
+                action='exams_wiped',
+                description=f'Admin wiped entire CBT system: {exam_count} exams, {question_count} questions, {submission_count} submissions deleted',
+                performed_by_type='admin',
+                performed_by_name=request.session.get('user_name', 'Admin')
+            )
+            
+            messages.success(request, f'✅ Successfully deleted {exam_count} exams, {question_count} questions, and {submission_count} submissions. CBT system is now clean.')
+            return redirect('admin_dashboard')
+        else:
+            messages.error(request, 'Incorrect confirmation text. Deletion cancelled.')
+    
+    # Get counts for display
+    context = {
+        'exam_count': Exam.objects.count(),
+        'question_count': Question.objects.count(),
+        'submission_count': ExamSubmission.objects.count(),
+    }
+    
+    return render(request, 'admin/wipe_exams_confirm.html', context)
