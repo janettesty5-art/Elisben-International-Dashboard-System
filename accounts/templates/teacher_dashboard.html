@@ -18,24 +18,24 @@
         .action-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
         .action-btn .icon { font-size: 45px; margin-bottom: 10px; }
         
-        .section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
+        .section { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; overflow-x: auto; }
         .section h2 { margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; }
         
-        /* Draft/Published Badges */
         .status-badge { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; }
         .status-draft { background: #fff3cd; color: #856404; border: 2px solid #ffc107; }
         .status-published { background: #d4edda; color: #155724; border: 2px solid #28a745; }
         
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
         table th, table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         table th { background: #f8f9fa; font-weight: 600; color: #666; }
         
-        .btn { padding: 8px 15px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; font-size: 13px; cursor: pointer; margin: 2px; }
+        .btn { padding: 8px 15px; border: none; border-radius: 6px; text-decoration: none; display: inline-block; font-size: 13px; cursor: pointer; margin: 2px; white-space: nowrap; }
         .btn-publish { background: #28a745; color: white; }
         .btn-unpublish { background: #ffc107; color: #333; }
         .btn-edit { background: #17a2b8; color: white; }
         .btn-delete { background: #dc3545; color: white; }
         .btn-export { background: #6c757d; color: white; }
+        .btn-duration { background: #fd7e14; color: white; }
         
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .alert-success { background: #d4edda; color: #155724; }
@@ -44,8 +44,10 @@
             .navbar { flex-direction: column; gap: 10px; text-align: center; }
             .navbar .user-info { flex-direction: column; gap: 10px; }
             .actions-grid { grid-template-columns: 1fr; }
+            .container { padding: 16px; }
             table { font-size: 12px; }
             table th, table td { padding: 8px 5px; }
+            .btn { font-size: 11px; padding: 6px 10px; }
         }
     </style>
 </head>
@@ -110,6 +112,7 @@
                         <td><span class="status-badge status-draft">📝 DRAFT</span></td>
                         <td>
                             <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit">✏️ Edit Questions</a>
+                            <a href="{% url 'edit_exam_duration' exam.id %}" class="btn btn-duration">⏱️ Duration</a>
                             <form method="POST" action="{% url 'toggle_exam_publish' exam.id %}" style="display:inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-publish">✅ Publish</button>
@@ -153,6 +156,7 @@
                         <td><span class="status-badge status-published">✅ PUBLISHED</span></td>
                         <td>
                             <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit">✏️ Edit</a>
+                            <a href="{% url 'edit_exam_duration' exam.id %}" class="btn btn-duration">⏱️ Duration</a>
                             <form method="POST" action="{% url 'toggle_exam_publish' exam.id %}" style="display:inline;">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-unpublish">📝 Unpublish</button>

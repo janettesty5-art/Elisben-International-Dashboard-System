@@ -3131,3 +3131,41 @@ def admin_wipe_all_exams(request):
     }
     
     return render(request, 'admin/wipe_exams_confirm.html', context)
+
+@login_required
+def edit_exam_duration(request, exam_id):
+    """Allow teacher to edit exam duration (time) only."""
+    try:
+        teacher = Teacher.objects.get(user=request.user)
+        exam = Exam.objects.get(id=exam_id, created_by=teacher)
+    except:
+        messages.error(request, 'Access denied.')
+        return redirect('teacher_dashboard')
+ 
+    if request.method == 'POST':
+        try:
+            new_duration = int(request.POST.get('duration_minutes', exam.duration_minutes))
+            if new_duration < 5:
+                new_duration = 5
+            if new_duration > 300:
+                new_duration = 300
+ 
+            old_duration = exam.duration_minutes
+            exam.duration_minutes = new_duration
+            exam.save()
+ 
+            ActivityLog.objects.create(
+                action='exam_edited',
+                description=f'Exam "{exam.title}" duration changed from {old_duration} to {new_duration} minutes',
+                performed_by_type='teacher',
+                performed_by_name=teacher.full_name
+            )
+ 
+            messages.success(request, f'✅ Duration updated to {new_duration} minutes!')
+            return redirect('teacher_dashboard')
+        except Exception as e:
+            messages.error(request, f'Error updating duration: {str(e)}')
+ 
+    context = {'exam': exam, 'teacher': teacher}
+    return render(request, 'edit_exam_duration.html', context)
+ 

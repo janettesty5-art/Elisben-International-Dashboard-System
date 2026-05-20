@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Exam - {{ exam.title }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; }
+        .navbar {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: white; padding: 18px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar h1 { font-size: 20px; }
+        .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; font-size: 14px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 36px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .card h2 { color: #333; margin-bottom: 6px; font-size: 22px; }
+        .card .subtitle { color: #666; font-size: 14px; margin-bottom: 28px; }
+        .info-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px 16px; margin-bottom: 24px; font-size: 14px; color: #9a3412; line-height: 1.5; }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #444; font-size: 14px; }
+        .current-val { display: inline-block; background: #fef3c7; color: #92400e; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+        input[type="number"] {
+            width: 100%; padding: 14px; border: 2px solid #e0e0e0; border-radius: 10px;
+            font-size: 17px; font-family: inherit; transition: border-color 0.2s;
+        }
+        input[type="number"]:focus { outline: none; border-color: #2ecc71; }
+        .helper { font-size: 12px; color: #888; margin-top: 6px; }
+        .btn-row { display: flex; gap: 12px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; text-align: center; }
+        .btn-save { background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-cancel { background: #f1f5f9; color: #555; }
+        .btn-cancel:hover { background: #e2e8f0; }
+        .exam-info { background: #f8fafc; border-radius: 10px; padding: 16px; margin-bottom: 24px; }
+        .exam-info p { font-size: 13px; color: #555; margin: 4px 0; }
+        .exam-info strong { color: #333; }
+        @media (max-width: 480px) {
+            .navbar { flex-direction: column; gap: 10px; text-align: center; }
+            .btn-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>⏱️ Edit Exam Duration</h1>
+        <a href="{% url 'teacher_dashboard' %}">← Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for msg in messages %}
+            <div style="padding:14px;border-radius:10px;margin-bottom:16px;background:{% if msg.tags == 'success' %}#d4edda;color:#155724{% else %}#f8d7da;color:#721c24{% endif %}">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <h2>Edit Exam Settings</h2>
+            <p class="subtitle">Update the duration for this exam. Changes take effect immediately.</p>
+
+            <div class="exam-info">
+                <p><strong>Exam Title:</strong> {{ exam.title }}</p>
+                <p><strong>Subject:</strong> {{ exam.subject }}</p>
+                <p><strong>Class:</strong> {{ exam.class_name }}</p>
+                <p><strong>Questions:</strong> {{ exam.questions.count }}</p>
+                <p><strong>Status:</strong> {% if exam.is_published %}✅ Published{% else %}📝 Draft{% endif %}</p>
+            </div>
+
+            <div class="info-box">
+                ⚠️ <strong>Note:</strong> If students are currently taking this exam, the new duration will apply to new sessions only. Students already in the exam will continue with the original time.
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>Exam Duration (minutes)</label>
+                    <div class="current-val">Current: {{ exam.duration_minutes }} minutes</div>
+                    <input type="number" name="duration_minutes" value="{{ exam.duration_minutes }}"
+                           min="5" max="300" required>
+                    <div class="helper">Minimum 5 minutes · Maximum 300 minutes</div>
+                </div>
+
+                <div class="btn-row">
+                    <a href="{% url 'teacher_dashboard' %}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn btn-save">💾 Save Duration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
