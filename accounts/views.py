@@ -508,6 +508,7 @@ def take_exam(request, exam_id):
             return redirect('student_dashboard')
     
     import json
+    exam_questions = list(exam.questions.filter(exam=exam))
     questions_json = json.dumps([
         {
             'id': q.id,
@@ -517,7 +518,7 @@ def take_exam(request, exam_id):
             'c': q.option_c,
             'd': q.option_d,
         }
-        for q in exam.questions.all()
+        for q in exam.questions
     ])
     context = {
         'exam': exam,
