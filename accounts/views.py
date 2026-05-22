@@ -518,7 +518,7 @@ def take_exam(request, exam_id):
             'c': q.option_c,
             'd': q.option_d,
         }
-        for q in exam.questions
+        for q in questions
     ])
     context = {
         'exam': exam,
