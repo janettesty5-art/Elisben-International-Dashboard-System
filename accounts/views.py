@@ -447,6 +447,8 @@ def student_profile(request):
 
 @login_required
 def take_exam(request, exam_id):
+    import random
+
     try:
         student = Student.objects.get(user=request.user)
     except Student.DoesNotExist:
@@ -454,67 +456,63 @@ def take_exam(request, exam_id):
         return redirect('student_dashboard')
 
     try:
-        # Fetch exam using the custom CharField exam_id, scoped to student's class
         exam = Exam.objects.get(
             exam_id=exam_id,
             class_name=student.class_name,
             is_active=True,
-            is_published=True   # ← add this: only published exams
+            is_published=True,
         )
     except Exam.DoesNotExist:
         messages.error(request, 'Invalid exam or access denied.')
         return redirect('student_dashboard')
 
-    # Check if student already submitted THIS version
     if ExamSubmission.objects.filter(
         student=student,
         exam=exam,
-        exam_version=exam.version
+        exam_version=exam.version,
     ).exists():
         messages.error(request, 'You have already taken this version of the exam.')
         return redirect('student_dashboard')
 
-    # ── FETCH ONLY THIS EXAM'S QUESTIONS (explicit pk filter to be safe) ──────
     questions = list(
-        Question.objects.filter(exam__pk=exam.pk)   # ← use exam__pk explicitly
-        .order_by('question_number')
+        Question.objects.filter(exam__pk=exam.pk).order_by('question_number')
     )
 
     if not questions:
         messages.error(request, 'This exam has no questions yet.')
         return redirect('student_dashboard')
 
-    # Shuffle a COPY so the originals stay intact for grading
-    import random, json
     shuffled = questions[:]
     if exam.shuffle_questions:
         random.shuffle(shuffled)
 
-    # ── HANDLE SUBMISSION ─────────────────────────────────────────────────────
+    # ── POST: grade the submission ────────────────────────────────────────────
     if request.method == 'POST':
         try:
-            # Grade against the FULL unshuffled list
             submission = ExamSubmission.objects.create(
                 student=student,
                 exam=exam,
                 exam_version=exam.version,
                 total_questions=len(questions),
                 correct_answers=0,
-                score=0
+                score=0,
             )
 
             correct_count = 0
-            for question in questions:          # unshuffled — all questions
+            for question in questions:   # grade against original unshuffled list
                 selected = request.POST.get(f'question_{question.id}', '')
                 if selected:
-                    is_correct = (selected.strip().upper() == question.correct_answer.strip().upper())
+                    is_correct = (
+                        selected.strip().upper()
+                        == question.correct_answer.strip().upper()
+                    )
                     if is_correct:
                         correct_count += 1
                     StudentAnswer.objects.create(
                         submission=submission,
                         question=question,
                         selected_answer=selected,
-                        is_correct=is_correct
+                        is_correct=is_correct,
                     )
 
             total_q = len(questions)
@@ -530,7 +528,7 @@ def take_exam(request, exam_id):
                     f'(v{exam.version}) - Score: {score:.2f}%'
                 ),
                 performed_by_type='student',
-                performed_by_name=student.full_name
+                performed_by_name=student.full_name,
             )
 
             messages.success(request, f'Exam submitted! Your score: {score:.2f}%')
@@ -540,24 +538,25 @@ def take_exam(request, exam_id):
             messages.error(request, f'Error submitting exam: {str(e)}')
             return redirect('student_dashboard')
 
-    # ── BUILD JSON FROM THE SHUFFLED LIST ────────────────────────────────────
-    # Field names in the dict MUST match what the JS reads: text, a, b, c, d
-    questions_json = json.dumps([
+    # ── GET: build the plain Python list — NO json.dumps() ───────────────────
+    # json_script in the template handles serialisation itself.
+    # Passing a pre-serialised string causes double-encoding → QS.length = char count.
+    questions_data = [
         {
             'id':   q.id,
-            'text': q.question_text,   # JS reads q.text  ✅
-            'a':    q.option_a,        # JS reads q.a     ✅
-            'b':    q.option_b,        # JS reads q.b     ✅
-            'c':    q.option_c,        # JS reads q.c     ✅
-            'd':    q.option_d,        # JS reads q.d     ✅
+            'text': q.question_text,
+            'a':    q.option_a,
+            'b':    q.option_b,
+            'c':    q.option_c,
+            'd':    q.option_d,
         }
-        for q in shuffled             # shuffled order for display
-    ])
+        for q in shuffled          # shuffled order for the student
+    ]
 
     context = {
-        'exam': exam,
-        'questions': shuffled,        # used by {{ questions|length }} in template
-        'questions_json': questions_json,
+        'exam':           exam,
+        'questions':      shuffled,       # {{ questions|length }} in template
+        'questions_data': questions_data, # passed to {{ questions_data|json_script:"questionsData" }}
     }
     return render(request, 'take_exam.html', context)
 
