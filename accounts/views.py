@@ -454,7 +454,6 @@ def take_exam(request, exam_id):
         messages.error(request, 'Invalid exam or access denied.')
         return redirect('student_dashboard')
     
-    # ✅ UPDATED: Check if already taken THIS VERSION
     if ExamSubmission.objects.filter(student=student, exam=exam, exam_version=exam.version).exists():
         messages.error(request, 'You have already taken this version of the exam.')
         return redirect('student_dashboard')
@@ -465,11 +464,10 @@ def take_exam(request, exam_id):
     
     if request.method == 'POST':
         try:
-            # ✅ UPDATED: Save exam version with submission
             submission = ExamSubmission.objects.create(
                 student=student,
                 exam=exam,
-                exam_version=exam.version,  # ← NEW: Save which version
+                exam_version=exam.version,
                 total_questions=len(questions),
                 correct_answers=0,
                 score=0
@@ -509,9 +507,22 @@ def take_exam(request, exam_id):
             messages.error(request, f'Error submitting exam: {str(e)}')
             return redirect('student_dashboard')
     
+    import json
+    questions_json = json.dumps([
+        {
+            'id': q.id,
+            'text': q.question_text,
+            'a': q.option_a,
+            'b': q.option_b,
+            'c': q.option_c,
+            'd': q.option_d,
+        }
+        for q in exam.questions.all()
+    ])
     context = {
         'exam': exam,
-        'questions': questions,
+        'questions': exam_questions,
+        'questions_json': questions_json,
     }
     return render(request, 'take_exam.html', context)
 
