@@ -449,44 +449,67 @@ def student_profile(request):
 def take_exam(request, exam_id):
     try:
         student = Student.objects.get(user=request.user)
-        exam = Exam.objects.get(exam_id=exam_id, class_name=student.class_name, is_active=True)
-    except:
+    except Student.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('student_dashboard')
+
+    try:
+        # Fetch exam using the custom CharField exam_id, scoped to student's class
+        exam = Exam.objects.get(
+            exam_id=exam_id,
+            class_name=student.class_name,
+            is_active=True,
+            is_published=True   # ← add this: only published exams
+        )
+    except Exam.DoesNotExist:
         messages.error(request, 'Invalid exam or access denied.')
         return redirect('student_dashboard')
 
-    if ExamSubmission.objects.filter(student=student, exam=exam, exam_version=exam.version).exists():
+    # Check if student already submitted THIS version
+    if ExamSubmission.objects.filter(
+        student=student,
+        exam=exam,
+        exam_version=exam.version
+    ).exists():
         messages.error(request, 'You have already taken this version of the exam.')
         return redirect('student_dashboard')
 
-    # ✅ FIX: Fetch ONLY this exam's questions using the FK, not related manager
-    questions = list(Question.objects.filter(exam=exam))
+    # ── FETCH ONLY THIS EXAM'S QUESTIONS (explicit pk filter to be safe) ──────
+    questions = list(
+        Question.objects.filter(exam__pk=exam.pk)   # ← use exam__pk explicitly
+        .order_by('question_number')
+    )
 
+    if not questions:
+        messages.error(request, 'This exam has no questions yet.')
+        return redirect('student_dashboard')
+
+    # Shuffle a COPY so the originals stay intact for grading
+    import random, json
+    shuffled = questions[:]
     if exam.shuffle_questions:
-        random.shuffle(questions)
+        random.shuffle(shuffled)
 
+    # ── HANDLE SUBMISSION ─────────────────────────────────────────────────────
     if request.method == 'POST':
         try:
-            # Use the correct full question set for grading (not shuffled order)
-            all_exam_questions = Question.objects.filter(exam=exam)
-
+            # Grade against the FULL unshuffled list
             submission = ExamSubmission.objects.create(
                 student=student,
                 exam=exam,
                 exam_version=exam.version,
-                total_questions=all_exam_questions.count(),
+                total_questions=len(questions),
                 correct_answers=0,
                 score=0
             )
 
             correct_count = 0
-
-            for question in all_exam_questions:
-                selected = request.POST.get(f'question_{question.id}')
+            for question in questions:          # unshuffled — all questions
+                selected = request.POST.get(f'question_{question.id}', '')
                 if selected:
-                    is_correct = (selected == question.correct_answer)
+                    is_correct = (selected.strip().upper() == question.correct_answer.strip().upper())
                     if is_correct:
                         correct_count += 1
-
                     StudentAnswer.objects.create(
                         submission=submission,
                         question=question,
@@ -494,42 +517,46 @@ def take_exam(request, exam_id):
                         is_correct=is_correct
                     )
 
-            total_q = all_exam_questions.count()
-            score = (correct_count / total_q * 100) if total_q > 0 else 0
+            total_q = len(questions)
+            score = round((correct_count / total_q * 100), 2) if total_q > 0 else 0
             submission.correct_answers = correct_count
-            submission.score = round(score, 2)
+            submission.score = score
             submission.save()
 
             ActivityLog.objects.create(
                 action='exam_submitted',
-                description=f'{student.full_name} submitted {exam.title} (v{exam.version}) - Score: {score:.2f}%',
+                description=(
+                    f'{student.full_name} submitted {exam.title} '
+                    f'(v{exam.version}) - Score: {score:.2f}%'
+                ),
                 performed_by_type='student',
                 performed_by_name=student.full_name
             )
 
             messages.success(request, f'Exam submitted! Your score: {score:.2f}%')
             return redirect('view_result', submission_id=submission.id)
+
         except Exception as e:
             messages.error(request, f'Error submitting exam: {str(e)}')
             return redirect('student_dashboard')
 
-    # ✅ FIX: Build JSON from the SAME shuffled `questions` list, with correct field names
-    import json
+    # ── BUILD JSON FROM THE SHUFFLED LIST ────────────────────────────────────
+    # Field names in the dict MUST match what the JS reads: text, a, b, c, d
     questions_json = json.dumps([
         {
-            'id': q.id,
-            'text': q.question_text,      # JS reads q.text ✅
-            'a': q.option_a,              # JS reads q.a   ✅
-            'b': q.option_b,              # JS reads q.b   ✅
-            'c': q.option_c,              # JS reads q.c   ✅
-            'd': q.option_d,              # JS reads q.d   ✅
+            'id':   q.id,
+            'text': q.question_text,   # JS reads q.text  ✅
+            'a':    q.option_a,        # JS reads q.a     ✅
+            'b':    q.option_b,        # JS reads q.b     ✅
+            'c':    q.option_c,        # JS reads q.c     ✅
+            'd':    q.option_d,        # JS reads q.d     ✅
         }
-        for q in questions              # Same shuffled list, not a re-fetch ✅
+        for q in shuffled             # shuffled order for display
     ])
 
     context = {
         'exam': exam,
-        'questions': questions,          # Used for {{ questions|length }} count ✅
+        'questions': shuffled,        # used by {{ questions|length }} in template
         'questions_json': questions_json,
     }
     return render(request, 'take_exam.html', context)
