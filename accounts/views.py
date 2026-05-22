@@ -521,7 +521,7 @@ def take_exam(request, exam_id):
     ])
     context = {
         'exam': exam,
-        'questions': exam_questions,
+        'questions': questions,
         'questions_json': questions_json,
     }
     return render(request, 'take_exam.html', context)
