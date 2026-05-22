@@ -453,76 +453,83 @@ def take_exam(request, exam_id):
     except:
         messages.error(request, 'Invalid exam or access denied.')
         return redirect('student_dashboard')
-    
+
     if ExamSubmission.objects.filter(student=student, exam=exam, exam_version=exam.version).exists():
         messages.error(request, 'You have already taken this version of the exam.')
         return redirect('student_dashboard')
-    
-    questions = list(exam.questions.all())
+
+    # ✅ FIX: Fetch ONLY this exam's questions using the FK, not related manager
+    questions = list(Question.objects.filter(exam=exam))
+
     if exam.shuffle_questions:
         random.shuffle(questions)
-    
+
     if request.method == 'POST':
         try:
+            # Use the correct full question set for grading (not shuffled order)
+            all_exam_questions = Question.objects.filter(exam=exam)
+
             submission = ExamSubmission.objects.create(
                 student=student,
                 exam=exam,
                 exam_version=exam.version,
-                total_questions=len(questions),
+                total_questions=all_exam_questions.count(),
                 correct_answers=0,
                 score=0
             )
-            
+
             correct_count = 0
-            
-            for question in exam.questions.all():
+
+            for question in all_exam_questions:
                 selected = request.POST.get(f'question_{question.id}')
                 if selected:
                     is_correct = (selected == question.correct_answer)
                     if is_correct:
                         correct_count += 1
-                    
+
                     StudentAnswer.objects.create(
                         submission=submission,
                         question=question,
                         selected_answer=selected,
                         is_correct=is_correct
                     )
-            
-            score = (correct_count / len(questions)) * 100
+
+            total_q = all_exam_questions.count()
+            score = (correct_count / total_q * 100) if total_q > 0 else 0
             submission.correct_answers = correct_count
             submission.score = round(score, 2)
             submission.save()
-            
+
             ActivityLog.objects.create(
                 action='exam_submitted',
-                description=f'{student.full_name} submitted {exam.title} (v{exam.version}) - Score: {score}%',
+                description=f'{student.full_name} submitted {exam.title} (v{exam.version}) - Score: {score:.2f}%',
                 performed_by_type='student',
                 performed_by_name=student.full_name
             )
-            
-            messages.success(request, f'Exam submitted! Your score: {score}%')
+
+            messages.success(request, f'Exam submitted! Your score: {score:.2f}%')
             return redirect('view_result', submission_id=submission.id)
         except Exception as e:
             messages.error(request, f'Error submitting exam: {str(e)}')
             return redirect('student_dashboard')
-    
+
+    # ✅ FIX: Build JSON from the SAME shuffled `questions` list, with correct field names
     import json
-    exam_questions = list(exam.questions.filter(exam=exam))
     questions_json = json.dumps([
         {
             'id': q.id,
-            'text': q.question_text,
-            'a': q.option_a,
-            'b': q.option_b,
-            'c': q.option_c,
-            'd': q.option_d,
+            'text': q.question_text,      # JS reads q.text ✅
+            'a': q.option_a,              # JS reads q.a   ✅
+            'b': q.option_b,              # JS reads q.b   ✅
+            'c': q.option_c,              # JS reads q.c   ✅
+            'd': q.option_d,              # JS reads q.d   ✅
         }
-        for q in questions
+        for q in questions              # Same shuffled list, not a re-fetch ✅
     ])
+
     context = {
         'exam': exam,
-        'questions': questions,
+        'questions': questions,          # Used for {{ questions|length }} count ✅
         'questions_json': questions_json,
     }
     return render(request, 'take_exam.html', context)
