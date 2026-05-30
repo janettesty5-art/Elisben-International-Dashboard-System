@@ -392,32 +392,33 @@ def student_dashboard(request):
     except Student.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
-    
-    submissions = ExamSubmission.objects.filter(student=student).order_by('-submitted_at')
-    
-    # ✅ UPDATED: Get all published exams for student's class
+ 
+    # Show ALL submissions - no limit, no filter
+    submissions = ExamSubmission.objects.filter(
+        student=student
+    ).order_by('-submitted_at')
+ 
+    # Get published exams for student's class
     available_exams_all = Exam.objects.filter(
-        class_name=student.class_name, 
+        class_name=student.class_name,
         is_active=True,
         is_published=True
     )
-    
-    # ✅ UPDATED: Filter out exams where student already submitted CURRENT version
+ 
+    # Only exclude exams the student has ALREADY submitted for CURRENT version
     available_exams = []
     for exam in available_exams_all:
-        # Check if student has submission for THIS VERSION
         already_taken = ExamSubmission.objects.filter(
             student=student,
             exam=exam,
             exam_version=exam.version
         ).exists()
-        
         if not already_taken:
             available_exams.append(exam)
-    
+ 
     context = {
         'student': student,
-        'submissions': submissions,
+        'submissions': submissions,       # ALL results, no limit
         'available_exams': available_exams,
     }
     return render(request, 'student_dashboard.html', context)
@@ -2284,12 +2285,15 @@ def admin_dashboard(request):
     except Admin.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
-    
+ 
     students = Student.objects.all().order_by('-created_at')
     teachers = Teacher.objects.all().order_by('-created_at')
-    recent_activities = ActivityLog.objects.all()[:20]
+ 
+    # ALL activity logs - no [:20] limit
+    recent_activities = ActivityLog.objects.all().order_by('-timestamp')
+ 
     total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
-    
+ 
     context = {
         'admin': admin,
         'students': students,
@@ -2797,6 +2801,7 @@ def bursar_dashboard(request):
     return render(request, 'bursar_dashboard.html', context)
 
 # ============= TEACHER VIEWS =============
+
 @login_required
 def teacher_dashboard(request):
     try:
@@ -2804,17 +2809,25 @@ def teacher_dashboard(request):
     except Teacher.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
-    
-    published_exams = Exam.objects.filter(created_by=teacher, is_published=True).order_by('-created_at')
-    draft_exams = Exam.objects.filter(created_by=teacher, is_published=False).order_by('-created_at')
-    
-    submissions = ExamSubmission.objects.filter(exam__created_by=teacher).order_by('-submitted_at')[:10]
-    
+ 
+    published_exams = Exam.objects.filter(
+        created_by=teacher, is_published=True
+    ).order_by('-created_at')
+ 
+    draft_exams = Exam.objects.filter(
+        created_by=teacher, is_published=False
+    ).order_by('-created_at')
+ 
+    # ALL submissions for this teacher's exams - no [:10] limit
+    submissions = ExamSubmission.objects.filter(
+        exam__created_by=teacher
+    ).order_by('-submitted_at')
+ 
     context = {
         'teacher': teacher,
         'published_exams': published_exams,
         'draft_exams': draft_exams,
-        'recent_submissions': submissions,
+        'recent_submissions': submissions,   # ALL submissions, not just 10
         'total_exams': published_exams.count() + draft_exams.count(),
     }
     return render(request, 'teacher_dashboard.html', context)
