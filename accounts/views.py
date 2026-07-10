@@ -741,6 +741,21 @@ def subject_teacher_entry(request):
             except SubjectResult.DoesNotExist:
                 pass
     
+    previous_term_results = {}
+    if selected_class and subject_name and term in ['Second Term', 'Third Term'] and students:
+        prev_term = 'First Term' if term == 'Second Term' else 'Second Term'
+        for student in students:
+            try:
+                prev_result = SubjectResult.objects.get(
+                    student=student,
+                    subject_name=subject_name,
+                    term=prev_term,
+                    academic_year=academic_year
+                )
+                previous_term_results[student.id] = prev_result.cum
+            except SubjectResult.DoesNotExist:
+                pass
+    
     recorded_results = SubjectResult.objects.filter(
         entered_by=teacher
     ).values('subject_name', 'term', 'academic_year', 'student__class_name').annotate(
@@ -761,9 +776,11 @@ def subject_teacher_entry(request):
         'departments': departments,
         'is_senior_class': is_senior_class,
         'recorded_results': recorded_results,
+        'previous_term_results': previous_term_results,
     }
     
     return render(request, 'result/subject_teacher_entry.html', context)
+
 
 def test_subject_teacher(request):
     print("🎯 TEST VIEW CALLED!")
