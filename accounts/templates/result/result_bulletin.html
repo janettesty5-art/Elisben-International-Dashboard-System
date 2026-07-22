@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Bulletin - Elisben International Schools</title>
+    <title>End-of-Session Bulletin - Elisben International Schools</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -26,7 +26,11 @@
             --border:   #e8d0f0;
             --white:    #ffffff;
 
-            
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 26px;
+
             --shadow-soft: 0 4px 24px rgba(57,16,93,0.08);
             --shadow-md:   0 8px 40px rgba(57,16,93,0.13);
             --shadow-lg:   0 16px 60px rgba(57,16,93,0.18);
@@ -140,6 +144,12 @@
             letter-spacing: 0.02em;
             line-height: 1.2;
             margin-bottom: 8px;
+        }
+        .school-address {
+            font-size: 12px;
+            color: rgba(255,255,255,0.55);
+            letter-spacing: 0.03em;
+            margin-bottom: 10px;
         }
         .bulletin-badge {
             display: inline-flex;
@@ -306,6 +316,29 @@
         .info-banner .ib-title i { color: var(--rose-mid); }
 
         /* ═══════════════════════════
+           ADMISSION GRID
+        ═══════════════════════════ */
+        .admission-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .admission-chip {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.3);
+            border-radius: 50px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--plum);
+        }
+        .admission-chip i { color: var(--rose-mid); font-size: 13px; }
+
+        /* ═══════════════════════════
            FEES SECTION — CLASS ACCORDION
         ═══════════════════════════ */
         .fees-header {
@@ -319,6 +352,11 @@
             font-size: clamp(18px, 4vw, 23px);
             font-weight: 700;
             color: var(--plum);
+        }
+        .fees-sub {
+            font-size: 12.5px;
+            color: var(--muted);
+            margin: -14px 0 20px;
         }
 
         /* Tab selector */
@@ -334,7 +372,7 @@
         }
         .tab-btn {
             flex: 1;
-            min-width: 70px;
+            min-width: 100px;
             padding: 9px 6px;
             border: none;
             border-radius: var(--radius-sm);
@@ -362,6 +400,21 @@
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .fee-panel-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(212,95,181,0.12);
+            color: var(--rose-mid);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 50px;
+            margin-bottom: 14px;
         }
 
         /* Fee rows */
@@ -412,7 +465,7 @@
             font-family: var(--font-display);
         }
 
-        /* Saturday lesson note */
+        /* Saturday lesson / laptop note */
         .lesson-note {
             display: flex;
             align-items: center;
@@ -443,6 +496,173 @@
             display: flex; align-items: center; gap: 6px;
         }
         .fee-sub-title i { color: var(--rose-mid); }
+
+        /* ═══════════════════════════
+           UNIFORM SECTION
+        ═══════════════════════════ */
+        .uniform-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+        @media (max-width: 460px) { .uniform-grid { grid-template-columns: 1fr; } }
+
+        .uniform-card {
+            background: var(--rose-pale);
+            border: 1px solid rgba(232,145,204,0.25);
+            border-radius: var(--radius-md);
+            padding: 14px 12px;
+            text-align: center;
+        }
+        .uniform-card .uc-day {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 6px;
+        }
+        .uniform-card .uc-price {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--plum);
+            font-family: var(--font-display);
+        }
+        .uniform-card .uc-note {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        /* ═══════════════════════════
+           IMAGE GALLERY (click-to-expand bill schedules)
+        ═══════════════════════════ */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 6px;
+        }
+        @media (max-width: 560px) { .gallery-grid { grid-template-columns: 1fr 1fr; } }
+        @media (max-width: 380px) { .gallery-grid { grid-template-columns: 1fr; } }
+
+        .gallery-card {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            background: var(--rose-pale);
+            box-shadow: var(--shadow-soft);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .gallery-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        .gallery-card img {
+            width: 100%;
+            aspect-ratio: 3/4;
+            object-fit: cover;
+            display: block;
+        }
+        .gallery-card .gc-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(34,10,58,0.88) 0%, rgba(34,10,58,0.05) 55%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 12px 10px;
+        }
+        .gallery-card .gc-label {
+            color: var(--white);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+        .gallery-card .gc-expand {
+            position: absolute;
+            top: 8px; right: 8px;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.92);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .gallery-card .gc-expand i { color: var(--plum); font-size: 12px; }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(20,6,34,0.92);
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: fadeIn 0.2s ease;
+        }
+        .lightbox.open { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .lightbox-inner {
+            position: relative;
+            max-width: 560px;
+            width: 100%;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .lightbox-inner img {
+            max-width: 100%;
+            max-height: 72vh;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-lg);
+            background: var(--white);
+        }
+        .lightbox-caption {
+            margin-top: 14px;
+            color: var(--rose-lt);
+            font-family: var(--font-display);
+            font-size: 16px;
+            font-style: italic;
+            text-align: center;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: -6px; right: -6px;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: var(--white);
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+        }
+        .lightbox-close i { color: var(--plum); font-size: 15px; }
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .lightbox-nav:hover { background: rgba(255,255,255,0.28); }
+        .lightbox-nav i { color: var(--white); font-size: 16px; }
+        .lightbox-prev { left: -8px; }
+        .lightbox-next { right: -8px; }
+        @media (max-width: 640px) {
+            .lightbox-prev { left: 4px; }
+            .lightbox-next { right: 4px; }
+        }
 
         /* ═══════════════════════════
            PAYMENT SECTION
@@ -493,48 +713,13 @@
             font-size: 11.5px;
             color: var(--muted);
         }
-
-        /* Payment schedule */
-        .schedule-track {
-            display: flex;
-            align-items: stretch;
-            gap: 0;
-            background: var(--rose-pale);
-            border: 1px solid rgba(232,145,204,0.3);
-            border-radius: var(--radius-md);
-            overflow: hidden;
-        }
-        .schedule-step {
-            flex: 1;
-            padding: 16px 10px;
-            text-align: center;
-            position: relative;
-        }
-        .schedule-step:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            right: 0; top: 20%; bottom: 20%;
-            width: 1px;
-            background: rgba(232,145,204,0.35);
-        }
-        .schedule-step .ss-pct {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--plum);
-            font-family: var(--font-display);
-            line-height: 1;
-            margin-bottom: 4px;
-        }
-        .schedule-step .ss-when {
-            font-size: 11px;
-            color: var(--muted);
-            line-height: 1.35;
-        }
-        .schedule-step .ss-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: var(--rose-mid);
-            margin: 0 auto 6px;
+        .bank-card .bc-for {
+            font-size: 10.5px;
+            color: var(--rose-mid);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 600;
+            margin-top: 6px;
         }
 
         .teller-note {
@@ -688,46 +873,9 @@
         }
         .cta-btn i { font-size: 14px; color: var(--rose-lt); }
 
-        /* ═══════════════════════════
-           UNIFORM SECTION
-        ═══════════════════════════ */
-        .uniform-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 12px;
-        }
-        @media (max-width: 460px) { .uniform-grid { grid-template-columns: 1fr; } }
-
-        .uniform-card {
-            background: var(--rose-pale);
-            border: 1px solid rgba(232,145,204,0.25);
-            border-radius: var(--radius-md);
-            padding: 14px 12px;
-            text-align: center;
-        }
-        .uniform-card .uc-day {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            margin-bottom: 6px;
-        }
-        .uniform-card .uc-price {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--plum);
-            font-family: var(--font-display);
-        }
-        .uniform-card .uc-note {
-            font-size: 11px;
-            color: var(--muted);
-            margin-top: 3px;
-        }
-
         @media print {
             .cta-wrap { display: none; }
+            .lightbox { display: none !important; }
             body { background: white; }
             body::before { display: none; }
         }
@@ -740,19 +888,22 @@
     <div class="header-card">
         <div class="header-inner">
             <div class="logo-ring">
-             <img src="{% static 'images/Elisben_Logo.png' %}" alt="Logo"> 
+             <img src="{% static 'images/Elisben_Logo.png' %}" alt="Elisben International Schools Logo">
             </div>
             <div class="header-text">
                 <div class="bulletin-badge">
                     <i class="fa-regular fa-bell"></i> Official School Bulletin
                 </div>
-                <div class="school-name">Elisben International Schools, Ikere Ekiti</div>
+                <div class="school-name">Elisben International Schools</div>
+                <div class="school-address">
+                    <i class="fa-solid fa-location-dot"></i> Oke Osun, Ikere-Ekiti, Ekiti State
+                </div>
                 <div class="bulletin-title">
-                    End of Second Term 2025/2026 Academic Session<br>
-                    &amp; Commencement of Third Term
+                    End-of-Session Bulletin<br>
+                    2025/2026 Academic Session
                 </div>
                 <div class="header-date">
-                    <i class="fa-regular fa-calendar"></i> 1st April, 2026
+                    <i class="fa-regular fa-calendar"></i> Issued 22nd July, 2026
                 </div>
             </div>
         </div>
@@ -764,22 +915,8 @@
             <div class="icon-wrap"><i class="fa-regular fa-handshake"></i></div>
             <h2>Dear Parents & Guardians</h2>
         </div>
-        <p class="body-text">We give thanks to Almighty God for His faithfulness and protection over our students and the entire school community throughout the Second Term of the 2025/2026 Academic Session.</p>
-        <p class="body-text" style="margin-top:12px;">The Second Term came to a successful close on <strong>Thursday, 2nd April, 2026</strong>. We appreciate the commitment of our students, the dedication of our teachers, and the continued support of all parents and guardians.</p>
-    </div>
-
-    <!-- ══════ TERM HIGHLIGHTS ══════ -->
-    <div class="card">
-        <div class="section-label">
-            <div class="icon-wrap"><i class="fa-solid fa-star"></i></div>
-            <h2>Term Highlights</h2>
-        </div>
-        <ul class="highlight-list">
-            <li><i class="fa-solid fa-circle-check"></i> Successful completion of the Second Term examinations.</li>
-            <li><i class="fa-solid fa-circle-check"></i> Active participation in cultural activities, particularly on Asa Day.</li>
-            <li><i class="fa-solid fa-circle-check"></i> Notable improvement in students' reading culture.</li>
-            <li><i class="fa-solid fa-circle-check"></i> Continued emphasis on moral and spiritual development through weekly devotion and character education classes.</li>
-        </ul>
+        <p class="body-text">On behalf of the Management and Staff of Elisben International Schools, we sincerely appreciate you for your support, cooperation, and commitment throughout the 2025/2026 academic session.</p>
+        <p class="body-text" style="margin-top:12px;">This is to inform all parents, guardians, and students that the school will officially close for the Third Term and End-of-Session Vacation on <strong>Friday, 24th July, 2026</strong>, and will resume for the <strong>2026/2027 Academic Session</strong> on <strong>Monday, 14th September, 2026</strong>.</p>
     </div>
 
     <!-- ══════ VACATION DATES ══════ -->
@@ -792,28 +929,43 @@
             <div class="date-pill">
                 <div class="dp-icon"><i class="fa-solid fa-plane-departure"></i></div>
                 <div>
-                    <div class="dp-label">Vacation begins</div>
-                    <div class="dp-value">Thursday, 2nd April 2026</div>
+                    <div class="dp-label">School closes</div>
+                    <div class="dp-value">Friday, 24th July 2026</div>
                 </div>
             </div>
             <div class="date-pill">
                 <div class="dp-icon"><i class="fa-solid fa-school"></i></div>
                 <div>
-                    <div class="dp-label">School resumes</div>
-                    <div class="dp-value">Monday, 27th April 2026</div>
+                    <div class="dp-label">Resumes 2026/2027</div>
+                    <div class="dp-value">Monday, 14th September 2026</div>
                 </div>
             </div>
         </div>
 
         <div class="info-banner" style="margin-top:18px;">
-            <div class="ib-title"><i class="fa-solid fa-circle-exclamation"></i> Important — Third Term</div>
+            <div class="ib-title"><i class="fa-solid fa-circle-exclamation"></i> During the Holiday, Parents Are Encouraged To</div>
             <ul class="highlight-list">
-                <li><i class="fa-solid fa-clock"></i> Reporting time: <strong>7:20 a.m. prompt</strong> — complete school uniform required.</li>
-                <li><i class="fa-solid fa-calendar-week"></i> Third Term runs for approximately <strong>13 weeks</strong>.</li>
-                <li><i class="fa-solid fa-money-bill-wave"></i> All outstanding Second Term fees must be <strong>fully paid before resumption</strong>. Late payment attracts a penalty.</li>
-                <li><i class="fa-solid fa-book"></i> Students must come with all required textbooks, notebooks, mathematical sets, and learning materials.</li>
-                <li><i class="fa-solid fa-shirt"></i> All students must resume in <strong>clean and complete school uniform</strong>. No fancy wears or accessories.</li>
+                <li><i class="fa-solid fa-book-open-reader"></i> Encourage regular reading and academic activities.</li>
+                <li><i class="fa-solid fa-user-shield"></i> Monitor their wards' conduct and participation in productive activities.</li>
+                <li><i class="fa-solid fa-briefcase"></i> Prepare adequately for the new academic session.</li>
             </ul>
+        </div>
+    </div>
+
+    <!-- ══════ ADMISSION ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-solid fa-graduation-cap"></i></div>
+            <h2>Admission Ongoing</h2>
+        </div>
+        <p class="body-text">Admission is currently ongoing into the following classes for the 2026/2027 Academic Session:</p>
+        <div class="admission-grid">
+            <div class="admission-chip"><i class="fa-solid fa-baby"></i> Crèche</div>
+            <div class="admission-chip"><i class="fa-solid fa-child-reaching"></i> Kindergarten</div>
+            <div class="admission-chip"><i class="fa-solid fa-shapes"></i> Nursery Classes</div>
+            <div class="admission-chip"><i class="fa-solid fa-book"></i> Basic Classes</div>
+            <div class="admission-chip"><i class="fa-solid fa-user-graduate"></i> Junior Secondary (JSS)</div>
+            <div class="admission-chip"><i class="fa-solid fa-graduation-cap"></i> Senior Secondary (SSS)</div>
         </div>
     </div>
 
@@ -823,152 +975,129 @@
             <div class="icon-wrap" style="width:36px;height:36px;border-radius:10px;background:var(--rose-pale);display:flex;align-items:center;justify-content:center;">
                 <i class="fa-solid fa-receipt" style="color:var(--rose-mid);font-size:15px;"></i>
             </div>
-            <h2>Third Term Fees Breakdown</h2>
+            <h2>School Bill Schedule &mdash; Returning Students</h2>
         </div>
+        <p class="fees-sub">Investing today, building tomorrow.</p>
 
         <!-- CLASS TABS -->
         <div class="class-tabs" role="tablist">
-            <button class="tab-btn active" onclick="switchTab('jss1', this)" role="tab">JSS 1</button>
-            <button class="tab-btn" onclick="switchTab('jss2', this)" role="tab">JSS 2</button>
-            <button class="tab-btn" onclick="switchTab('jss3', this)" role="tab">JSS 3</button>
-            <button class="tab-btn" onclick="switchTab('sss1', this)" role="tab">SSS 1</button>
-            <button class="tab-btn" onclick="switchTab('sss2', this)" role="tab">SSS 2</button>
-            <button class="tab-btn" onclick="switchTab('sss3', this)" role="tab">SSS 3</button>
+            <button class="tab-btn active" onclick="switchTab('jss', this)" role="tab">JSS</button>
+            <button class="tab-btn" onclick="switchTab('sss', this)" role="tab">SSS (No Furniture)</button>
+            <button class="tab-btn" onclick="switchTab('ssssci', this)" role="tab">SSS Science</button>
         </div>
 
-        <!-- JSS 1 -->
-        <div id="fee-jss1" class="fee-panel active">
+        <!-- JSS RETURNING -->
+        <div id="fee-jss" class="fee-panel active">
+            <div class="fee-panel-tag"><i class="fa-solid fa-user-graduate"></i> JSS Returning Students</div>
             <div class="fee-rows">
                 <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
                 <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-briefcase-medical"></i> Medical</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦3,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦4,000</span></div>
             </div>
             <div class="fee-total-row">
                 <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
-                <span class="ft-amt">₦45,500</span>
+                <span class="ft-amt">₦50,000</span>
             </div>
         </div>
 
-        <!-- JSS 2 -->
-        <div id="fee-jss2" class="fee-panel">
+        <!-- SSS RETURNING (NO FURNITURE) -->
+        <div id="fee-sss" class="fee-panel">
+            <div class="fee-panel-tag"><i class="fa-solid fa-graduation-cap"></i> SSS Returning Students (Without Furniture)</div>
             <div class="fee-rows">
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦30,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦40,000</span></div>
                 <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-briefcase-medical"></i> Medical</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦3,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦4,000</span></div>
             </div>
             <div class="fee-total-row">
                 <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
-                <span class="ft-amt">₦40,500</span>
+                <span class="ft-amt">₦55,000</span>
             </div>
         </div>
 
-        <!-- JSS 3 -->
-        <div id="fee-jss3" class="fee-panel">
+        <!-- SSS SCIENCE RETURNING -->
+        <div id="fee-ssssci" class="fee-panel">
+            <div class="fee-panel-tag"><i class="fa-solid fa-flask"></i> SSS Science Returning Students (Science Fee Included)</div>
             <div class="fee-rows">
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦30,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦40,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-flask-vial"></i> Science Fee</span><span class="fr-amt">₦5,000</span></div>
                 <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-briefcase-medical"></i> Medical</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,500</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦3,000</span></div>
+                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦4,000</span></div>
             </div>
             <div class="fee-total-row">
                 <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
-                <span class="ft-amt">₦40,500</span>
-            </div>
-            <div class="lesson-note">
-                <i class="fa-solid fa-chalkboard-user"></i>
-                Saturday Lesson: <strong style="margin-left:4px;">₦5,000</strong> &nbsp;(additional)
-            </div>
-        </div>
-
-        <!-- SSS 1 -->
-        <div id="fee-sss1" class="fee-panel">
-            <div class="fee-rows">
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
-            </div>
-            <div class="fee-total-row">
-                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
-                <span class="ft-amt">₦45,500</span>
-            </div>
-        </div>
-
-        <!-- SSS 2 -->
-        <div id="fee-sss2" class="fee-panel">
-            <div class="fee-rows">
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
-            </div>
-            <div class="fee-total-row">
-                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
-                <span class="ft-amt">₦45,500</span>
-            </div>
-            <div class="lesson-note">
-                <i class="fa-solid fa-chalkboard-user"></i>
-                Saturday Lesson: <strong style="margin-left:4px;">₦5,000</strong> &nbsp;(additional)
-            </div>
-        </div>
-
-        <!-- SSS 3 -->
-        <div id="fee-sss3" class="fee-panel">
-            <div class="fee-rows">
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-book-open"></i> Tuition Fees</span><span class="fr-amt">₦35,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-hammer"></i> Trade Subject</span><span class="fr-amt">₦1,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-computer"></i> CBT / ICT</span><span class="fr-amt">₦2,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-pen-to-square"></i> Examination</span><span class="fr-amt">₦5,000</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-bolt"></i> Utilities</span><span class="fr-amt">₦1,500</span></div>
-                <div class="fee-row"><span class="fr-name"><i class="fa-solid fa-wrench"></i> Maintenance</span><span class="fr-amt">₦1,000</span></div>
-            </div>
-            <div class="fee-total-row">
-                <span class="ft-label"><i class="fa-solid fa-sigma"></i> Total</span>
-                <span class="ft-amt">₦45,500</span>
-            </div>
-            <div class="lesson-note">
-                <i class="fa-solid fa-chalkboard-user"></i>
-                Saturday Lesson: <strong style="margin-left:4px;">₦5,000</strong> &nbsp;(additional)
+                <span class="ft-amt">₦60,000</span>
             </div>
         </div>
 
         <!-- UNIFORM subsection (always visible) -->
         <div class="fee-divider"></div>
-        <div class="fee-sub-title"><i class="fa-solid fa-shirt"></i> Uniform Fees — All Classes</div>
+        <div class="fee-sub-title"><i class="fa-solid fa-shirt"></i> Uniform Fees &mdash; All Classes</div>
         <div class="uniform-grid">
             <div class="uniform-card">
-                <div class="uc-day"><i class="fa-regular fa-calendar-check"></i> Mon / Tue</div>
-                <div class="uc-price">₦25,000</div>
-                <div class="uc-note">SSS</div>
-                <div class="uc-price" style="margin-top:4px;">₦17,000</div>
-                <div class="uc-note">JSS</div>
+                <div class="uc-day"><i class="fa-regular fa-calendar-check"></i> Waist Coat</div>
+                <div class="uc-price">₦18,000</div>
+                <div class="uc-note">Blue with Waist Coat</div>
             </div>
             <div class="uniform-card">
-                <div class="uc-day"><i class="fa-solid fa-person-running"></i> Wednesday</div>
-                <div class="uc-price">₦17,000</div>
-                <div class="uc-note">Sport Wear</div>
-            </div>
-            <div class="uniform-card">
-                <div class="uc-day"><i class="fa-regular fa-calendar"></i> Thu / Fri</div>
+                <div class="uc-day"><i class="fa-solid fa-shirt"></i> Shirt Set</div>
                 <div class="uc-price">₦13,000</div>
+                <div class="uc-note">Cream with Blue</div>
+            </div>
+            <div class="uniform-card">
+                <div class="uc-day"><i class="fa-regular fa-calendar"></i> Cardigan</div>
+                <div class="uc-price">₦7,000</div>
                 <div class="uc-note">All Classes</div>
             </div>
         </div>
         <div class="lesson-note" style="margin-top:12px;">
-            <i class="fa-solid fa-sock"></i>
-            White and Wine socks to be purchased individually
+            <i class="fa-solid fa-laptop"></i>
+            A laptop is essential for every student and is available for purchase in school.
+        </div>
+    </div>
+
+    <!-- ══════ FEE SCHEDULE GALLERY (click to expand) ══════ -->
+    <div class="card">
+        <div class="section-label">
+            <div class="icon-wrap"><i class="fa-regular fa-images"></i></div>
+            <h2>Fee Schedule Notices</h2>
+        </div>
+        <p class="body-text" style="margin-bottom:14px;">Tap any notice below to view it full size.</p>
+        <div class="gallery-grid">
+            <div class="gallery-card" onclick="openLightbox(0)">
+                <img src="{% static 'images/bill_jss_returning.jpg' %}" alt="JSS Returning Students School Bill">
+                <div class="gc-expand"><i class="fa-solid fa-expand"></i></div>
+                <div class="gc-overlay"><div class="gc-label">JSS Returning Students</div></div>
+            </div>
+            <div class="gallery-card" onclick="openLightbox(1)">
+                <img src="{% static 'images/bill_sss_returning.jpg' %}" alt="SSS Returning Students School Bill (No Furniture)">
+                <div class="gc-expand"><i class="fa-solid fa-expand"></i></div>
+                <div class="gc-overlay"><div class="gc-label">SSS Returning (No Furniture)</div></div>
+            </div>
+            <div class="gallery-card" onclick="openLightbox(2)">
+                <img src="{% static 'images/bill_sss_science_returning.jpg' %}" alt="SSS Science Returning Students School Bill">
+                <div class="gc-expand"><i class="fa-solid fa-expand"></i></div>
+                <div class="gc-overlay"><div class="gc-label">SSS Science Returning</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox overlay -->
+    <div class="lightbox" id="lightbox">
+        <div class="lightbox-inner">
+            <button class="lightbox-close" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="lightbox-nav lightbox-prev" onclick="changeLightbox(-1)"><i class="fa-solid fa-chevron-left"></i></div>
+            <img id="lightbox-img" src="" alt="School bill notice">
+            <div class="lightbox-caption" id="lightbox-caption"></div>
+            <div class="lightbox-nav lightbox-next" onclick="changeLightbox(1)"><i class="fa-solid fa-chevron-right"></i></div>
         </div>
     </div>
 
@@ -983,33 +1112,14 @@
             <div class="bank-card">
                 <div class="bc-bank"><i class="fa-solid fa-building-columns"></i> Sterling Bank</div>
                 <div class="bc-acct">0092345848</div>
-                <div class="bc-name">ELISBEN INT. COLLEGE, IKERE</div>
+                <div class="bc-name">ELISBEN INTERNATIONAL COLLEGE, IKERE</div>
+                <div class="bc-for">School Fees Account</div>
             </div>
             <div class="bank-card">
                 <div class="bc-bank"><i class="fa-solid fa-building-columns"></i> Access Bank</div>
                 <div class="bc-acct">0027094420</div>
                 <div class="bc-name">DARAMOLA BENJAMIN BANKOLE</div>
-            </div>
-        </div>
-
-        <div class="fee-sub-title" style="margin-top:18px;margin-bottom:12px;">
-            <i class="fa-regular fa-clock"></i> Payment Schedule
-        </div>
-        <div class="schedule-track">
-            <div class="schedule-step">
-                <div class="ss-dot"></div>
-                <div class="ss-pct">40%</div>
-                <div class="ss-when">On or before<br>Resumption</div>
-            </div>
-            <div class="schedule-step">
-                <div class="ss-dot"></div>
-                <div class="ss-pct">30%</div>
-                <div class="ss-when">Before<br>Mid-Term</div>
-            </div>
-            <div class="schedule-step">
-                <div class="ss-dot"></div>
-                <div class="ss-pct">30%</div>
-                <div class="ss-when">Before<br>Examination</div>
+                <div class="bc-for">Uniforms Payment Account</div>
             </div>
         </div>
 
@@ -1028,11 +1138,11 @@
         <div class="reminder-grid">
             <div class="reminder-item">
                 <div class="ri-num">1</div>
-                Parents are advised to monitor their children's activities during vacation and ensure engagement in meaningful and productive tasks.
+                We thank God for a successful session and pray for His protection, good health, and journey mercies for all our pupils, students, parents, and staff throughout the vacation period.
             </div>
             <div class="reminder-item">
                 <div class="ri-num">2</div>
-                We encourage continued reading and light revision of Second Term work to prepare adequately for the Third Term.
+                All outstanding fees should be settled before resumption to avoid delay in the new session.
             </div>
             <div class="reminder-item">
                 <div class="ri-num">3</div>
@@ -1043,13 +1153,13 @@
 
     <!-- ══════ CLOSING + CONTACT ══════ -->
     <div class="card">
-        <p class="body-text">We look forward to welcoming our dear students back stronger, healthier, and more determined to excel in the Third Term.</p>
-        <p class="body-text" style="margin-top:10px;">Thank you for your continued partnership in the education and upbringing of our children. Together, we shall continue to raise future leaders of excellence, integrity, and godliness.</p>
+        <p class="body-text">We look forward to welcoming our learners back for another fruitful and successful academic session.</p>
+        <p class="body-text" style="margin-top:10px;"><strong>Happy Holiday!</strong></p>
 
         <div class="sign-block">
             <p>Signed,</p>
-            <div class="sign-name">The Proprietor</div>
-            <p>Elisben International Schools, Ikere Ekiti</p>
+            <div class="sign-name">Pastor Benjamin B. Daramola</div>
+            <p>Proprietor, Elisben International Schools<br>Ikere-Ekiti, Ekiti State.</p>
         </div>
 
         <div class="contact-row">
@@ -1058,6 +1168,9 @@
             </a>
             <a href="mailto:elisben2021@gmail.com" class="contact-chip">
                 <i class="fa-regular fa-envelope"></i> elisben2021@gmail.com
+            </a>
+            <a href="https://www.elisbeninternational.com" target="_blank" rel="noopener" class="contact-chip">
+                <i class="fa-solid fa-globe"></i> elisbeninternational.com
             </a>
         </div>
     </div>
@@ -1085,6 +1198,48 @@
         document.getElementById('fee-' + classId).classList.add('active');
         btn.classList.add('active');
     }
+
+    /* ── Fee schedule gallery + lightbox ── */
+    const galleryImages = [
+        { src: "{% static 'images/bill_jss_returning.jpg' %}", caption: "JSS Returning Students &mdash; School Bill" },
+        { src: "{% static 'images/bill_sss_returning.jpg' %}", caption: "SSS Returning Students &mdash; School Bill (No Furniture)" },
+        { src: "{% static 'images/bill_sss_science_returning.jpg' %}", caption: "SSS Science Returning Students &mdash; School Bill" }
+    ];
+    let currentLightboxIndex = 0;
+
+    function openLightbox(index) {
+        currentLightboxIndex = index;
+        renderLightbox();
+        document.getElementById('lightbox').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    function changeLightbox(direction) {
+        currentLightboxIndex = (currentLightboxIndex + direction + galleryImages.length) % galleryImages.length;
+        renderLightbox();
+    }
+
+    function renderLightbox() {
+        const item = galleryImages[currentLightboxIndex];
+        document.getElementById('lightbox-img').src = item.src;
+        document.getElementById('lightbox-caption').innerHTML = item.caption;
+    }
+
+    document.getElementById('lightbox').addEventListener('click', function (e) {
+        if (e.target === this) closeLightbox();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (!document.getElementById('lightbox').classList.contains('open')) return;
+        if (e.key === 'Escape') closeLightbox();
+        if (e.key === 'ArrowLeft') changeLightbox(-1);
+        if (e.key === 'ArrowRight') changeLightbox(1);
+    });
 
     /* ── Continue button ── */
     document.getElementById('continueBtn').addEventListener('click', function(e) {
