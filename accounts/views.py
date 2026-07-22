@@ -1350,10 +1350,17 @@ def class_teacher_start_result(request):
             result.class_teacher = teacher
             
             # Calculate totals using CUM (not avg_2)
+            # Calculate totals using CUM (not avg_2)
             result.total_subjects = subject_results.count()
             result.score_gained = sum([sr.cum for sr in subject_results])  # Changed from avg_2 to cum
             result.average_score = result.score_gained / result.total_subjects if result.total_subjects > 0 else 0
-            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
+
+            if result.average_score >= 45:
+                result.status_promotion = "PROMOTED"
+            elif result.average_score >= 40:
+                result.status_promotion = "PROMOTED ON TRIAL"
+            else:
+                result.status_promotion = "REPEAT"
             
             result.save()
             
@@ -1549,7 +1556,13 @@ def class_teacher_edit_result(request, result_id):
                     break
             
             result.position_in_class = f"{position}/{results_in_class.count()}"
-            result.status_promotion = "PROMOTED" if result.average_score >= 50 else "REPEAT"
+
+            if result.average_score >= 45:
+                result.status_promotion = "PROMOTED"
+            elif result.average_score >= 40:
+                result.status_promotion = "PROMOTED ON TRIAL"
+            else:
+                result.status_promotion = "REPEAT"
             
             result.save()
             
