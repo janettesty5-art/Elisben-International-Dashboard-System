@@ -110,4 +110,5 @@ urlpatterns = [
     path('make-result/subject-teacher/delete-post/', views.delete_subject_result_post, name='delete_subject_result_post'),
     path('make-result/admin/download-pins/', views.download_pins, name='download_pins'),
     path('teacher/exam/<int:exam_id>/edit-duration/', views.edit_exam_duration, name='edit_exam_duration'),
+    path('admin/fix-promotion-status/', views.admin_fix_promotion_status, name='admin_fix_promotion_status'),
 ]

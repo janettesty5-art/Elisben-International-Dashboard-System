@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fix Promotion Status</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 40px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h1 { color: #333; margin-bottom: 20px; }
+        .warning-box { background: #fff3cd; border-left: 6px solid #ffc107; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        .info-box { background: #e7f3ff; border-left: 6px solid #3498db; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; margin: 15px 0; }
+        .btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; text-decoration: none; display: inline-block; margin-right: 10px; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-back { background: #95a5a6; color: white; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Fix Promotion Status</h1>
+
+        {% if ran %}
+            <div class="info-box">
+                <strong>✅ Done.</strong> Output below shows exactly which results were updated.
+            </div>
+            <pre>{{ output }}</pre>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-back">← Back to Dashboard</a>
+        {% else %}
+            <div class="warning-box">
+                <strong>What this does:</strong> Recalculates <code>status_promotion</code> for
+                <strong>{{ total_results }}</strong> existing result(s) using the new thresholds:
+                <br><br>
+                0–39% → REPEAT &nbsp;|&nbsp; 40–44% → PROMOTED ON TRIAL &nbsp;|&nbsp; 45%+ → PROMOTED
+                <br><br>
+                This includes already-published results. Nothing else about the result is touched — only this one field.
+            </div>
+            <form method="POST">
+                {% csrf_token %}
+                <label>Type <strong>FIX PROMOTION STATUS</strong> to confirm:</label>
+                <input type="text" name="confirmation" placeholder="Type here..." required>
+                <button type="submit" class="btn btn-danger">🔄 Run Fix Now</button>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-back">Cancel</a>
+            </form>
+        {% endif %}
+    </div>
+</body>
+</html>

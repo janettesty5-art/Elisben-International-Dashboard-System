@@ -10,6 +10,7 @@ import csv
 from datetime import datetime
 import random
 from django.core.management import call_command
+from io import StringIO
 from django.utils import timezone
 
 # ============= UNIFIED LOGIN =============
@@ -3256,4 +3257,47 @@ def edit_exam_duration(request, exam_id):
  
     context = {'exam': exam, 'teacher': teacher}
     return render(request, 'edit_exam_duration.html', context)
- 
+
+
+@login_required
+def admin_fix_promotion_status(request):
+    """
+    Recalculate status_promotion for ALL StudentResult records
+    using the new thresholds (0-39 REPEAT, 40-44 PROMOTED ON TRIAL, 45+ PROMOTED).
+    Works without shell access — runs as a normal web request.
+    """
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+
+    if request.method == 'POST':
+        confirmation = request.POST.get('confirmation')
+
+        if confirmation == 'FIX PROMOTION STATUS':
+            output = StringIO()
+            try:
+                call_command('fix_promotion_status', stdout=output)
+                result_text = output.getvalue()
+
+                ActivityLog.objects.create(
+                    action='result_generated',
+                    description=f'Admin {admin.full_name} ran promotion status fix for all results',
+                    performed_by_type='admin',
+                    performed_by_name=admin.full_name
+                )
+
+                messages.success(request, 'Promotion status fix completed! See output below.')
+                context = {'output': result_text, 'ran': True}
+                return render(request, 'fix_promotion_confirm.html', context)
+            except Exception as e:
+                messages.error(request, f'Error running fix: {str(e)}')
+        else:
+            messages.error(request, 'Incorrect confirmation text. Action cancelled.')
+
+    from .models import StudentResult
+    context = {
+        'total_results': StudentResult.objects.count(),
+    }
+    return render(request, 'fix_promotion_confirm.html', context)
