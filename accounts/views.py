@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.utils.text import slugify
 from PIL import Image, ImageOps
+from django.core.paginator import Paginator
 
 try:
     import pillow_heif          # enables iPhone/Android .HEIC photos
@@ -2546,23 +2547,29 @@ def admin_dashboard(request):
     except Admin.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
- 
-    students = Student.objects.all().order_by('-created_at')
-    teachers = Teacher.objects.all().order_by('-created_at')
- 
-    # ALL activity logs - no [:20] limit
-    recent_activities = ActivityLog.objects.all().order_by('-timestamp')
- 
+
+    all_students = Student.objects.all().order_by('-created_at')
+    all_teachers = Teacher.objects.all().order_by('-created_at')
+
+    student_paginator = Paginator(all_students, 25)
+    students = student_paginator.get_page(request.GET.get('student_page'))
+
+    teacher_paginator = Paginator(all_teachers, 25)
+    teachers = teacher_paginator.get_page(request.GET.get('teacher_page'))
+
+    # The activity feed doesn't need every log ever created — just the recent ones
+    recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:30]
+
     total_fees = FeeRecord.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
- 
+
     context = {
         'admin': admin,
         'students': students,
         'teachers': teachers,
         'activities': recent_activities,
         'total_fees': total_fees,
-        'student_count': students.count(),
-        'teacher_count': teachers.count(),
+        'student_count': all_students.count(),
+        'teacher_count': all_teachers.count(),
     }
     return render(request, 'admin_dashboard.html', context)
 
