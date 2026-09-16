@@ -7,11 +7,21 @@ from django.db.models import Q, Sum, Avg
 from django.http import JsonResponse, HttpResponse
 from .models import *
 import csv
+import os
 from datetime import datetime
 import random
 from django.core.management import call_command
-from io import StringIO
+from io import StringIO, BytesIO
 from django.utils import timezone
+from django.core.files.base import ContentFile
+from django.utils.text import slugify
+from PIL import Image, ImageOps
+
+try:
+    import pillow_heif          # enables iPhone/Android .HEIC photos
+    pillow_heif.register_heif_opener()
+except Exception:
+    pass
 
 # ============= UNIFIED LOGIN =============
 def unified_login(request):
@@ -3717,6 +3727,44 @@ def admin_fix_promotion_status(request):
 # NEW: ID CARD GENERATOR (Admin & Principal only)
 # ============================================================
 
+
+def _normalize_photo(uploaded_file, max_size=(700, 900)):
+    """Accept ANY image the user picks (jpg, png, webp, heic, bmp, tiff, gif...)
+    and turn it into a browser-safe, correctly-rotated, right-sized JPEG."""
+    if not uploaded_file:
+        return None
+    try:
+        try:
+            uploaded_file.seek(0)
+        except Exception:
+            pass
+
+        img = Image.open(uploaded_file)
+        img = ImageOps.exif_transpose(img)          # fixes sideways phone photos
+
+        if img.mode in ('RGBA', 'LA', 'P'):
+            img = img.convert('RGBA')
+            background = Image.new('RGB', img.size, (255, 255, 255))
+            background.paste(img, mask=img.split()[-1])
+            img = background
+        else:
+            img = img.convert('RGB')
+
+        img.thumbnail(max_size, Image.LANCZOS)
+
+        buffer = BytesIO()
+        img.save(buffer, format='JPEG', quality=88, optimize=True)
+
+        base = os.path.splitext(os.path.basename(getattr(uploaded_file, 'name', 'photo')))[0]
+        return ContentFile(buffer.getvalue(), name=f"{slugify(base) or 'photo'}.jpg")
+    except Exception as e:
+        print(f"⚠️ Photo conversion failed, saving original: {e}")
+        try:
+            uploaded_file.seek(0)
+        except Exception:
+            pass
+        return uploaded_file
+    
 def _get_id_card_actor(request):
     """Returns (admin_or_none, principal_or_none, is_admin, actor_name) or None if access denied."""
     try:
@@ -3767,7 +3815,7 @@ def generate_student_id_card(request):
     if request.method == 'POST':
         try:
             student = Student.objects.get(student_id=request.POST.get('student_id'))
-            photo = request.FILES.get('photo') or student.profile_picture or None
+            photo = _normalize_photo(request.FILES.get('photo')) or student.profile_picture or None
 
             card = IDCard.objects.create(
                 holder_type='student',
@@ -3817,7 +3865,7 @@ def generate_staff_id_card(request):
     if request.method == 'POST':
         try:
             staff_type = request.POST.get('staff_type')
-            photo = request.FILES.get('photo')
+            photo = _normalize_photo(request.FILES.get('photo'))
 
             if staff_type == 'teaching':
                 teacher = Teacher.objects.get(id=request.POST.get('teacher_id'))
@@ -3923,7 +3971,12 @@ def generate_principal_id_card(request):
     if request.method == 'POST':
         try:
             target_principal = Principal.objects.get(id=request.POST.get('principal_id'))
-            photo = request.FILES.get('photo')
+            photo = _normalize_photo(request.FILES.get('photo'))
+
+            school = SchoolSettings.objects.first()
+            school_name = school.school_name if school and school.school_name else 'Elisben International College'
+            # e.g. "ELISBEN INTERNATIONAL COLLEGE PRINCIPAL"
+            role_title = f"{school_name} PRINCIPAL".upper()
 
             card = IDCard.objects.create(
                 holder_type='principal',
@@ -3931,7 +3984,7 @@ def generate_principal_id_card(request):
                 full_name=target_principal.full_name,
                 id_number=target_principal.principal_id,
                 phone_number=request.POST.get('phone_number', '').strip(),
-                role_title='Principal',
+                role_title=role_title,
                 photo=photo,
                 generated_by_admin=admin,
             )
@@ -3960,7 +4013,7 @@ def generate_admin_id_card(request):
 
     if request.method == 'POST':
         try:
-            photo = request.FILES.get('photo')
+            photo = _normalize_photo(request.FILES.get('photo'))
 
             card = IDCard.objects.create(
                 holder_type='admin',
@@ -3999,20 +4052,19 @@ def view_id_card(request, card_id):
 
 @login_required
 def id_card_print_sheet(request):
-    """Print up to 4 selected ID cards on one A4 sheet (2 top, 2 bottom)."""
+    """Print selected ID cards on A4 - 8 per sheet (2 across x 4 down)."""
     admin, principal, is_admin, actor_name = _get_id_card_actor(request)
     if is_admin is None:
         messages.error(request, 'Access denied. Admin or Principal only.')
         return redirect('unified_login')
 
     ids_param = request.GET.get('ids', '')
-    card_ids = [i for i in ids_param.split(',') if i.strip().isdigit()][:4]
+    card_ids = [i for i in ids_param.split(',') if i.strip().isdigit()][:12]   # was [:4]
 
     if not card_ids:
         messages.error(request, 'No cards selected to print.')
         return redirect('id_card_hub')
 
-    # Preserve the order the user selected them in
     cards = list(IDCard.objects.filter(id__in=card_ids))
     cards.sort(key=lambda c: card_ids.index(str(c.id)))
 

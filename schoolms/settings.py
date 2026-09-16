@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage',
     'django.contrib.staticfiles',
+    'cloudinary',
     'accounts',
 ]
 
@@ -62,7 +64,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.debug',      # ✅ ADD THIS
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -85,7 +87,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
     # Parse the database URL manually
     db_config = dj_database_url.parse(DATABASE_URL)
-    
+
     # Direct database configuration with explicit schema and SSL
     DATABASES = {
         'default': {
@@ -153,25 +155,33 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# Static files
+# ============================================================
+# STATIC FILES (CSS, JS, admin styling) - served by WhiteNoise
+# ============================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Media files  
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-# WhiteNoise - serves both static AND media
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-STATICFILES_DIRS = [BASE_DIR / 'media']
+# NOTE: media is intentionally NOT listed in STATICFILES_DIRS.
+# Media (user uploads) must never be treated as static — static files
+# only get copied once at deploy time, so anything uploaded afterwards
+# would be lost on the next deploy.
+
+
+# ============================================================
+# MEDIA FILES (user uploads: ID card photos, profile pictures,
+# school logo) - stored on Cloudinary, free tier, survives every
+# Render deploy since it's not on Render's own disk at all.
+# ============================================================
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
+    'API_KEY': config('CLOUDINARY_API_KEY', default=''),
+    'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+MEDIA_URL = '/media/'

@@ -33,11 +33,11 @@
 
         .btn-submit { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
         .btn-submit:hover { opacity: 0.92; }
-    
-@media (max-width: 768px) {
-    .navbar { flex-direction: column; gap: 10px; text-align: center; }
-}
-</style>
+
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -77,7 +77,7 @@
                     <label>Photo for the ID Card *</label>
                     <label class="photo-upload" id="photoLabel">
                         <div id="photoPreviewWrap"><i class="fa-solid fa-camera"></i> <br>Click to upload their best picture</div>
-                        <input type="file" name="photo" id="photoInput" accept="image/*" onchange="previewPhoto(event)">
+                        <input type="file" name="photo" id="photoInput" accept="image/*,.heic,.heif" onchange="previewPhoto(event)">
                     </label>
                     <p style="font-size:12px; color:#888; margin-top:6px;">If left empty, their existing profile picture (if any) will be used instead.</p>
                 </div>
@@ -104,9 +104,12 @@
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 document.getElementById('photoPreviewWrap').innerHTML =
-                    '<img src="' + e.target.result + '" class="photo-preview"><div>Click to change photo</div>';
+                    '<img src="' + e.target.result + '" class="photo-preview" ' +
+                    'onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),' +
+                    '{textContent:\'Photo selected (' + (file.name || 'image') + ') - it will be converted automatically\'}))">' +
+                    '<div>Click to change photo</div>';
             };
             reader.readAsDataURL(file);
         }

@@ -1,30 +1,40 @@
 {% comment %}
-Includable partial - renders ONE physical ID card.
-Expects: card (IDCard instance), school (SchoolSettings instance or None)
-Card size: 3.4in x 2.15in - standard-ish badge size, 4 fit neatly on one A4 sheet (2x2).
+Renders ONE physical ID card. Expects: card (IDCard), school (SchoolSettings or None).
+Size 3.4in x 2.15in - 8 fit on one A4 sheet (2 across x 4 down).
+Requires _id_card_styles.html to be included in the <head> of the page using this.
 {% endcomment %}
 <div class="id-card" style="--c1: {{ card.card_color.0 }}; --c2: {{ card.card_color.1 }};">
     <div class="id-card-header">
         {% if school.logo %}
-            <img src="{{ school.logo.url }}" alt="Logo" class="id-card-logo-img">
+            <img src="{{ school.logo.url }}" alt="" class="id-card-logo-img"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="id-card-logo" style="display:none;">{{ school.school_name|default:"Elisben International College"|slice:":1" }}</div>
         {% else %}
-            <div class="id-card-logo">{{ school.school_name|default:"School"|slice:":1" }}</div>
+            <div class="id-card-logo">{{ school.school_name|default:"Elisben International College"|slice:":1" }}</div>
         {% endif %}
         <div>
             <div class="id-card-school-name">{{ school.school_name|default:"Elisben International College" }}</div>
-            <div class="id-card-school-sub">{{ school.school_motto|default:"Excellence in Education" }}</div>
+            <div class="id-card-school-sub">{{ school.school_motto|default:"Knowledge For Self Reliance" }}</div>
         </div>
     </div>
 
     <div class="id-card-body">
         {% if card.photo %}
-            <img src="{{ card.photo.url }}" alt="{{ card.full_name }}" class="id-card-photo">
+            <img src="{{ card.photo.url }}" alt="" class="id-card-photo"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="id-card-photo id-card-photo-placeholder" style="display:none;">{{ card.full_name|slice:":1" }}</div>
         {% else %}
             <div class="id-card-photo id-card-photo-placeholder">{{ card.full_name|slice:":1" }}</div>
         {% endif %}
+
         <div class="id-card-info">
-            <div class="id-card-name">{{ card.full_name }}</div>
-            <div class="id-card-role">{{ card.role_title }}</div>
+            {% if card.holder_type == 'principal' %}
+                <div class="id-card-role id-card-role-top">{{ card.role_title|default:"Principal" }}</div>
+                <div class="id-card-name-sub">{{ card.full_name }}</div>
+            {% else %}
+                <div class="id-card-name">{{ card.full_name }}</div>
+                <div class="id-card-role">{{ card.role_title }}</div>
+            {% endif %}
             <div class="id-card-id">ID: {{ card.id_number }}</div>
             {% if card.phone_number %}
             <div class="id-card-phone"><i class="fa-solid fa-phone"></i> {{ card.phone_number }}</div>

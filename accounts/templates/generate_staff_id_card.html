@@ -39,11 +39,11 @@
 
         .btn-submit { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
         .btn-submit:hover { opacity: 0.92; }
-    
-@media (max-width: 768px) {
-    .navbar { flex-direction: column; gap: 10px; text-align: center; }
-}
-</style>
+
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -121,7 +121,7 @@
                     <label>Photo for the ID Card *</label>
                     <label class="photo-upload" id="photoLabel">
                         <div id="photoPreviewWrap"><i class="fa-solid fa-camera"></i> <br>Click to upload their best picture</div>
-                        <input type="file" name="photo" id="photoInput" accept="image/*" onchange="previewPhoto(event)" required>
+                        <input type="file" name="photo" id="photoInput" accept="image/*,.heic,.heif" onchange="previewPhoto(event)" required>
                     </label>
                 </div>
 
@@ -131,8 +131,13 @@
     </div>
 
     <script>
+        function currentType() {
+            const checked = document.querySelector('input[name="staff_type"]:checked');
+            return checked ? checked.value : 'teaching';
+        }
+
         function toggleType() {
-            const isTeaching = document.querySelector('input[name="staff_type"]:checked').value === 'teaching';
+            const isTeaching = currentType() === 'teaching';
 
             document.getElementById('teachingLabel').classList.toggle('active', isTeaching);
             document.getElementById('nonTeachingLabel').classList.toggle('active', !isTeaching);
@@ -142,29 +147,42 @@
             document.getElementById('teacherSelect').required = isTeaching;
             document.getElementById('nonTeachingSelect').required = !isTeaching;
 
-            if (!isTeaching) toggleNewStaffFields();
+            toggleNewStaffFields();
         }
 
         function toggleNewStaffFields() {
-            const val = document.getElementById('nonTeachingSelect').value;
-            const isNew = (val === '__new__');
+            const isTeaching = currentType() === 'teaching';
+            const sel = document.getElementById('nonTeachingSelect');
+            // Only require the name when the block is actually VISIBLE.
+            // A hidden required field blocks submit silently in Chrome.
+            const isNew = (!isTeaching && sel.value === '__new__');
             document.getElementById('newStaffFields').style.display = isNew ? 'block' : 'none';
             document.getElementById('newFullName').required = isNew;
         }
+
+        // Don't post the fields belonging to the branch that isn't selected
+        document.getElementById('staffForm').addEventListener('submit', function () {
+            const isTeaching = currentType() === 'teaching';
+            document.getElementById('teacherSelect').disabled = !isTeaching;
+            document.getElementById('nonTeachingSelect').disabled = isTeaching;
+        });
 
         function previewPhoto(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 document.getElementById('photoPreviewWrap').innerHTML =
-                    '<img src="' + e.target.result + '" class="photo-preview"><div>Click to change photo</div>';
+                    '<img src="' + e.target.result + '" class="photo-preview" ' +
+                    'onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),' +
+                    '{textContent:\'Photo selected (' + (file.name || 'image') + ') - it will be converted automatically\'}))">' +
+                    '<div>Click to change photo</div>';
             };
             reader.readAsDataURL(file);
         }
 
         // Init
-        toggleNewStaffFields();
+        toggleType();
     </script>
 </body>
 </html>

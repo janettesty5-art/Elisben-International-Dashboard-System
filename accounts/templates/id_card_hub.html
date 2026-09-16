@@ -117,8 +117,8 @@
             <div class="section-header">
                 <h2><i class="fa-solid fa-address-card"></i> Generated Cards ({{ total_cards }} total)</h2>
                 <div>
-                    <button type="button" class="btn-print-sheet" id="printSheetBtn" onclick="goToPrintSheet()" disabled><i class="fa-solid fa-print"></i> Print Selected (0/4)</button>
-                    <div class="select-note">Tick up to 4 cards to print together on one A4 sheet</div>
+                    <button type="button" class="btn-print-sheet" id="printSheetBtn" onclick="goToPrintSheet()" disabled><i class="fa-solid fa-print"></i> Print Selected (0/12)</button>
+<div class="select-note">8 cards fill one A4 sheet — tick up to 12 and the rest continue on page 2</div>
                 </div>
             </div>
 
@@ -155,21 +155,17 @@
         </div>
     </div>
 
-    <script>
+     <script>
+        const MAX_CARDS = 12;   // 8 fill one A4 sheet, the rest flow to page 2
+
         function updatePrintButton() {
             const checked = document.querySelectorAll('.card-checkbox:checked');
             const btn = document.getElementById('printSheetBtn');
-            btn.textContent = '<i class="fa-solid fa-print"></i> Print Selected (' + checked.length + '/4)';
+            btn.innerHTML = '<i class="fa-solid fa-print"></i> Print Selected (' + checked.length + '/' + MAX_CARDS + ')';
             btn.disabled = checked.length === 0;
 
-            // Cap selection at 4
-            const all = document.querySelectorAll('.card-checkbox');
-            all.forEach(function(cb) {
-                if (!cb.checked && checked.length >= 4) {
-                    cb.disabled = true;
-                } else {
-                    cb.disabled = false;
-                }
+            document.querySelectorAll('.card-checkbox').forEach(function (cb) {
+                cb.disabled = (!cb.checked && checked.length >= MAX_CARDS);
             });
         }
 

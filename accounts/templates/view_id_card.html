@@ -5,75 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ID Card - {{ card.full_name }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    {% include '_id_card_styles.html' %}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
-
         .navbar { background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
         .navbar h1 { font-size: 20px; }
         .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; }
-
-        .container { max-width: 700px; margin: 50px auto; padding: 0 20px; text-align: center; }
+        .container { max-width: 700px; margin: 40px auto; padding: 0 16px; text-align: center; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: left; }
         .alert-success { background: #d4edda; color: #155724; }
-
-        .card-stage {
-            display: flex; justify-content: center; margin: 30px 0;
-        }
-
+        .card-stage { display: flex; justify-content: center; margin: 30px 0; }
+        .card-stage .id-card { box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
         .meta-box { background: white; border-radius: 12px; padding: 20px; margin-top: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: left; }
-        .meta-box .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .meta-box .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 14px; gap: 12px; }
         .meta-box .row:last-child { border-bottom: none; }
         .meta-box .label { color: #888; }
-        .meta-box .value { color: #333; font-weight: 600; }
-
+        .meta-box .value { color: #333; font-weight: 600; text-align: right; }
         .btn { padding: 14px 28px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; display: inline-block; margin: 6px; }
         .btn-print { background: #2ecc71; color: white; }
-        .btn-print:hover { background: #27ae60; }
         .btn-back { background: #95a5a6; color: white; }
         .btn-delete { background: #e74c3c; color: white; }
+        .hint { color:#888; font-size:12.5px; margin-top:12px; }
 
-        /* ===== CARD VISUAL ===== */
-        .id-card {
-            width: 3.4in; height: 2.15in;
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #ddd;
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 10px; text-align: center; padding: 16px 20px; }
+            .btn { display: block; width: 100%; margin: 8px 0; }
         }
-        .id-card-header { background: linear-gradient(135deg, var(--c1), var(--c2)); color: white; padding: 8px 10px; display: flex; align-items: center; gap: 8px; }
-        .id-card-logo, .id-card-logo-img { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; }
-        .id-card-logo { background: white; color: var(--c1); display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; }
-        .id-card-logo-img { object-fit: cover; background: white; }
-        .id-card-school-name { font-size: 11px; font-weight: 800; line-height: 1.15; }
-        .id-card-school-sub { font-size: 7.5px; opacity: .85; }
-        .id-card-body { flex: 1; display: flex; padding: 10px; gap: 10px; align-items: center; }
-        .id-card-photo { width: 0.95in; height: 1.15in; border-radius: 8px; object-fit: cover; border: 2px solid #eee; background: #f0f0f0; flex-shrink: 0; }
-        .id-card-photo-placeholder { display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; color: #bbb; }
-        .id-card-info { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
-        .id-card-name { font-size: 12.5px; font-weight: 800; color: #222; line-height: 1.2; word-break: break-word; }
-        .id-card-role { font-size: 9.5px; font-weight: 700; color: var(--c1); text-transform: uppercase; }
-        .id-card-id { font-size: 9.5px; color: #555; margin-top: 3px; font-family: 'Courier New', monospace; }
-        .id-card-phone { font-size: 9px; color: #777; }
-        .id-card-footer { background: #f4f4f4; padding: 5px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .id-card-barcode { display: flex; gap: 1px; align-items: flex-end; height: 16px; }
-        .id-card-barcode span { background: #333; display: inline-block; }
-        .id-card-valid { font-size: 6.5px; color: #888; white-space: nowrap; }
 
+        @page { size: A4 portrait; margin: 12mm; }
         @media print {
             .no-print { display: none !important; }
             body { background: white; }
-            .container { margin: 0; max-width: 100%; }
+            .container { margin: 0; max-width: 100%; padding: 0; }
+            .card-stage { margin: 0; justify-content: flex-start; }
         }
-    
-@media (max-width: 768px) {
-    .navbar { flex-direction: column; gap: 10px; text-align: center; }
-}
-</style>
+    </style>
 </head>
 <body>
     <nav class="navbar no-print">
@@ -99,6 +66,7 @@
                 {% csrf_token %}
                 <button type="submit" class="btn btn-delete"><i class="fa-solid fa-trash"></i> Delete Card</button>
             </form>
+            <p class="hint">If the printed card comes out plain white, turn on <strong>&ldquo;Background graphics&rdquo;</strong> in your printer dialog options.</p>
         </div>
 
         <div class="meta-box no-print">
