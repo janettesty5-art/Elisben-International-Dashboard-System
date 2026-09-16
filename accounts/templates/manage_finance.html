@@ -142,6 +142,35 @@
         .student-option:hover {
             background: #f0f0f0;
         }
+
+        .student-list {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.student-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    background: #f8f9fa;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+.student-card:hover { background: #eef1ff; }
+.student-card.selected { border-color: #667eea; background: #eef1ff; }
+.student-card input[type="radio"] { flex-shrink: 0; width: 18px; height: 18px; accent-color: #667eea; }
+.student-card-id { font-weight: 700; color: #667eea; font-family: monospace; white-space: nowrap; flex-shrink: 0; }
+.student-card-name { color: #333; flex: 1; min-width: 150px; word-break: break-word; }
     
 @media (max-width: 720px) {
     .form-grid { grid-template-columns: 1fr; }
@@ -188,16 +217,17 @@
                             <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
                         </div>
                         
-                        <select name="student_id" id="student_id" required size="8" style="height: 200px;">
-                            <option value="">-- Select Student --</option>
-                            {% for student in students %}
-                            <option value="{{ student.student_id }}" class="student-option" 
-                                    data-name="{{ student.full_name|lower }}" 
-                                    data-id="{{ student.student_id|lower }}">
-                                {{ student.student_id }} - {{ student.full_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="student-list" id="studentList">
+    {% for student in students %}
+    <label class="student-card" data-name="{{ student.full_name|lower }}" data-id="{{ student.student_id|lower }}">
+        <input type="radio" name="student_id" value="{{ student.student_id }}" required onclick="markSelected(this)">
+        <span class="student-card-id">{{ student.student_id }}</span>
+        <span class="student-card-name">{{ student.full_name }}</span>
+    </label>
+    {% empty %}
+    <p style="padding:15px; color:#999;">No students registered yet.</p>
+    {% endfor %}
+</div>
                     </div>
                     
                     <div class="form-group">
@@ -246,35 +276,51 @@
         </div>
     </div>
     
-    <script>
-        // Set today's date as default
-        document.getElementById('payment_date').valueAsDate = new Date();
-        
-        // Filter Students Function
-        function filterStudents() {
-            const searchInput = document.getElementById('student_search').value.toLowerCase();
-            const select = document.getElementById('student_id');
-            const options = select.getElementsByTagName('option');
-            
-            for (let i = 1; i < options.length; i++) {  // Skip first "Select Student" option
-                const option = options[i];
-                const name = option.getAttribute('data-name');
-                const id = option.getAttribute('data-id');
-                
-                if (name.includes(searchInput) || id.includes(searchInput)) {
-                    option.style.display = '';
-                } else {
-                    option.style.display = 'none';
-                }
-            }
-        }
-        
-        // Auto-resize select box based on visible options
-        document.getElementById('student_search').addEventListener('input', function() {
-            const select = document.getElementById('student_id');
-            const visibleOptions = Array.from(select.options).filter(opt => opt.style.display !== 'none');
-            select.size = Math.min(Math.max(visibleOptions.length, 5), 10);
+<script>
+    // Set today's date as default
+    document.getElementById('payment_date').valueAsDate = new Date();
+
+    // Highlight whichever student card is selected
+    function markSelected(clickedInput) {
+        document.querySelectorAll('.student-card').forEach(card => card.classList.remove('selected'));
+        clickedInput.closest('.student-card').classList.add('selected');
+    }
+
+    // Filter student cards as the admin/bursar types
+    function filterStudents() {
+        const searchInput = document.getElementById('student_search').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.student-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const name = card.getAttribute('data-name') || '';
+            const id = card.getAttribute('data-id') || '';
+            const matches = name.includes(searchInput) || id.includes(searchInput);
+            card.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
         });
-    </script>
+
+        showNoResultsMessage(visibleCount);
+    }
+
+    // Show a friendly message if a search matches nobody
+    function showNoResultsMessage(visibleCount) {
+        const list = document.getElementById('studentList');
+        let noResultsMsg = document.getElementById('noResultsMsg');
+
+        if (visibleCount === 0) {
+            if (!noResultsMsg) {
+                noResultsMsg = document.createElement('p');
+                noResultsMsg.id = 'noResultsMsg';
+                noResultsMsg.style.cssText = 'padding:15px; color:#999; text-align:center;';
+                noResultsMsg.textContent = 'No students match your search.';
+                list.appendChild(noResultsMsg);
+            }
+            noResultsMsg.style.display = '';
+        } else if (noResultsMsg) {
+            noResultsMsg.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>

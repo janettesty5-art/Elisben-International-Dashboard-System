@@ -87,6 +87,41 @@
 
         .empty-note { text-align: center; color: #999; padding: 40px; }
 
+/* ===== OVERFLOW HARDENING ===== */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* Flex items ignore their container's width by default — this forces them to respect it */
+.navbar, .navbar h1, .user-info, .user-info span,
+.search-bar-form, .search-bar-input,
+.tab-strip, .tab-btn,
+.stats-grid, .stat-card {
+    min-width: 0;
+}
+
+/* Long peso figures and names must wrap instead of pushing the card wider */
+.stat-card .number { word-break: break-word; overflow-wrap: break-word; }
+.stat-card h3 { word-break: break-word; }
+
+/* Table stays scrollable INSIDE its own box, never inside the page */
+.section { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { min-width: 700px; }
+table th, table td { word-break: break-word; overflow-wrap: break-word; }
+
+/* Activity feed text can be long (fee descriptions) */
+.activity-item, .activity-item .description { word-break: break-word; overflow-wrap: break-word; }
+
+/* Search result note / balance text */
+.search-result-note, .balance-text, .badge { word-break: break-word; }
+
+@media (max-width: 900px) {
+    .container { padding: 16px; }
+    .navbar { flex-direction: column; gap: 10px; text-align: center; padding: 16px 20px; }
+    .user-info { flex-wrap: wrap; justify-content: center; }
+    .search-bar-form { flex-direction: column; }
+    .tab-strip { flex-wrap: nowrap; }
+    .stats-grid { grid-template-columns: 1fr; }
+}
+
         @media (max-width: 900px) {
             .container { padding: 20px; }
             .navbar { flex-direction: column; gap: 10px; text-align: center; padding: 16px 20px; }
