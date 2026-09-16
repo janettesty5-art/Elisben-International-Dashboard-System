@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Principal Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -161,11 +162,17 @@
             background: #d4edda;
             color: #155724;
         }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>👔 Principal Dashboard</h1>
+        <h1><i class="fa-solid fa-user-tie"></i> Principal Dashboard</h1>
         <div class="user-info">
             <span>Welcome, {{ principal.full_name }}</span>
             <span style="opacity: 0.7;">ID: {{ principal.principal_id }}</span>
@@ -197,19 +204,28 @@
         <!-- Quick Actions -->
         <div class="actions-grid">
             <a href="{% url 'register_student' %}" class="action-btn">
-                <div class="icon">👨‍🎓</div>
+                <div class="icon"><i class="fa-solid fa-user-graduate"></i></div>
                 <div>Register Student</div>
             </a>
             <a href="{% url 'register_teacher' %}" class="action-btn">
-                <div class="icon">👨‍🏫</div>
+                <div class="icon"><i class="fa-solid fa-chalkboard-user"></i></div>
                 <div>Register Teacher</div>
+            </a>
+            <a href="{% url 'principal_result_review' %}" class="action-btn">
+                <div class="icon"><i class="fa-solid fa-chart-column"></i></div>
+                <div>Review Results</div>
+            </a>
+            <a href="{% url 'id_card_hub' %}" class="action-btn">
+                <div class="icon"><i class="fa-solid fa-id-card-clip"></i></div>
+                <div>ID Card Generator</div>
             </a>
         </div>
         
         <!-- Students List -->
         <div class="section">
             <h2>Registered Students</h2>
-            <table>
+            <div class="table-scroll-wrap">
+<table>
                 <thead>
                     <tr>
                         <th>Student ID</th>
@@ -237,12 +253,14 @@
                     {% endfor %}
                 </tbody>
             </table>
+</div>
         </div>
         
         <!-- Teachers List -->
         <div class="section">
             <h2>Registered Teachers</h2>
-            <table>
+            <div class="table-scroll-wrap">
+<table>
                 <thead>
                     <tr>
                         <th>Teacher ID</th>
@@ -270,6 +288,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+</div>
         </div>
     </div>
 </body>

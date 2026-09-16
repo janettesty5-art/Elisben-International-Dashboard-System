@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Student</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 40px 20px; }
         .container { max-width: 700px; margin: 0 auto; }
         .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
         h1 { color: #667eea; margin-bottom: 30px; text-align: center; }
+        h1 i { margin-right: 8px; }
         .form-group { margin-bottom: 25px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
         input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
@@ -27,7 +29,7 @@
 <body>
     <div class="container">
         <div class="card">
-            <h1>👨‍🎓 Register New Student</h1>
+            <h1><i class="fa-solid fa-user-graduate"></i> Register New Student</h1>
             
             {% if messages %}
                 {% for message in messages %}
@@ -36,7 +38,7 @@
             {% endif %}
             
             <div class="info-box">
-                <strong>📌 Note:</strong> For SS1, SS2, and SS3 students, you must select a department (Science, Art, or Commercial).
+                <i class="fa-solid fa-thumbtack"></i> <strong>Note:</strong> For SS1, SS2, and SS3 students, you must select a department (Science, Art, or Commercial).
             </div>
             
             <form method="POST">
@@ -72,7 +74,7 @@
                 
                 <!-- Department Section (Only shows for SS1-3) -->
                 <div id="department-section" class="department-section">
-                    <h3>🎓 Department Selection (Required for Senior Classes)</h3>
+                    <h3><i class="fa-solid fa-graduation-cap"></i> Department Selection (Required for Senior Classes)</h3>
                     <div class="form-group">
                         <label>Select Department: <span style="color: red;">*</span></label>
                         <select name="department" id="department">
@@ -83,12 +85,12 @@
                         </select>
                     </div>
                     <p style="color: #666; font-size: 13px; margin-top: 10px;">
-                        ⚠️ This selection determines which subject results will be recorded for this student.
+                        <i class="fa-solid fa-triangle-exclamation"></i> This selection determines which subject results will be recorded for this student.
                     </p>
                 </div>
                 
-                <button type="submit" class="btn">✅ Register Student</button>
-                <a href="{% url 'admin_dashboard' %}" class="btn btn-back" style="text-align: center; text-decoration: none; display: block;">← Back to Dashboard</a>
+                <button type="submit" class="btn"><i class="fa-solid fa-circle-check"></i> Register Student</button>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-back" style="text-align: center; text-decoration: none; display: block;"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
             </form>
         </div>
     </div>

@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; padding: 20px; }
@@ -10,7 +12,9 @@
         table { width: 100%; border-collapse: collapse; font-size: 10px; }
         th, td { border: 1px solid #000; padding: 5px; text-align: center; }
         th { background: #e8e8e8; }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
 </head>
 <body>
     <div class="header">
@@ -28,7 +32,8 @@
     <p><strong>Class:</strong> {{ result.class_name }}</p>
     <p><strong>Term:</strong> {{ result.term }}</p>
     
-    <table>
+    <div class="table-scroll-wrap">
+<table>
         <tr>
             <th>Subject</th>
             <th>Test A</th>
@@ -50,5 +55,6 @@
         </tr>
         {% endfor %}
     </table>
+</div>
 </body>
 </html>

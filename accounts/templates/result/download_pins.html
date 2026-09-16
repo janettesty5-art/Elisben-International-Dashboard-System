@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PIN List - {{ term }} {{ academic_year }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         /* ═══════════════════════════════════════
            SCREEN STYLES
@@ -249,16 +250,18 @@
                 padding-bottom: 0;
             }
         }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
 </head>
 <body>
 
     <!-- Action Bar (screen only) -->
     <div class="action-bar">
-        <h2>🖨️ PIN List Preview — {{ filter_desc }}</h2>
+        <h2><i class="fa-solid fa-print"></i> PIN List Preview — {{ filter_desc }}</h2>
         <div>
-            <button class="btn btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
-            <a href="{% url 'admin_view_published' %}?academic_year={{ request.GET.academic_year }}&term={{ request.GET.term }}&class_name={{ request.GET.class_name }}" class="btn btn-back">← Back</a>
+            <button class="btn btn-print" onclick="window.print()"><i class="fa-solid fa-print"></i> Print / Save as PDF</button>
+            <a href="{% url 'admin_view_published' %}?academic_year={{ request.GET.academic_year }}&term={{ request.GET.term }}&class_name={{ request.GET.class_name }}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
     </div>
 
@@ -272,12 +275,12 @@
             <div class="school-header">
                 <h1>Elisben International College</h1>
                 <div class="sub">Excellence in Education &nbsp;|&nbsp; Surulere Quarters, Oke Osum Ikere Ekiti, Nigeria</div>
-                <div class="doc-title">📌 Student Result PINs</div>
+                <div class="doc-title"><i class="fa-solid fa-thumbtack"></i> Student Result PINs</div>
                 <div class="meta"><strong>{{ term }}</strong> &nbsp;|&nbsp; <strong>{{ academic_year }}</strong> &nbsp;|&nbsp; Generated: {% now "F j, Y" %}</div>
             </div>
 
             <!-- Class heading -->
-            <div class="class-heading">📚 PINS FOR {{ class_name|upper }}</div>
+            <div class="class-heading"><i class="fa-solid fa-book"></i> PINS FOR {{ class_name|upper }}</div>
             <div class="class-meta-row">
                 <span>{{ pins|length }} student{{ pins|length|pluralize }}</span>
                 <span>{{ term }} &nbsp;·&nbsp; {{ academic_year }}</span>
@@ -285,7 +288,8 @@
 
             <!-- Table fills remaining space -->
             <div class="table-wrapper">
-                <table class="pin-table">
+                <div class="table-scroll-wrap">
+<table class="pin-table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -303,6 +307,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+</div>
             </div>
 
             <!-- Footer -->
@@ -317,7 +322,7 @@
 
     {% else %}
         <div class="empty-state">
-            <p style="font-size:40px;">📭</p>
+            <p style="font-size:40px;"><i class="fa-solid fa-inbox"></i></p>
             <p style="font-size:17px; margin-top:12px; color:#666;">No published results found for the selected filters.</p>
             <p style="margin-top:8px; font-size:13px;">Go back and adjust your filters.</p>
         </div>

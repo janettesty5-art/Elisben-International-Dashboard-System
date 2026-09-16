@@ -6,6 +6,7 @@ from .models import (
     SchoolSettings
 )
 from .models import SubjectResult, StudentResult, PublishedResult, ResultActivityLog
+from .models import NonTeachingStaff, IDCard
 
 @admin.register(Admin)
 class AdminModelAdmin(admin.ModelAdmin):
@@ -161,3 +162,17 @@ class ResultActivityLogAdmin(admin.ModelAdmin):
 @admin.register(SchoolSettings)
 class SchoolSettingsAdmin(admin.ModelAdmin):
     list_display = ['school_name', 'school_motto', 'email', 'phone', 'address', 'website']
+
+@admin.register(NonTeachingStaff)
+class NonTeachingStaffAdmin(admin.ModelAdmin):
+    list_display = ['staff_id', 'full_name', 'role_title', 'phone', 'created_at']
+    search_fields = ['staff_id', 'full_name', 'role_title']
+    list_filter = ['role_title', 'created_at']
+    readonly_fields = ['staff_id', 'created_at']
+
+@admin.register(IDCard)
+class IDCardAdmin(admin.ModelAdmin):
+    list_display = ['full_name', 'holder_type', 'id_number', 'generated_by_display', 'created_at']
+    list_filter = ['holder_type', 'created_at']
+    search_fields = ['full_name', 'id_number']
+    readonly_fields = ['created_at']

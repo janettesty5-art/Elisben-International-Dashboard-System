@@ -18,6 +18,7 @@ urlpatterns = [
     path('admin/delete-student-confirm/<int:student_id>/', views.delete_student_confirm, name='delete_student_confirm'),
     path('admin/delete-teacher-confirm/<int:teacher_id>/', views.delete_teacher_confirm, name='delete_teacher_confirm'),
     path('admin/wipe-all-exams/', views.admin_wipe_all_exams, name='admin_wipe_all_exams'),
+    path('admin/change-id/', views.admin_change_id, name='admin_change_id'),
     
     # Search functionality
     path('search-students/', views.search_students, name='search_students'),
@@ -29,6 +30,7 @@ urlpatterns = [
     # Bursar URLs
     path('bursar/dashboard/', views.bursar_dashboard, name='bursar_dashboard'),
     path('bursar/finance/', views.manage_finance, name='bursar_finance'),
+    path('bursar/discount/start/', views.start_discount_record, name='start_discount_record'),
     
     # Teacher URLs
     path('teacher/dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
@@ -45,6 +47,7 @@ urlpatterns = [
     # Student URLs
     path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
     path('student/profile/', views.student_profile, name='student_profile'),
+    path('student/track-payment/', views.track_payment, name='track_payment'),
     path('student/take-exam/<str:exam_id>/', views.take_exam, name='take_exam'),
     path('student/result/<int:submission_id>/', views.view_result, name='view_result'),
     
@@ -74,6 +77,11 @@ urlpatterns = [
     path('make-result/principal/comment/<int:result_id>/', views.principal_add_comment, name='principal_add_comment'),
     path('make-result/principal/send/<int:result_id>/', views.send_result_to_admin, name='send_result_to_admin'),
     path('make-result/principal/send-batch/', views.send_batch_to_admin, name='send_batch_to_admin'),
+    # NEW: Principal stamp & publish (same power as Admin)
+    path('make-result/principal/stamp/<int:result_id>/', views.principal_add_stamp, name='principal_add_stamp'),
+    path('make-result/principal/stamp-batch/', views.principal_stamp_batch, name='principal_stamp_batch'),
+    path('make-result/principal/publish/<int:result_id>/', views.principal_publish_result, name='principal_publish_result'),
+    path('make-result/principal/publish-batch/', views.principal_publish_batch, name='principal_publish_batch'),
     
     # Admin Result Management
     path('make-result/admin/', views.admin_result_management, name='admin_result_management'),
@@ -111,4 +119,16 @@ urlpatterns = [
     path('make-result/admin/download-pins/', views.download_pins, name='download_pins'),
     path('teacher/exam/<int:exam_id>/edit-duration/', views.edit_exam_duration, name='edit_exam_duration'),
     path('admin/fix-promotion-status/', views.admin_fix_promotion_status, name='admin_fix_promotion_status'),
+
+    # ============================================================
+    # NEW: ID CARD GENERATOR (Admin & Principal only)
+    # ============================================================
+    path('id-cards/', views.id_card_hub, name='id_card_hub'),
+    path('id-cards/generate/student/', views.generate_student_id_card, name='generate_student_id_card'),
+    path('id-cards/generate/staff/', views.generate_staff_id_card, name='generate_staff_id_card'),
+    path('id-cards/generate/principal/', views.generate_principal_id_card, name='generate_principal_id_card'),
+    path('id-cards/generate/admin/', views.generate_admin_id_card, name='generate_admin_id_card'),
+    path('id-cards/view/<int:card_id>/', views.view_id_card, name='view_id_card'),
+    path('id-cards/print-sheet/', views.id_card_print_sheet, name='id_card_print_sheet'),
+    path('id-cards/delete/<int:card_id>/', views.delete_id_card, name='delete_id_card'),
 ]

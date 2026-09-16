@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Attendance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -126,12 +127,22 @@
             background: #fff3cd;
             color: #856404;
         }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 720px) {
+    .filter-form { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>👀 View Attendance Records</h1>
-        <a href="{% url 'teacher_dashboard' %}">← Back to Dashboard</a>
+        <h1><i class="fa-solid fa-eye"></i> View Attendance Records</h1>
+        <a href="{% url 'teacher_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -156,7 +167,7 @@
                 
                 <div class="form-group">
                     <label>&nbsp;</label>
-                    <button type="submit" class="btn-filter">🔍 Search</button>
+                    <button type="submit" class="btn-filter"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
                 </div>
             </form>
         </div>
@@ -164,7 +175,8 @@
         <!-- Records Table -->
         <div class="records-card">
             <h2>Attendance Records ({{ attendance_records.count }})</h2>
-            <table>
+            <div class="table-scroll-wrap">
+<table>
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -184,11 +196,11 @@
                         <td>{{ record.class_name }}</td>
                         <td>
                             {% if record.status == 'Present' %}
-                                <span class="badge badge-present">✓ Present</span>
+                                <span class="badge badge-present"><i class="fa-solid fa-check"></i> Present</span>
                             {% elif record.status == 'Absent' %}
-                                <span class="badge badge-absent">✗ Absent</span>
+                                <span class="badge badge-absent"><i class="fa-solid fa-xmark"></i> Absent</span>
                             {% else %}
-                                <span class="badge badge-late">⏰ Late</span>
+                                <span class="badge badge-late"><i class="fa-solid fa-clock"></i> Late</span>
                             {% endif %}
                         </td>
                         <td>{{ record.marked_by.full_name }}</td>
@@ -200,6 +212,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+</div>
         </div>
     </div>
 </body>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Payment Record</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
@@ -28,7 +29,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>✏️ Edit Payment Record</h1>
+        <h1><i class="fa-solid fa-pen-to-square"></i> Edit Payment Record</h1>
     </nav>
     
     <div class="container">
@@ -42,7 +43,7 @@
         
         <div class="card">
             <div class="info-box">
-                <strong>📌 Note:</strong> You can edit any part of this payment record. The balance will be recalculated automatically.
+                <strong><i class="fa-solid fa-thumbtack"></i> Note:</strong> You can edit any part of this payment record. The balance will be recalculated automatically.
             </div>
             
             <form method="POST">
@@ -96,8 +97,8 @@
                 </div>
                 
                 <div style="margin-top: 30px;">
-                    <button type="submit" class="btn btn-save">💾 Save Changes</button>
-                    <a href="{% url 'bursar_dashboard' %}" class="btn btn-cancel">❌ Cancel</a>
+                    <button type="submit" class="btn btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                    <a href="{% url 'bursar_dashboard' %}" class="btn btn-cancel"><i class="fa-solid fa-xmark"></i> Cancel</a>
                 </div>
             </form>
         </div>

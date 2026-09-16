@@ -249,6 +249,8 @@ class SchoolSettings(models.Model):
     phone = models.CharField(max_length=50, default="+234 803 634 3681")
     email = models.EmailField(default="admin@elisbencollege.com")
     website = models.URLField(blank=True, null=True)
+    # NEW: used on generated ID cards - falls back to a text badge if not set
+    logo = models.ImageField(upload_to='school_logo/', null=True, blank=True)
 
     class Meta:
         verbose_name = "School Settings"
@@ -438,6 +440,65 @@ class ResultSummary(models.Model):
 
 
 
+# NEW: Sibling Discount (3+ children of the same family, discounted together)
+class SiblingDiscountRecord(models.Model):
+    """One batch created by the Bursar when entering a discounted fee for 3+ siblings at once."""
+    group_id = models.CharField(max_length=20, unique=True)
+    fee_type = models.CharField(max_length=100)
+    payment_method = models.CharField(max_length=50, choices=[('Cash', 'Cash'), ('Bank Transfer', 'Bank Transfer'), ('Card', 'Card')])
+    payment_date = models.DateField()
+    term = models.ForeignKey(Term, on_delete=models.SET_NULL, null=True, blank=True)
+
+    total_fee_before_discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_fee_after_discount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    created_by = models.ForeignKey(Bursar, on_delete=models.SET_NULL, null=True, blank=True, related_name='discount_records')
+    created_by_admin = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True, related_name='discount_records')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.group_id:
+            self.group_id = f"SIB{''.join(random.choices(string.digits, k=6))}"
+        super().save(*args, **kwargs)
+
+    @property
+    def child_count(self):
+        return self.entries.count()
+
+    @property
+    def recorded_by_display(self):
+        if self.created_by:
+            return f"{self.created_by.full_name} (Bursar)"
+        if self.created_by_admin:
+            return f"{self.created_by_admin.full_name} (Admin)"
+        return ""
+
+    def __str__(self):
+        return f"Sibling Discount {self.group_id} - {self.fee_type} ({self.child_count} children)"
+
+
+class SiblingDiscountEntry(models.Model):
+    """One line per child within a SiblingDiscountRecord batch."""
+    group = models.ForeignKey(SiblingDiscountRecord, on_delete=models.CASCADE, related_name='entries')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='discount_entries')
+
+    fee_before_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fee_after_discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    def save(self, *args, **kwargs):
+        self.fee_after_discount = self.fee_before_discount - self.discount_amount
+        self.balance = self.fee_after_discount - self.amount_paid
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.student.full_name} - {self.group.fee_type} (discount: ₦{self.discount_amount})"
+
+
 # NEW: Enhanced Fee Record for Bursar
 class FeeRecord(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
@@ -457,6 +518,9 @@ class FeeRecord(models.Model):
     # Who recorded
     recorded_by = models.ForeignKey(Bursar, on_delete=models.SET_NULL, null=True, blank=True, related_name='bursar_records')
     recorded_by_admin = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True, related_name='admin_records')
+
+    # NEW: set only when this entry came from a Sibling Discount batch
+    sibling_group = models.ForeignKey(SiblingDiscountRecord, on_delete=models.SET_NULL, null=True, blank=True, related_name='fee_records')
     
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -487,6 +551,7 @@ class ActivityLog(models.Model):
         ('book_added', 'Book Added'),
         ('book_borrowed', 'Book Borrowed'),
         ('book_returned', 'Book Returned'),
+        ('admin_id_changed', 'Admin ID Changed'),  # NEW
     ]
     
     action = models.CharField(max_length=50, choices=ACTION_CHOICES)
@@ -651,10 +716,12 @@ class StudentResult(models.Model):
     sent_to_principal_at = models.DateTimeField(null=True, blank=True)
     sent_to_admin_at = models.DateTimeField(null=True, blank=True)
     
-    # Admin stamp
+    # Admin/Principal stamp
     has_stamp = models.BooleanField(default=False)
     stamped_at = models.DateTimeField(null=True, blank=True)
     stamped_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True)
+    # NEW: Principal can now also stamp results
+    stamped_by_principal = models.ForeignKey(Principal, on_delete=models.SET_NULL, null=True, blank=True, related_name='stamped_results')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -665,13 +732,24 @@ class StudentResult(models.Model):
     
     def __str__(self):
         return f"{self.student.full_name} - {self.term} - {self.academic_year}"
+    
+    @property
+    def stamped_by_display(self):
+        """Show who added the stamp, whether Admin or Principal"""
+        if self.stamped_by:
+            return f"{self.stamped_by.full_name} (Admin)"
+        if self.stamped_by_principal:
+            return f"{self.stamped_by_principal.full_name} (Principal)"
+        return ""
 
 
 # Published Result with PIN
 class PublishedResult(models.Model):
     result = models.OneToOneField(StudentResult, on_delete=models.CASCADE)
     pin = models.CharField(max_length=20, unique=True)
-    published_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True)
+    published_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True)
+    # NEW: Principal can now also publish results
+    published_by_principal = models.ForeignKey(Principal, on_delete=models.SET_NULL, null=True, blank=True, related_name='published_results')
     published_at = models.DateTimeField(auto_now_add=True)
     
     # For easy filtering
@@ -681,6 +759,15 @@ class PublishedResult(models.Model):
     
     def __str__(self):
         return f"{self.result.student.full_name} - PIN: {self.pin}"
+    
+    @property
+    def published_by_display(self):
+        """Show who published the result, whether Admin or Principal"""
+        if self.published_by:
+            return f"{self.published_by.full_name} (Admin)"
+        if self.published_by_principal:
+            return f"{self.published_by_principal.full_name} (Principal)"
+        return ""
     
     @staticmethod
     def generate_pin():
@@ -741,3 +828,86 @@ class ResultActivityLog(models.Model):
     
     def __str__(self):
         return f"{self.action} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+
+# ============================================================
+# NEW: ID CARD GENERATOR
+# ============================================================
+
+class NonTeachingStaff(models.Model):
+    """For staff who are not teachers and don't otherwise have a login/role in
+    the system (cleaners, security, office assistants, etc.). Created on the
+    fly the first time an ID card is generated for them."""
+    staff_id = models.CharField(max_length=20, unique=True)
+    full_name = models.CharField(max_length=200)
+    phone = models.CharField(max_length=20, blank=True)
+    role_title = models.CharField(max_length=100, blank=True)  # e.g. "Security", "Cleaner", "Office Assistant"
+    photo = models.ImageField(upload_to='staff_photos/', null=True, blank=True)
+
+    registered_by = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_non_teaching_staff')
+    registered_by_principal = models.ForeignKey(Principal, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_non_teaching_staff')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.staff_id:
+            self.staff_id = f"STF{''.join(random.choices(string.digits, k=6))}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.full_name} ({self.staff_id})"
+
+
+class IDCard(models.Model):
+    """One generated, printable ID card. Works for students, teaching staff,
+    non-teaching staff, the Principal, and the Admin/proprietor."""
+    HOLDER_TYPE_CHOICES = [
+        ('student', 'Student'),
+        ('teaching_staff', 'Teaching Staff'),
+        ('non_teaching_staff', 'Non-Teaching Staff'),
+        ('principal', 'Principal'),
+        ('admin', 'Admin'),
+    ]
+
+    holder_type = models.CharField(max_length=30, choices=HOLDER_TYPE_CHOICES)
+
+    # Only one of these will be set, matching holder_type
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True, related_name='id_cards')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True, related_name='id_cards')
+    non_teaching_staff = models.ForeignKey(NonTeachingStaff, on_delete=models.CASCADE, null=True, blank=True, related_name='id_cards')
+    principal = models.ForeignKey(Principal, on_delete=models.CASCADE, null=True, blank=True, related_name='id_cards')
+    admin = models.ForeignKey(Admin, on_delete=models.CASCADE, null=True, blank=True, related_name='id_cards')
+
+    # Snapshot fields - what's actually printed on the card
+    full_name = models.CharField(max_length=200)
+    id_number = models.CharField(max_length=20)
+    phone_number = models.CharField(max_length=20, blank=True)
+    role_title = models.CharField(max_length=100, blank=True)  # "JSS2 Student", "Mathematics Teacher", "Security", "Principal"...
+    photo = models.ImageField(upload_to='id_cards/', null=True, blank=True)
+
+    generated_by_admin = models.ForeignKey(Admin, on_delete=models.SET_NULL, null=True, blank=True, related_name='generated_id_cards')
+    generated_by_principal = models.ForeignKey(Principal, on_delete=models.SET_NULL, null=True, blank=True, related_name='generated_id_cards')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    @property
+    def generated_by_display(self):
+        if self.generated_by_admin:
+            return f"{self.generated_by_admin.full_name} (Admin)"
+        if self.generated_by_principal:
+            return f"{self.generated_by_principal.full_name} (Principal)"
+        return ""
+
+    @property
+    def card_color(self):
+        """Hex color pair per holder type, used to theme the printed card."""
+        return {
+            'student': ('#3498db', '#2980b9'),
+            'teaching_staff': ('#2ecc71', '#27ae60'),
+            'non_teaching_staff': ('#f39c12', '#e67e22'),
+            'principal': ('#8e44ad', '#663399'),
+            'admin': ('#667eea', '#764ba2'),
+        }.get(self.holder_type, ('#667eea', '#764ba2'))
+
+    def __str__(self):
+        return f"{self.full_name} - {self.get_holder_type_display()} ID Card"

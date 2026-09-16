@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Admin ID</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 24px; }
+        .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .current-id-box { background: #eef2ff; border: 2px solid #667eea; border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 30px; }
+        .current-id-box .label { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .current-id-box .id-value { font-size: 28px; font-weight: 800; color: #667eea; letter-spacing: 2px; font-family: 'Courier New', monospace; }
+        .info-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px 20px; border-radius: 8px; margin-bottom: 25px; font-size: 14px; color: #856404; line-height: 1.6; }
+        .form-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input { width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 17px; font-family: 'Courier New', monospace; letter-spacing: 1px; text-transform: uppercase; }
+        input:focus { outline: none; border-color: #667eea; }
+        .helper { font-size: 12px; color: #888; margin-top: 8px; }
+        .btn-row { display: flex; gap: 12px; margin-top: 30px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
+        .btn-save { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-cancel { background: #95a5a6; color: white; }
+        .btn-cancel:hover { background: #7f8c8d; }
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+    
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1><i class="fa-solid fa-lock"></i> Change Admin ID</h1>
+        <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <div class="current-id-box">
+                <div class="label">Your Current Admin ID</div>
+                <div class="id-value">{{ admin.admin_id }}</div>
+            </div>
+
+            <div class="info-box">
+                <i class="fa-solid fa-shield-halved"></i> <strong>Privacy note:</strong> This is the ID you use to log in. Once changed, your old ID will stop working immediately and only your new ID will let you into the Admin account. Make sure you remember it!
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>New Admin ID:</label>
+                    <input type="text" name="new_admin_id" placeholder="e.g. ADM847213" maxlength="20" required autofocus>
+                    <div class="helper">Letters and numbers only, no spaces. Must be different from your current ID and not already used by anyone else.</div>
+                </div>
+
+                <div class="btn-row">
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-cancel">Cancel</a>
+                    <button type="submit" class="btn btn-save"><i class="fa-solid fa-floppy-disk"></i> Save New ID</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

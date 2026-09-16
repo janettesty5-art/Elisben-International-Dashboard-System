@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirm Delete Student</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
         .container { max-width: 600px; width: 100%; }
         .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); border-top: 5px solid #e74c3c; }
-        .icon { font-size: 80px; text-align: center; margin-bottom: 20px; }
+        .icon { font-size: 60px; text-align: center; margin-bottom: 20px; color: #e74c3c; }
         h1 { color: #e74c3c; text-align: center; margin-bottom: 20px; }
         .warning-box { background: #fff3cd; border: 2px solid #ffc107; border-radius: 10px; padding: 20px; margin-bottom: 30px; }
         .warning-box p { color: #856404; margin: 0; font-weight: 600; }
@@ -38,11 +39,11 @@
 <body>
     <div class="container">
         <div class="card">
-            <div class="icon">⚠️</div>
+            <div class="icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <h1>Confirm Student Deletion</h1>
             
             <div class="warning-box">
-                <p>⚠️ WARNING: This action is PERMANENT and CANNOT be undone!</p>
+                <p><i class="fa-solid fa-triangle-exclamation"></i> WARNING: This action is PERMANENT and CANNOT be undone!</p>
             </div>
             
             <div class="student-info">
@@ -56,7 +57,7 @@
             </div>
             
             <div class="consequences">
-                <h4>⚠️ The following will be permanently deleted:</h4>
+                <h4><i class="fa-solid fa-triangle-exclamation"></i> The following will be permanently deleted:</h4>
                 <ul>
                     <li>Student profile and login account</li>
                     <li>All exam submissions and scores</li>
@@ -73,12 +74,12 @@
             
             <div class="buttons">
                 <a href="{% url 'admin_dashboard' %}" class="btn btn-cancel">
-                    ❌ No, Go Back
+                    <i class="fa-solid fa-xmark"></i> No, Go Back
                 </a>
                 <form method="POST" style="display:inline;">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-delete" onclick="return confirm('FINAL CONFIRMATION: Delete {{ student.full_name }} permanently?')">
-                        🗑️ Yes, Delete Permanently
+                        <i class="fa-solid fa-trash"></i> Yes, Delete Permanently
                     </button>
                 </form>
             </div>

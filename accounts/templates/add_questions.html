@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Questions - {{ exam.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -197,8 +198,8 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>📝 Add/Edit Questions - {{ exam.title }}</h1>
-        <a href="{% url 'teacher_dashboard' %}">← Back to Dashboard</a>
+        <h1><i class="fa-solid fa-pen"></i> Add/Edit Questions - {{ exam.title }}</h1>
+        <a href="{% url 'teacher_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -210,7 +211,7 @@
         
         <!-- Add New Question Form -->
         <div class="card">
-            <h2>➕ Add New Question</h2>
+            <h2><i class="fa-solid fa-plus"></i> Add New Question</h2>
             <form method="POST">
                 {% csrf_token %}
                 <div class="form-group">
@@ -243,19 +244,19 @@
                         <option value="D">D</option>
                     </select>
                 </div>
-                <button type="submit" name="add_another" class="btn btn-primary">➕ Add Question & Continue</button>
-                <button type="submit" class="btn btn-primary" style="background: #27ae60;">✅ Add & Finish</button>
+                <button type="submit" name="add_another" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add Question & Continue</button>
+                <button type="submit" class="btn btn-primary" style="background: #27ae60;"><i class="fa-solid fa-circle-check"></i> Add & Finish</button>
             </form>
         </div>
         
         <!-- Existing Questions -->
         <div class="card">
             <div class="question-header" style="border-bottom: 2px solid #e0e0e0; padding-bottom: 15px;">
-                <h2>📋 Existing Questions ({{ questions.count }})</h2>
+                <h2><i class="fa-solid fa-clipboard-list"></i> Existing Questions ({{ questions.count }})</h2>
                 {% if questions %}
                 <a href="{% url 'delete_exam' exam.id %}" class="btn btn-danger" 
-                   onclick="return confirm('⚠️ DELETE ALL QUESTIONS AND THIS EXAM? This cannot be undone!')">
-                    🗑️ Delete ENTIRE Exam
+                   onclick="return confirm('<i class="fa-solid fa-triangle-exclamation"></i> DELETE ALL QUESTIONS AND THIS EXAM? This cannot be undone!')">
+                    <i class="fa-solid fa-trash"></i> Delete ENTIRE Exam
                 </a>
                 {% endif %}
             </div>
@@ -265,14 +266,14 @@
                 <div class="question-header">
                     <span class="question-number">Question {{ question.question_number }}</span>
                     <div class="question-actions">
-                        <a href="{% url 'edit_question' question.id %}" class="btn btn-warning">✏️ Edit</a>
+                        <a href="{% url 'edit_question' question.id %}" class="btn btn-warning"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
                         <!-- THIS IS THE KEY FEATURE: DELETE INDIVIDUAL QUESTION -->
                         <form method="POST" action="{% url 'delete_single_question' exam.id question.question_number %}" 
                               style="display:inline;">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-danger" 
                                     onclick="return confirm('Delete Question {{ question.question_number }}? Other questions will be renumbered.')">
-                                🗑️ Delete This Question Only
+                                <i class="fa-solid fa-trash"></i> Delete This Question Only
                             </button>
                         </form>
                     </div>
@@ -290,12 +291,12 @@
                 </ul>
                 
                 <div>
-                    <span class="correct-answer">✅ Correct Answer: {{ question.correct_answer }}</span>
+                    <span class="correct-answer"><i class="fa-solid fa-circle-check"></i> Correct Answer: {{ question.correct_answer }}</span>
                 </div>
             </div>
             {% empty %}
             <div style="text-align: center; padding: 60px 20px;">
-                <p style="font-size: 48px; margin-bottom: 20px;">📝</p>
+                <p style="font-size: 48px; margin-bottom: 20px;"><i class="fa-solid fa-pen"></i></p>
                 <p style="color: #999; font-size: 18px;">No questions added yet.</p>
                 <p style="color: #666; margin-top: 10px;">Add your first question using the form above!</p>
             </div>
@@ -308,7 +309,7 @@
                     Remember to <strong>publish</strong> this exam from your dashboard when ready!
                 </p>
                 <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">
-                    ← Back to Dashboard
+                    <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
                 </a>
             </div>
             {% endif %}

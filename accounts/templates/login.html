@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Elisben International College</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -27,6 +28,7 @@
             text-align: center;
             margin-bottom: 30px;
         }
+        .logo .logo-icon { font-size: 32px; color: #667eea; margin-bottom: 8px; }
         .logo h1 {
             color: #667eea;
             font-size: 28px;
@@ -110,7 +112,7 @@
             display: none;
         }
         .role-icon {
-            font-size: 30px;
+            font-size: 26px;
             margin-bottom: 8px;
         }
         .role-name {
@@ -125,12 +127,17 @@
             border-radius: 10px;
             margin-left: 5px;
         }
-    </style>
+    
+@media (max-width: 720px) {
+    .role-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <h1>🏫 Elisben International College</h1>
+            <div class="logo-icon"><i class="fa-solid fa-school"></i></div>
+            <h1>Elisben International College</h1>
             <p>School Management System</p>
         </div>
         
@@ -148,43 +155,43 @@
                 <div class="role-grid">
                     <label class="role-option">
                         <input type="radio" name="role" value="admin" required>
-                        <div class="role-icon">🔑</div>
+                        <div class="role-icon"><i class="fa-solid fa-key"></i></div>
                         <div class="role-name">Admin</div>
                     </label>
                     
                     <label class="role-option">
                         <input type="radio" name="role" value="principal" required>
-                        <div class="role-icon">👔</div>
+                        <div class="role-icon"><i class="fa-solid fa-user-tie"></i></div>
                         <div class="role-name">Principal</div>
                     </label>
                     
                     <label class="role-option">
                         <input type="radio" name="role" value="teacher" required>
-                        <div class="role-icon">👨‍🏫</div>
+                        <div class="role-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
                         <div class="role-name">Teacher</div>
                     </label>
                     
                     <label class="role-option">
                         <input type="radio" name="role" value="bursar" required>
-                        <div class="role-icon">💰</div>
+                        <div class="role-icon"><i class="fa-solid fa-sack-dollar"></i></div>
                         <div class="role-name">Bursar</div>
                     </label>
                     
                     <label class="role-option">
                         <input type="radio" name="role" value="student" required>
-                        <div class="role-icon">👨‍🎓</div>
+                        <div class="role-icon"><i class="fa-solid fa-user-graduate"></i></div>
                         <div class="role-name">Student</div>
                     </label>
                     
                     <label class="role-option">
                         <input type="radio" name="role" value="make_result" required>
-                        <div class="role-icon">📊</div>
+                        <div class="role-icon"><i class="fa-solid fa-chart-column"></i></div>
                         <div class="role-name">Make Result<span class="new-badge">NEW</span></div>
                     </label>
                     
                     <label class="role-option">
                         <input type="radio" name="role" value="check_result" required>
-                        <div class="role-icon">📋</div>
+                        <div class="role-icon"><i class="fa-solid fa-clipboard-list"></i></div>
                         <div class="role-name">Check Result<span class="new-badge">NEW</span></div>
                     </label>
                 </div>
@@ -232,7 +239,7 @@
         });
     });
 
-    // ✅ NEW: Intercept form submission for "Check Result" to show bulletin first
+    // Intercept form submission for "Check Result" to show bulletin first
     const loginForm = document.querySelector('form');
     loginForm.addEventListener('submit', function(e) {
         const selectedRole = document.querySelector('input[name="role"]:checked');

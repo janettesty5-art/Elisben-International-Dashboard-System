@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Make Result Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -85,37 +86,37 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Make Result Portal</h1>
+            <h1><i class="fa-solid fa-chart-column"></i> Make Result Portal</h1>
             <p>Select your role to continue</p>
         </div>
         
         <div class="role-grid">
             <a href="{% url 'subject_teacher_entry' %}" class="role-card">
-                <div class="role-icon">📚</div>
+                <div class="role-icon"><i class="fa-solid fa-book"></i></div>
                 <h2>Subject Teacher</h2>
                 <p>Enter results for your subject across all classes. Input test scores, exam scores, and cumulative marks for students offering your subject.</p>
             </a>
             
             <a href="{% url 'class_teacher_collate' %}" class="role-card">
-                <div class="role-icon">📝</div>
+                <div class="role-icon"><i class="fa-solid fa-pen"></i></div>
                 <h2>Class Teacher</h2>
                 <p>Collate all subject results for your class. Add attendance, fees, affective & psychomotor domains, and class teacher comments.</p>
             </a>
             
             <a href="{% url 'principal_result_review' %}" class="role-card">
-                <div class="role-icon">👔</div>
+                <div class="role-icon"><i class="fa-solid fa-user-tie"></i></div>
                 <h2>Principal</h2>
                 <p>Review incoming results from class teachers. Add principal's comments and forward results to admin for final approval.</p>
             </a>
             
             <a href="{% url 'admin_result_management' %}" class="role-card">
-                <div class="role-icon">🔑</div>
+                <div class="role-icon"><i class="fa-solid fa-key"></i></div>
                 <h2>Admin</h2>
                 <p>Final review and approval. Edit any part of results, add school stamp, publish results, and generate PINs for students.</p>
             </a>
         </div>
         
-        <a href="{% url 'logout' %}" class="logout-btn">← Logout</a>
+        <a href="{% url 'logout' %}" class="logout-btn"><i class="fa-solid fa-arrow-left"></i> Logout</a>
     </div>
 </body>
 </html>

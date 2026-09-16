@@ -2,7 +2,9 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Check Result - Elisben International College</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -118,7 +120,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="logo">🎓</div>
+        <div class="logo"><i class="fa-solid fa-graduation-cap"></i></div>
         <h1>Check Your Result</h1>
         <p>Enter your 12-digit PIN to view your academic result</p>
         
@@ -131,23 +133,23 @@
         <form method="POST" action="{% url 'view_student_result' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label>📌 Enter Your PIN:</label>
+                <label><i class="fa-solid fa-thumbtack"></i> Enter Your PIN:</label>
                 <input type="text" name="result_pin" placeholder="000000000000" maxlength="12" pattern="[0-9]{12}" required autofocus>
             </div>
-            <button type="submit" class="btn">🔍 View My Result</button>
+            <button type="submit" class="btn"><i class="fa-solid fa-magnifying-glass"></i> View My Result</button>
         </form>
         
         <div class="info-box">
-            <h3>ℹ️ Important Information:</h3>
+            <h3><i class="fa-solid fa-circle-info"></i> Important Information:</h3>
             <ul>
-                <li>✓ Your PIN is 12 digits long</li>
-                <li>✓ PINs are case-sensitive</li>
-                <li>✓ Contact your school if you've lost your PIN</li>
-                <li>✓ Results are only available for published terms</li>
+                <li><i class="fa-solid fa-check"></i> Your PIN is 12 digits long</li>
+                <li><i class="fa-solid fa-check"></i> PINs are case-sensitive</li>
+                <li><i class="fa-solid fa-check"></i> Contact your school if you've lost your PIN</li>
+                <li><i class="fa-solid fa-check"></i> Results are only available for published terms</li>
             </ul>
         </div>
         
-        <a href="{% url 'unified_login' %}" class="back-btn">← Back to Login</a>
+        <a href="{% url 'unified_login' %}" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back to Login</a>
     </div>
 </body>
 </html>

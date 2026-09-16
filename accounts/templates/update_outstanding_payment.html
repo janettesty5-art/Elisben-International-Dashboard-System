@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Update Outstanding Payment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
       * {
         margin: 0;
@@ -118,7 +119,7 @@
   </head>
   <body>
     <nav class="navbar">
-      <h1>💵 Update Outstanding Payment</h1>
+      <h1><i class="fa-solid fa-money-bill-wave"></i> Update Outstanding Payment</h1>
     </nav>
 
     <div class="container">
@@ -128,7 +129,7 @@
 
       <div class="card">
         <div class="student-info">
-          <h3>👨‍🎓 Student Information</h3>
+          <h3><i class="fa-solid fa-user-graduate"></i> Student Information</h3>
           <p><strong>Name:</strong> {{ student.full_name }}</p>
           <p><strong>Student ID:</strong> {{ student.student_id }}</p>
           <p><strong>Class:</strong> {{ student.class_name }}</p>
@@ -197,10 +198,10 @@
 
           <div style="margin-top: 30px">
             <button type="submit" class="btn btn-save">
-              💰 Record Payment
+              <i class="fa-solid fa-sack-dollar"></i> Record Payment
             </button>
             <a href="{% url 'bursar_dashboard' %}" class="btn btn-cancel"
-              >❌ Cancel</a
+              ><i class="fa-solid fa-xmark"></i> Cancel</a
             >
           </div>
         </form>
@@ -210,7 +211,7 @@
         </p>
         <div style="text-align: center; margin-top: 20px">
           <a href="{% url 'bursar_dashboard' %}" class="btn btn-cancel"
-            >← Back</a
+            ><i class="fa-solid fa-arrow-left"></i> Back</a
           >
         </div>
         {% endif %}

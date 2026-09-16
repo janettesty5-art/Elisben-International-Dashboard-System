@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Published Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -32,11 +33,18 @@
         .stat-card { background: white; padding: 20px; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
         .stat-number { font-size: 36px; font-weight: bold; color: #667eea; }
         .stat-label { color: #666; margin-top: 8px; }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 720px) {
+    .filter-row { grid-template-columns: 1fr; }
+    .stats { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
     <div class="navbar">
-        <h1>📋 Published Results with PINs</h1>
+        <h1><i class="fa-solid fa-clipboard-list"></i> Published Results with PINs</h1>
     </div>
     
     <div class="container">
@@ -47,7 +55,7 @@
         {% endif %}
         
         <div class="alert alert-info">
-            <strong>ℹ️ Published Results:</strong> These results are permanently stored. Copy the PINs and give them to students to check their results.
+            <strong><i class="fa-solid fa-circle-info"></i> Published Results:</strong> These results are permanently stored. Copy the PINs and give them to students to check their results.
         </div>
         
         <!-- Statistics -->
@@ -72,7 +80,7 @@
         
         <!-- Filters -->
         <div class="card">
-            <h2>🔍 Filter Published Results</h2>
+            <h2><i class="fa-solid fa-magnifying-glass"></i> Filter Published Results</h2>
             <form method="GET">
                 <div class="filter-row">
                     <div class="form-group">
@@ -108,10 +116,11 @@
         
         <!-- Published Results Table -->
         <div class="card">
-            <h2>📊 Published Results</h2>
+            <h2><i class="fa-solid fa-chart-column"></i> Published Results</h2>
             
             {% if published_results %}
-                <table>
+                <div class="table-scroll-wrap">
+<table>
                     <thead>
                         <tr>
                             <th>#</th>
@@ -137,30 +146,31 @@
                             <td>
                                 <div class="pin-box" id="pin-{{ published.id }}">{{ published.pin }}</div>
                                 <span class="copy-icon" onclick="copyPIN('{{ published.pin }}', {{ published.id }})" title="Copy PIN">
-                                    📋
+                                    <i class="fa-solid fa-clipboard-list"></i>
                                 </span>
                             </td>
                             <td>{{ published.published_at|date:"M d, Y H:i" }}</td>
                             <td>
                                 <a href="{% url 'print_result' published.result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px;" target="_blank">
-                                    🖨️ Print
+                                    <i class="fa-solid fa-print"></i> Print
                                 </a>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+</div>
             {% else %}
                 <p style="text-align: center; color: #999; padding: 40px;">No published results found with the selected filters.</p>
             {% endif %}
         </div>
         
         <div style="text-align: center; margin-top: 20px;">
-    <a href="{% url 'admin_result_management' %}" class="btn btn-back">← Back to Management</a>
+    <a href="{% url 'admin_result_management' %}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back to Management</a>
     <a href="{% url 'download_pins' %}?academic_year={{ request.GET.academic_year }}&term={{ request.GET.term }}&class_name={{ request.GET.class_name }}" 
        class="btn btn-publish" 
        target="_blank">
-        📌 Download PINs
+        <i class="fa-solid fa-thumbtack"></i> Download PINs
     </a>
 </div>
     </div>

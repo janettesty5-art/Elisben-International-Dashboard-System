@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Result Management</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -31,7 +32,7 @@
 </head>
 <body>
     <div class="navbar">
-        <h1>🔒 Admin - Result Management</h1>
+        <h1><i class="fa-solid fa-lock"></i> Admin - Result Management</h1>
     </div>
     
     <div class="container">
@@ -42,20 +43,20 @@
         {% endif %}
         
         <div class="alert alert-info">
-            <strong>ℹ️ Admin Panel:</strong> You can edit ANY part of results, add stamps, and publish results with PINs. Click on any class to expand and view students.
+            <strong><i class="fa-solid fa-circle-info"></i> Admin Panel:</strong> You can edit ANY part of results, add stamps, and publish results with PINs. Click on any class to expand and view students.
         </div>
         
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>📥 Incoming Results by Class</h2>
-                <a href="{% url 'admin_view_published' %}" class="btn">📋 View Published Results</a>
+                <h2><i class="fa-solid fa-inbox"></i> Incoming Results by Class</h2>
+                <a href="{% url 'admin_view_published' %}" class="btn"><i class="fa-solid fa-clipboard-list"></i> View Published Results</a>
             </div>
             
             {% if results_by_class %}
                 {% for class_name, results in results_by_class.items %}
                 <div class="class-card" onclick="toggleClass('class-{{ forloop.counter }}')">
                     <div class="class-header">
-                        <div class="class-name">📚 {{ class_name }}</div>
+                        <div class="class-name"><i class="fa-solid fa-book"></i> {{ class_name }}</div>
                         <div class="class-count">{{ results|length }} students</div>
                     </div>
                     
@@ -72,26 +73,26 @@
                                 </div>
                                 <div>
                                     <a href="{% url 'admin_edit_result' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px;">
-                                        ✏️ Edit
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
                                     </a>
                                     {% if not result.has_stamp %}
                                     <a href="{% url 'admin_add_stamp' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px; background: #f39c12;">
-                                        🖨️ Add Stamp
+                                        <i class="fa-solid fa-print"></i> Add Stamp
                                     </a>
                                     {% else %}
                                     <a href="{% url 'admin_publish_result' result.id %}" class="btn btn-publish" style="font-size: 13px; padding: 8px 15px;">
-                                        ✅ Publish
+                                        <i class="fa-solid fa-circle-check"></i> Publish
                                     </a>
                                     {% endif %}
                                     <a href="{% url 'print_result' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px; background: #34495e;" target="_blank">
-                                        👁️ Preview
+                                        <i class="fa-solid fa-eye"></i> Preview
                                     </a>
                                 </div>
                             </div>
                             {% endfor %}
                             
                             <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #ddd;">
-                                <button type="submit" class="btn btn-publish">✅ Publish Selected Results</button>
+                                <button type="submit" class="btn btn-publish"><i class="fa-solid fa-circle-check"></i> Publish Selected Results</button>
                             </div>
                         </form>
                     </div>
@@ -103,7 +104,7 @@
         </div>
         
         <div style="text-align: center;">
-            <a href="{% url 'make_result_portal' %}" class="btn btn-back">← Back</a>
+            <a href="{% url 'make_result_portal' %}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
     </div>
     

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
@@ -11,6 +12,7 @@
         .navbar h1 { font-size: 24px; }
         .navbar .user-info { display: flex; align-items: center; gap: 20px; }
         .btn-logout { background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; }
+        .btn-settings { background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; }
         .container { padding: 40px; max-width: 1400px; margin: 0 auto; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 40px; }
         .stat-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; }
@@ -28,6 +30,45 @@
         .action-btn { background: white; padding: 25px; border-radius: 15px; text-align: center; text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: transform 0.2s; display: block; }
         .action-btn:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
         .action-btn .icon { font-size: 40px; margin-bottom: 10px; }
+        
+        /* ACCOUNT SETTINGS STYLES */
+        .account-zone {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 40px;
+            border-left: 6px solid #667eea;
+        }
+        .account-zone h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .account-zone p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .btn-account-action {
+            background: #667eea;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .btn-account-action:hover {
+            background: #5a67d8;
+        }
         
         /* DANGER ZONE STYLES */
         .danger-zone { 
@@ -111,10 +152,11 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>🔑 Admin Dashboard</h1>
+        <h1><i class="fa-solid fa-key"></i> Admin Dashboard</h1>
         <div class="user-info">
             <span>Welcome, {{ admin.full_name }}</span>
             <span style="opacity: 0.7;">ID: {{ admin.admin_id }}</span>
+            <a href="{% url 'admin_change_id' %}" class="btn-settings" title="Change your Admin ID"><i class="fa-solid fa-gear"></i> Account</a>
             <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
         </div>
     </nav>
@@ -145,36 +187,53 @@
         <!-- Quick Actions -->
         <div class="actions-grid">
             <a href="{% url 'register_student' %}" class="action-btn">
-                <div class="icon">👨‍🎓</div>
+                <div class="icon"><i class="fa-solid fa-user-graduate"></i></div>
                 <div>Register Student</div>
             </a>
             <a href="{% url 'register_teacher' %}" class="action-btn">
-                <div class="icon">👨‍🏫</div>
+                <div class="icon"><i class="fa-solid fa-chalkboard-user"></i></div>
                 <div>Register Teacher</div>
             </a>
             <a href="{% url 'manage_finance' %}" class="action-btn">
-                <div class="icon">💰</div>
+                <div class="icon"><i class="fa-solid fa-sack-dollar"></i></div>
                 <div>Manage Finance</div>
             </a>
             <a href="{% url 'view_alumni' %}" class="action-btn">
-                <div class="icon">🎓</div>
+                <div class="icon"><i class="fa-solid fa-graduation-cap"></i></div>
                 <div>View Alumni</div>
+            </a>
+            <a href="{% url 'id_card_hub' %}" class="action-btn">
+                <div class="icon"><i class="fa-solid fa-id-card-clip"></i></div>
+                <div>ID Card Generator</div>
+            </a>
+        </div>
+
+        <!-- ACCOUNT SETTINGS SECTION -->
+        <div class="account-zone">
+            <h2><i class="fa-solid fa-gear"></i> Account Settings</h2>
+            <p>
+                <strong>Privacy:</strong> Your Admin ID is what you use to log in. If it's been shared
+                with someone else, or you just want a fresh one for privacy, you can change it below —
+                only you (the proprietor) can do this.
+            </p>
+            <a href="{% url 'admin_change_id' %}" class="btn-account-action">
+                <i class="fa-solid fa-lock"></i> Change My Admin ID
             </a>
         </div>
 
         <!-- DANGER ZONE SECTION - ADD THIS -->
         <div class="danger-zone">
-            <h2>⚠️ Danger Zone</h2>
+            <h2><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h2>
             <p>
                 <strong>Warning:</strong> The following actions are permanent and cannot be undone. 
                 Use with extreme caution.
             </p>
             <a href="{% url 'admin_wipe_all_exams' %}" class="btn-danger-action">
-                🗑️ Delete All CBT Exams & Questions
+                <i class="fa-solid fa-trash"></i> Delete All CBT Exams & Questions
             </a>
             <br>
             <a href="{% url 'admin_fix_promotion_status' %}" class="btn-danger-action" style="background:#3498db;">
-            🔄 Fix Promotion Status (Recalculate All)
+            <i class="fa-solid fa-rotate"></i> Fix Promotion Status (Recalculate All)
 </a>
         </div>
         
@@ -185,7 +244,7 @@
             <div class="search-container">
                 <form method="GET" action="{% url 'search_students' %}" class="search-form">
                     <input type="text" name="q" class="search-input" 
-                           placeholder="🔍 Search students by name or ID..." 
+                           placeholder="Search students by name or ID..." 
                            value="{{ search_query|default:'' }}">
                     <button type="submit" class="btn-search">Search</button>
                     {% if search_query %}
@@ -229,15 +288,15 @@
                         <td>{{ student.created_at|date:"M d, Y" }}</td>
                         <td>
                             <a href="{% url 'edit_student' student.id %}" class="btn btn-edit" title="Edit student information">
-                                ✏️ Edit
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
                             </a>
                             
                             <a href="{% url 'move_to_alumni' student.id %}" class="btn btn-alumni"
                                onclick="return confirm('Move {{ student.full_name }} to Alumni?')">
-                                🎓 Alumni
+                                <i class="fa-solid fa-graduation-cap"></i> Alumni
                             </a>
                             <a href="{% url 'delete_student_confirm' student.id %}" class="btn btn-delete">
-                                🗑️ Delete
+                                <i class="fa-solid fa-trash"></i> Delete
                             </a>
                         </td>
                     </tr>
@@ -263,7 +322,7 @@
             <div class="search-container">
                 <form method="GET" action="{% url 'search_teachers' %}" class="search-form">
                     <input type="text" name="q" class="search-input" 
-                           placeholder="🔍 Search teachers by name or email..." 
+                           placeholder="Search teachers by name or email..." 
                            value="{{ search_query|default:'' }}">
                     <button type="submit" class="btn-search">Search</button>
                     {% if search_query %}

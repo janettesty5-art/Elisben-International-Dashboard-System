@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Teacher - Complete Student Result</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -39,11 +40,18 @@
         .btn-back { background: #95a5a6; }
         .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; background: #d4edda; color: #155724; }
         .comment-dropdown { margin-bottom: 10px; }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 720px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .rating-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
     <div class="navbar">
-        <h1>📝 Class Teacher - Complete Student Result</h1>
+        <h1><i class="fa-solid fa-pen"></i> Class Teacher - Complete Student Result</h1>
     </div>
     
     <div class="container">
@@ -54,16 +62,17 @@
         {% endif %}
         
         <div class="student-info">
-            <h3>👤 {{ student.full_name }} - {{ student.class_name }}</h3>
+            <h3><i class="fa-solid fa-user"></i> {{ student.full_name }} - {{ student.class_name }}</h3>
             <p><strong>Term:</strong> {{ term }} | <strong>Academic Year:</strong> {{ academic_year }}</p>
             <p><strong>Total Subjects:</strong> {{ subject_results.count }}</p>
         </div>
         
         <!-- SUBJECT RESULTS TABLE - SHOWS ALL COLUMNS -->
         <div class="card">
-            <h2>📚 Subject Results Summary</h2>
+            <h2><i class="fa-solid fa-book"></i> Subject Results Summary</h2>
             {% if subject_results %}
-            <table>
+            <div class="table-scroll-wrap">
+<table>
                 <thead>
                     <tr>
                         <th>#</th>
@@ -105,6 +114,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+</div>
             {% else %}
             <p style="text-align: center; color: #999; padding: 30px;">No subject results found for this student. Please ensure subject teachers have entered results.</p>
             {% endif %}
@@ -115,7 +125,7 @@
             
             <!-- Attendance -->
             <div class="card form-section">
-                <h3>📅 Attendance</h3>
+                <h3><i class="fa-solid fa-calendar-days"></i> Attendance</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Times School Opened:</label>
@@ -134,7 +144,7 @@
             
             <!-- Next Term Dates & Fees -->
             <div class="card form-section">
-                <h3>📆 Next Term Information</h3>
+                <h3><i class="fa-solid fa-calendar-days"></i> Next Term Information</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label>Vacation Date:</label>
@@ -159,7 +169,7 @@
             
             <!-- Affective Domain -->
             <div class="card form-section">
-                <h3>🎭 Affective Domain (Behavior & Attitude)</h3>
+                <h3><i class="fa-solid fa-user-tag"></i> Affective Domain (Behavior & Attitude)</h3>
                 <div class="rating-grid">
                     <div class="rating-item">
                         <label>Punctuality:</label>
@@ -243,7 +253,7 @@
             
             <!-- Psychomotor Domain -->
             <div class="card form-section">
-                <h3>🎨 Psychomotor Domain (Skills)</h3>
+                <h3><i class="fa-solid fa-palette"></i> Psychomotor Domain (Skills)</h3>
                 <div class="rating-grid">
                     <div class="rating-item">
                         <label>Handwriting:</label>
@@ -316,7 +326,7 @@
             
             <!-- Class Teacher Comment WITH DROPDOWN -->
             <div class="card form-section">
-                <h3>💬 Class Teacher's Comment</h3>
+                <h3><i class="fa-solid fa-comment"></i> Class Teacher's Comment</h3>
                 <div class="form-group">
                     <label>Quick Select Comment:</label>
                     <select class="comment-dropdown" id="commentDropdown" onchange="selectComment()">
@@ -360,8 +370,8 @@
             </div>
             
             <div style="text-align: center; margin-top: 30px;">
-                <button type="submit" class="btn">💾 Save Complete Result</button>
-                <a href="{% url 'class_teacher_collate' %}?class_name={{ student.class_name }}&term={{ term }}&academic_year={{ academic_year }}" class="btn btn-back">← Back</a>
+                <button type="submit" class="btn"><i class="fa-solid fa-floppy-disk"></i> Save Complete Result</button>
+                <a href="{% url 'class_teacher_collate' %}?class_name={{ student.class_name }}&term={{ term }}&academic_year={{ academic_year }}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
             </div>
         </form>
     </div>

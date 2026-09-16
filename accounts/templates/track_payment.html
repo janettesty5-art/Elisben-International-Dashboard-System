@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Payment - {{ student.full_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+
+        .navbar {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white; padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .navbar h1 { font-size: 24px; }
+        .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; }
+
+        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+
+        /* ===== CHART CARD ===== */
+        .chart-card {
+            background: white; padding: 35px; border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 30px;
+            display: grid; grid-template-columns: 220px 1fr; gap: 40px; align-items: center;
+        }
+        .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .donut {
+            width: 190px; height: 190px; border-radius: 50%;
+            background: conic-gradient(#27ae60 0% {{ percent_paid_chart }}%, #ecf0f1 {{ percent_paid_chart }}% 100%);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            box-shadow: inset 0 0 0 14px white, 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .donut::before {
+            content: '';
+            position: absolute; inset: 22px;
+            background: white; border-radius: 50%;
+        }
+        .donut-label { position: relative; text-align: center; z-index: 1; }
+        .donut-label .pct { font-size: 32px; font-weight: 800; color: #27ae60; }
+        .donut-label .txt { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+        .legend { display: flex; gap: 18px; font-size: 13px; color: #555; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 3px; }
+        .dot-paid { background: #27ae60; }
+        .dot-balance { background: #ecf0f1; border: 1px solid #ccc; }
+
+        .breakdown h2 { color: #333; margin-bottom: 20px; font-size: 20px; }
+        .figures-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; }
+        .figure-box { background: #f8f9fa; border-radius: 10px; padding: 16px; text-align: center; }
+        .figure-box .label { font-size: 12px; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .figure-box .value { font-size: 20px; font-weight: 700; color: #333; }
+        .figure-box.paid .value { color: #27ae60; }
+        .figure-box.balance .value { color: #e74c3c; }
+        .figure-box.total .value { color: #3498db; }
+
+        .progress-track { background: #ecf0f1; border-radius: 20px; height: 26px; overflow: hidden; position: relative; }
+        .progress-fill {
+            height: 100%; border-radius: 20px;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            width: {{ percent_paid_chart }}%;
+            transition: width 0.6s ease;
+        }
+        .progress-caption { font-size: 12px; color: #888; margin-top: 8px; }
+
+        .status-pill {
+            display: inline-block; margin-top: 14px; padding: 8px 18px;
+            border-radius: 20px; font-size: 13px; font-weight: 700;
+        }
+        .status-full { background: #d4edda; color: #155724; }
+        .status-partial { background: #fff3cd; color: #856404; }
+        .status-over { background: #d1ecf1; color: #0c5460; }
+        .status-none { background: #f8d7da; color: #721c24; }
+
+        /* ===== HISTORY TABLE ===== */
+        .section { background: white; padding: 30px; border-radius: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow-x: auto; }
+        .section h2 { color: #333; margin-bottom: 20px; font-size: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        table th, table td { padding: 14px; text-align: left; border-bottom: 1px solid #eee; }
+        table th { background: #f8f9fa; font-weight: 600; color: #666; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .fee-type-badge { background: #eaf4fd; color: #2980b9; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .paid-amt { color: #27ae60; font-weight: 700; }
+        .balance-amt { color: #e74c3c; font-weight: 700; }
+        .balance-amt.zero { color: #27ae60; }
+        .recorded-by { font-size: 12px; color: #999; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
+        .empty-state .icon { font-size: 60px; margin-bottom: 15px; }
+
+        @media (max-width: 700px) {
+            .chart-card { grid-template-columns: 1fr; text-align: center; }
+            .figures-grid { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1><i class="fa-solid fa-credit-card"></i> Track Payment</h1>
+        <a href="{% url 'student_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        {% if has_records %}
+        <!-- CHART + BREAKDOWN -->
+        <div class="chart-card">
+            <div class="donut-wrap">
+                <div class="donut">
+                    <div class="donut-label">
+                        <div class="pct">{{ percent_paid_display }}%</div>
+                        <div class="txt">Paid</div>
+                    </div>
+                </div>
+                <div class="legend">
+                    <div class="legend-item"><span class="dot dot-paid"></span> Paid</div>
+                    <div class="legend-item"><span class="dot dot-balance"></span> Remaining</div>
+                </div>
+            </div>
+
+            <div class="breakdown">
+                <h2>{{ student.full_name }}'s Fee Summary</h2>
+
+                <div class="figures-grid">
+                    <div class="figure-box total">
+                        <div class="label">Total Fees</div>
+                        <div class="value">₦{{ total_fees|floatformat:2 }}</div>
+                    </div>
+                    <div class="figure-box paid">
+                        <div class="label">Total Paid</div>
+                        <div class="value">₦{{ total_paid|floatformat:2 }}</div>
+                    </div>
+                    <div class="figure-box balance">
+                        <div class="label">Balance Left</div>
+                        <div class="value">₦{{ balance|floatformat:2 }}</div>
+                    </div>
+                </div>
+
+                <div class="progress-track">
+                    <div class="progress-fill"></div>
+                </div>
+                <div class="progress-caption">{{ percent_paid_display }}% of total fees paid so far</div>
+
+                {% if is_overpaid %}
+                    <span class="status-pill status-over"><i class="fa-solid fa-circle-info"></i> Overpaid — a credit balance is on this account</span>
+                {% elif is_fully_paid %}
+                    <span class="status-pill status-full"><i class="fa-solid fa-circle-check"></i> Fully Paid</span>
+                {% else %}
+                    <span class="status-pill status-partial">⏳ Payment In Progress</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ITEMIZED HISTORY -->
+        <div class="section">
+            <h2><i class="fa-solid fa-clipboard-list"></i> Every Payment Entry Recorded by the Bursar</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>What It's For</th>
+                        <th>Total Amount</th>
+                        <th>Amount Paid</th>
+                        <th>Balance</th>
+                        <th>Method</th>
+                        <th>Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in fee_records %}
+                    <tr>
+                        <td>{{ record.payment_date|date:"M d, Y" }}</td>
+                        <td><span class="fee-type-badge">{{ record.fee_type }}</span></td>
+                        <td>₦{{ record.total_fee|floatformat:2 }}</td>
+                        <td class="paid-amt">₦{{ record.amount_paid|floatformat:2 }}</td>
+                        <td class="balance-amt {% if record.balance <= 0 %}zero{% endif %}">₦{{ record.balance|floatformat:2 }}</td>
+                        <td>{{ record.payment_method }}</td>
+                        <td class="recorded-by">
+                            {% if record.recorded_by %}
+                                {{ record.recorded_by.full_name }} (Bursar)
+                            {% elif record.recorded_by_admin %}
+                                {{ record.recorded_by_admin.full_name }} (Admin)
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if discount_groups %}
+        {% for dg in discount_groups %}
+        <div class="section" style="margin-top: 25px;">
+            <h2><i class="fa-solid fa-people-roof"></i> Sibling Discount Group — {{ dg.group.group_id }}</h2>
+            <div class="sub" style="color:#888; font-size:13px; margin-bottom:16px;">
+                {{ student.full_name }} was discounted together with {{ dg.siblings|length }} other student(s) on {{ dg.group.payment_date|date:"M d, Y" }} for {{ dg.group.fee_type }}.
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Fee Before Discount</th>
+                        <th>Discount</th>
+                        <th>Final Fee</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if dg.my_entry %}
+                    <tr style="background:#eaf7ee;">
+                        <td><strong>{{ student.full_name }} (You)</strong></td>
+                        <td>₦{{ dg.my_entry.fee_before_discount|floatformat:2 }}</td>
+                        <td style="color:#27ae60; font-weight:700;">₦{{ dg.my_entry.discount_amount|floatformat:2 }}</td>
+                        <td>₦{{ dg.my_entry.fee_after_discount|floatformat:2 }}</td>
+                        <td>₦{{ dg.my_entry.amount_paid|floatformat:2 }}</td>
+                        <td>₦{{ dg.my_entry.balance|floatformat:2 }}</td>
+                    </tr>
+                    {% endif %}
+                    {% for entry in dg.siblings %}
+                    <tr>
+                        <td>{{ entry.student.full_name }}</td>
+                        <td>₦{{ entry.fee_before_discount|floatformat:2 }}</td>
+                        <td style="color:#27ae60; font-weight:700;">₦{{ entry.discount_amount|floatformat:2 }}</td>
+                        <td>₦{{ entry.fee_after_discount|floatformat:2 }}</td>
+                        <td>₦{{ entry.amount_paid|floatformat:2 }}</td>
+                        <td>₦{{ entry.balance|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% else %}
+        <div class="section">
+            <div class="empty-state">
+                <div class="icon"><i class="fa-solid fa-credit-card"></i></div>
+                <h3>No Payment Records Yet</h3>
+                <p style="margin-top: 10px;">The Bursar hasn't recorded any fee payments for {{ student.full_name }} yet. Check back once payments have been made.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

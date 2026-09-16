@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Discount Record</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, #6c47c9 0%, #4e2f9e 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 22px; }
+        .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; }
+        .container { max-width: 1100px; margin: 30px auto 60px; padding: 0 20px; }
+
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+
+        .info-box { background: #f0eefc; border-left: 4px solid #6c47c9; padding: 16px 20px; border-radius: 8px; margin-bottom: 25px; color: #4e2f9e; font-size: 14px; line-height: 1.6; }
+
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 25px; }
+        .card h2 { color: #333; margin-bottom: 20px; }
+
+        .shared-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 10px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; color: #444; font-size: 13px; }
+        input, select { width: 100%; padding: 11px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #6c47c9; }
+
+        .child-row {
+            display: grid; grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr 1.2fr auto;
+            gap: 12px; align-items: end; background: #faf9ff; border: 1px solid #ece7fb;
+            border-radius: 10px; padding: 16px; margin-bottom: 12px;
+        }
+        .child-row .row-num { font-weight: 800; color: #6c47c9; font-size: 13px; margin-bottom: 6px; }
+        .btn-remove-row { background: #e74c3c; color: white; border: none; border-radius: 8px; padding: 11px 14px; cursor: pointer; height: 42px; }
+        .btn-remove-row:hover { background: #c0392b; }
+        .final-fee-preview { font-size: 13px; color: #27ae60; font-weight: 700; margin-top: 4px; }
+
+        .btn-add-row {
+            background: white; border: 2px dashed #6c47c9; color: #6c47c9; padding: 14px;
+            border-radius: 10px; width: 100%; cursor: pointer; font-weight: 700; font-size: 14px; margin-bottom: 20px;
+        }
+        .btn-add-row:hover { background: #f0eefc; }
+
+        .totals-box {
+            background: #f0eefc; border-radius: 12px; padding: 20px; display: grid;
+            grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; text-align: center;
+        }
+        .totals-box .item .label { font-size: 12px; color: #6c47c9; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .totals-box .item .value { font-size: 22px; font-weight: 800; color: #4e2f9e; }
+        .totals-box .item.saved .value { color: #27ae60; }
+
+        .btn-submit { background: linear-gradient(135deg, #6c47c9 0%, #4e2f9e 100%); color: white; padding: 16px; border: none; border-radius: 10px; font-size: 17px; font-weight: 700; cursor: pointer; width: 100%; }
+        .btn-submit:hover { opacity: 0.92; }
+        .btn-cancel { background: #95a5a6; color: white; padding: 16px 26px; border: none; border-radius: 10px; font-size: 15px; text-decoration: none; display: inline-block; margin-top: 12px; }
+
+        .min-warning { color: #e74c3c; font-size: 13px; margin: -6px 0 16px; display: none; }
+
+        table.history { width: 100%; border-collapse: collapse; }
+        table.history th, table.history td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 13px; }
+        table.history th { background: #f8f9fa; color: #666; }
+        .group-id-badge { font-family: 'Courier New', monospace; background: #f0eefc; color: #6c47c9; padding: 3px 10px; border-radius: 8px; font-weight: 700; }
+
+        @media (max-width: 900px) {
+            .child-row { grid-template-columns: 1fr 1fr; }
+            .shared-fields { grid-template-columns: 1fr; }
+            .totals-box { grid-template-columns: 1fr; }
+        }
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1><i class="fa-solid fa-people-roof"></i> Start Discount Record</h1>
+        <a href="{% url 'bursar_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="info-box">
+            <i class="fa-solid fa-people-roof"></i> <strong>Sibling Discount:</strong> Use this when a family has <strong>3 or more children</strong> in the school and you're giving them a discount together. Add each child, their normal fee, and the discount amount — the system works out the final fee for each child and the totals before/after. You pick the students fresh each time; nothing is permanently linked as "siblings."
+        </div>
+
+        <form method="POST" id="discountForm">
+            {% csrf_token %}
+
+            <div class="card">
+                <h2><i class="fa-solid fa-credit-card"></i> Payment Details (applies to all children in this batch)</h2>
+                <div class="shared-fields">
+                    <div class="form-group">
+                        <label>Fee Type *</label>
+                        <input type="text" name="fee_type" placeholder="e.g. Tuition Fee" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Method *</label>
+                        <select name="payment_method" required>
+                            <option value="">-- Select --</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Card">Card</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Payment Date *</label>
+                        <input type="date" name="payment_date" id="paymentDate" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i class="fa-solid fa-people-roof"></i> Children in this Discount (minimum 3)</h2>
+                <div class="min-warning" id="minWarning"><i class="fa-solid fa-triangle-exclamation"></i> You need at least 3 children in a sibling discount record.</div>
+
+                <div id="childRows"></div>
+
+                <button type="button" class="btn-add-row" onclick="addChildRow()"><i class="fa-solid fa-plus"></i> Add Another Child</button>
+            </div>
+
+            <div class="totals-box">
+                <div class="item">
+                    <div class="label">Total Before Discount</div>
+                    <div class="value" id="totalBefore">₦0.00</div>
+                </div>
+                <div class="item saved">
+                    <div class="label">Total Discount (Saved)</div>
+                    <div class="value" id="totalDiscount">₦0.00</div>
+                </div>
+                <div class="item">
+                    <div class="label">Total Final Fee</div>
+                    <div class="value" id="totalAfter">₦0.00</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit"><i class="fa-solid fa-circle-check"></i> Create Discount Record</button>
+            <div style="text-align: center;">
+                <a href="{% url 'bursar_dashboard' %}" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+
+        {% if recent_batches %}
+        <div class="card" style="margin-top: 35px;">
+            <h2><i class="fa-solid fa-clock"></i> Recent Discount Batches</h2>
+            <div class="table-scroll-wrap">
+<table class="history">
+                <thead>
+                    <tr>
+                        <th>Batch</th>
+                        <th>Fee Type</th>
+                        <th>Children</th>
+                        <th>Before</th>
+                        <th>Discount</th>
+                        <th>After</th>
+                        <th>Recorded By</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for batch in recent_batches %}
+                    <tr>
+                        <td><span class="group-id-badge">{{ batch.group_id }}</span></td>
+                        <td>{{ batch.fee_type }}</td>
+                        <td>{{ batch.child_count }}</td>
+                        <td>₦{{ batch.total_fee_before_discount|floatformat:2 }}</td>
+                        <td style="color:#27ae60; font-weight:700;">₦{{ batch.total_discount_amount|floatformat:2 }}</td>
+                        <td>₦{{ batch.total_fee_after_discount|floatformat:2 }}</td>
+                        <td>{{ batch.recorded_by_display }}</td>
+                        <td>{{ batch.payment_date|date:"M d, Y" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Student list for the searchable dropdowns -->
+    {{ students_json|json_script:"studentsData" }}
+
+    <script>
+        const STUDENTS = JSON.parse(document.getElementById('studentsData').textContent);
+
+        let rowCount = 0;
+
+        function addChildRow() {
+            rowCount++;
+            const wrap = document.getElementById('childRows');
+            const row = document.createElement('div');
+            row.className = 'child-row';
+            row.id = 'row-' + rowCount;
+
+            const options = STUDENTS.map(function(s) {
+                return '<option value="' + s.student_id + '">' + s.full_name + ' — ' + s.student_id + ' (' + s.class_name + ')</option>';
+            }).join('');
+
+            row.innerHTML =
+                '<div><div class="row-num">Child ' + rowCount + '</div>' +
+                '<select name="student_id[]" required><option value="">-- Select Student --</option>' + options + '</select></div>' +
+                '<div><label>Normal Fee (₦)</label><input type="number" step="0.01" min="0" name="original_fee[]" class="orig-fee" required></div>' +
+                '<div><label>Discount (₦)</label><input type="number" step="0.01" min="0" name="discount_amount[]" class="disc-amt" required></div>' +
+                '<div><label>Amount Paid Now (₦)</label><input type="number" step="0.01" min="0" name="amount_paid[]" value="0"></div>' +
+                '<div><label>Final Fee</label><div class="final-fee-preview" id="preview-' + rowCount + '">₦0.00</div></div>' +
+                '<button type="button" class="btn-remove-row" onclick="removeChildRow(' + rowCount + ')"><i class="fa-solid fa-xmark"></i></button>';
+
+            wrap.appendChild(row);
+
+            row.querySelector('.orig-fee').addEventListener('input', recalc);
+            row.querySelector('.disc-amt').addEventListener('input', recalc);
+            recalc();
+        }
+
+        function removeChildRow(id) {
+            const row = document.getElementById('row-' + id);
+            if (row) row.remove();
+            recalc();
+        }
+
+        function recalc() {
+            let totalBefore = 0, totalDiscount = 0, totalAfter = 0;
+            const rows = document.querySelectorAll('.child-row');
+
+            rows.forEach(function(row) {
+                const idNum = row.id.split('-')[1];
+                const orig = parseFloat(row.querySelector('.orig-fee').value) || 0;
+                const disc = parseFloat(row.querySelector('.disc-amt').value) || 0;
+                let final = orig - disc;
+                if (final < 0) final = 0;
+
+                const preview = document.getElementById('preview-' + idNum);
+                if (preview) preview.textContent = '₦' + final.toFixed(2);
+
+                totalBefore += orig;
+                totalDiscount += disc;
+                totalAfter += final;
+            });
+
+            document.getElementById('totalBefore').textContent = '₦' + totalBefore.toFixed(2);
+            document.getElementById('totalDiscount').textContent = '₦' + totalDiscount.toFixed(2);
+            document.getElementById('totalAfter').textContent = '₦' + totalAfter.toFixed(2);
+
+            document.getElementById('minWarning').style.display = rows.length < 3 ? 'block' : 'none';
+        }
+
+        document.getElementById('discountForm').addEventListener('submit', function(e) {
+            const rows = document.querySelectorAll('.child-row');
+            if (rows.length < 3) {
+                e.preventDefault();
+                document.getElementById('minWarning').style.display = 'block';
+                window.scrollTo({ top: document.getElementById('minWarning').offsetTop - 100, behavior: 'smooth' });
+            }
+        });
+
+        // Default payment date to today, and start with 3 rows since that's the minimum
+        document.getElementById('paymentDate').valueAsDate = new Date();
+        addChildRow();
+        addChildRow();
+        addChildRow();
+    </script>
+</body>
+</html>

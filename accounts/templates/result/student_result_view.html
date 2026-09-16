@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Academic Result - {{ result.student.full_name }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     {% load static %}
     <style>
         @media print {
@@ -291,7 +292,9 @@
         .download-btn {
             background: #28a745;
         }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
 </head>
 <body>
     <div class="result-sheet">
@@ -330,10 +333,11 @@
             </div>
         </div>
         
-        <div class="report-title">📚 TERMLY ACADEMIC REPORT 📚</div>
+        <div class="report-title"><i class="fa-solid fa-book"></i> TERMLY ACADEMIC REPORT <i class="fa-solid fa-book"></i></div>
         
         <div class="table-section">
-            <table>
+            <div class="table-scroll-wrap">
+<table>
                 <thead>
                     <tr>
                         <th rowspan="2">=</th>
@@ -381,6 +385,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+</div>
         </div>
         
         <div class="bottom-section">
@@ -404,8 +409,8 @@
             <div>
                 <div class="info-box">
                     <p style="text-align: center;"><strong>CRITERIA FOR PASSING</strong></p>
-                    <p>✓ Compulsory: <strong>Maths & English</strong></p>
-                    <p>✓ Promotion Score: <strong>PASS (50%)</strong></p>
+                    <p><i class="fa-solid fa-check"></i> Compulsory: <strong>Maths & English</strong></p>
+                    <p><i class="fa-solid fa-check"></i> Promotion Score: <strong>PASS (50%)</strong></p>
                 </div>
                 
                 <div class="grading-scale">
@@ -417,56 +422,58 @@
                 
                 <div class="info-box">
                     <p><strong>AFFECTIVE & PSYCHOMOTOR</strong></p>
-                    <table style="font-size: 7px; margin-top: 2px; width: 100%;">
+                    <div class="table-scroll-wrap">
+<table style="font-size: 7px; margin-top: 2px; width: 100%;">
                         <tr>
                             <td style="text-align: left; padding: 1px;">Punctuality</td>
-                            <td style="padding: 1px;">{{ result.affective_punctuality|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.affective_punctuality|default:"<i class="fa-solid fa-check"></i>" }}</td>
                             <td style="text-align: left; padding: 1px;">Handwriting</td>
-                            <td style="padding: 1px;">{{ result.psycho_handwriting|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.psycho_handwriting|default:"<i class="fa-solid fa-check"></i>" }}</td>
                         </tr>
                         <tr>
                             <td style="text-align: left; padding: 1px;">Neatness</td>
-                            <td style="padding: 1px;">{{ result.affective_neatness|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.affective_neatness|default:"<i class="fa-solid fa-check"></i>" }}</td>
                             <td style="text-align: left; padding: 1px;">Sports</td>
-                            <td style="padding: 1px;">{{ result.psycho_sports|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.psycho_sports|default:"<i class="fa-solid fa-check"></i>" }}</td>
                         </tr>
                         <tr>
                             <td style="text-align: left; padding: 1px;">Honesty</td>
-                            <td style="padding: 1px;">{{ result.affective_honesty|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.affective_honesty|default:"<i class="fa-solid fa-check"></i>" }}</td>
                             <td style="text-align: left; padding: 1px;">Tools</td>
-                            <td style="padding: 1px;">{{ result.psycho_handling_tools|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.psycho_handling_tools|default:"<i class="fa-solid fa-check"></i>" }}</td>
                         </tr>
                         <tr>
                             <td style="text-align: left; padding: 1px;">Relationship</td>
-                            <td style="padding: 1px;">{{ result.affective_relationship|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.affective_relationship|default:"<i class="fa-solid fa-check"></i>" }}</td>
                             <td style="text-align: left; padding: 1px;">Fluency</td>
-                            <td style="padding: 1px;">{{ result.psycho_verbal_fluency|default:"✓" }}</td>
+                            <td style="padding: 1px;">{{ result.psycho_verbal_fluency|default:"<i class="fa-solid fa-check"></i>" }}</td>
                         </tr>
                     </table>
+</div>
                 </div>
             </div>
         </div>
         
         <div class="remarks-section">
-            <h4>📝 Class Teacher's Remarks:</h4>
+            <h4><i class="fa-solid fa-pen"></i> Class Teacher's Remarks:</h4>
             <p>{{ result.class_teacher_comment|default:"Keep trying! Continue to work hard." }}</p>
         </div>
         
         <div class="remarks-section">
-            <h4>👔 Principal's Comment:</h4>
+            <h4><i class="fa-solid fa-user-tie"></i> Principal's Comment:</h4>
             <p>{{ result.principal_comment|default:"Very good result! Keep it up." }}</p>
         </div>
         
         <img src="{% static 'images/stamp.jpeg' %}" class="stamp" alt="School Stamp">
         
         <p class="footer-text">
-            🎓 Elisben International College. All rights reserved ©2026
+            <i class="fa-solid fa-graduation-cap"></i> Elisben International College. All rights reserved ©2026
         </p>
     </div>
     
 <div class="no-print">
-    <button onclick="window.print()" class="btn download-btn">📥 Download PDF</button>
-    <button onclick="window.history.back()" class="btn" style="background: #666;">← Go Back</button>
+    <button onclick="window.print()" class="btn download-btn"><i class="fa-solid fa-inbox"></i> Download PDF</button>
+    <button onclick="window.history.back()" class="btn" style="background: #666;"><i class="fa-solid fa-arrow-left"></i> Go Back</button>
 </div>
 
 </body>

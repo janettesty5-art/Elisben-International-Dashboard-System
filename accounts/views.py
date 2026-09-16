@@ -425,6 +425,68 @@ def student_dashboard(request):
     return render(request, 'student_dashboard.html', context)
 
 @login_required
+def track_payment(request):
+    """Student (or their parent, logging in with the student's ID) can see every
+    single fee entry the Bursar has recorded, plus a % paid chart."""
+    try:
+        student = Student.objects.get(user=request.user)
+    except Student.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+
+    from decimal import Decimal
+
+    fee_records = FeeRecord.objects.filter(student=student).order_by('-payment_date', '-created_at')
+
+    total_fees = sum([Decimal(str(r.total_fee)) for r in fee_records]) or Decimal('0.00')
+    total_paid = sum([Decimal(str(r.amount_paid)) for r in fee_records]) or Decimal('0.00')
+    balance = total_fees - total_paid
+
+    if total_fees > 0:
+        percent_paid = float((total_paid / total_fees) * 100)
+    else:
+        percent_paid = 0.0
+
+    # Clamp the chart fill to 0-100 even if there's an overpayment,
+    # but keep the real figures for the breakdown text below the chart.
+    percent_paid_display = round(percent_paid, 1)
+    percent_paid_chart = max(0, min(100, percent_paid))
+    is_fully_paid = balance <= 0 and total_fees > 0
+    is_overpaid = balance < 0
+
+    # NEW: If this student was part of a sibling discount batch, show the
+    # other children in that same batch (no permanent family link — this is
+    # just the group they were discounted together with, per batch).
+    discount_groups = []
+    seen_group_ids = set()
+    for fr in fee_records:
+        if fr.sibling_group_id and fr.sibling_group_id not in seen_group_ids:
+            seen_group_ids.add(fr.sibling_group_id)
+            group = fr.sibling_group
+            sibling_entries = SiblingDiscountEntry.objects.filter(group=group).exclude(student=student)
+            my_entry = SiblingDiscountEntry.objects.filter(group=group, student=student).first()
+            discount_groups.append({
+                'group': group,
+                'my_entry': my_entry,
+                'siblings': sibling_entries,
+            })
+
+    context = {
+        'student': student,
+        'fee_records': fee_records,
+        'total_fees': total_fees,
+        'total_paid': total_paid,
+        'balance': balance,
+        'percent_paid_display': percent_paid_display,
+        'percent_paid_chart': percent_paid_chart,
+        'is_fully_paid': is_fully_paid,
+        'is_overpaid': is_overpaid,
+        'has_records': fee_records.exists(),
+        'discount_groups': discount_groups,
+    }
+    return render(request, 'track_payment.html', context)
+
+@login_required
 def student_profile(request):
     try:
         student = Student.objects.get(user=request.user)
@@ -1949,6 +2011,164 @@ def send_batch_to_admin(request):
     
     return redirect('principal_result_review')
 
+# ============================================================
+# NEW: PRINCIPAL STAMP & PUBLISH (same power as Admin)
+# ============================================================
+
+@login_required
+def principal_add_stamp(request, result_id):
+    """Principal adds a stamp to a single result - mirrors admin_add_stamp"""
+    try:
+        principal = Principal.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id)
+        
+        result.has_stamp = True
+        result.stamped_at = timezone.now()
+        result.stamped_by_principal = principal
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='stamp_added',
+            description=f'Stamp added to {result.student.full_name} result by Principal',
+            student_result=result,
+            performed_by_type='principal',
+            performed_by_name=principal.full_name
+        )
+        
+        messages.success(request, '✅ Stamp added!')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('principal_result_review')
+
+@login_required
+def principal_stamp_batch(request):
+    """Principal stamps multiple/all selected results at once"""
+    if request.method == 'POST':
+        try:
+            principal = Principal.objects.get(user=request.user)
+            result_ids = request.POST.getlist('result_ids')
+            
+            stamped_count = 0
+            for result_id in result_ids:
+                result = StudentResult.objects.get(id=result_id)
+                result.has_stamp = True
+                result.stamped_at = timezone.now()
+                result.stamped_by_principal = principal
+                result.save()
+                stamped_count += 1
+            
+            if stamped_count:
+                ResultActivityLog.objects.create(
+                    action='stamp_added',
+                    description=f'{stamped_count} results stamped in bulk by Principal {principal.full_name}',
+                    performed_by_type='principal',
+                    performed_by_name=principal.full_name
+                )
+            
+            messages.success(request, f'✅ {stamped_count} result(s) stamped!')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('principal_result_review')
+
+@login_required
+def principal_publish_result(request, result_id):
+    """Principal publishes a single stamped result - mirrors admin_publish_result"""
+    try:
+        principal = Principal.objects.get(user=request.user)
+        result = StudentResult.objects.get(id=result_id, has_stamp=True)
+        
+        pin = PublishedResult.generate_pin()
+        
+        PublishedResult.objects.create(
+            result=result,
+            pin=pin,
+            published_by_principal=principal,
+            academic_year=result.academic_year,
+            term=result.term,
+            class_name=result.class_name
+        )
+        
+        result.status = 'published'
+        result.save()
+        
+        ResultActivityLog.objects.create(
+            action='result_published',
+            description=f'Result published for {result.student.full_name} by Principal - PIN: {pin}',
+            student_result=result,
+            performed_by_type='principal',
+            performed_by_name=principal.full_name
+        )
+        
+        messages.success(request, f'✅ Result published! PIN: {pin}')
+    except Exception as e:
+        messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('principal_result_review')
+
+@login_required
+def principal_publish_batch(request):
+    """Principal publishes multiple/all selected results at once.
+    Any result not yet stamped is auto-stamped first, so one click handles everything."""
+    if request.method == 'POST':
+        try:
+            principal = Principal.objects.get(user=request.user)
+            result_ids = request.POST.getlist('result_ids')
+            
+            published_count = 0
+            auto_stamped_count = 0
+            skipped_count = 0
+            
+            for result_id in result_ids:
+                result = StudentResult.objects.get(id=result_id)
+                
+                # Skip results that are already published
+                if result.status == 'published':
+                    skipped_count += 1
+                    continue
+                
+                # Auto-stamp if not already stamped
+                if not result.has_stamp:
+                    result.has_stamp = True
+                    result.stamped_at = timezone.now()
+                    result.stamped_by_principal = principal
+                    result.save()
+                    auto_stamped_count += 1
+                
+                pin = PublishedResult.generate_pin()
+                PublishedResult.objects.create(
+                    result=result,
+                    pin=pin,
+                    published_by_principal=principal,
+                    academic_year=result.academic_year,
+                    term=result.term,
+                    class_name=result.class_name
+                )
+                
+                result.status = 'published'
+                result.save()
+                published_count += 1
+            
+            if published_count:
+                ResultActivityLog.objects.create(
+                    action='result_published',
+                    description=f'{published_count} results published in bulk by Principal {principal.full_name}' + (f' ({auto_stamped_count} auto-stamped first)' if auto_stamped_count else ''),
+                    performed_by_type='principal',
+                    performed_by_name=principal.full_name
+                )
+            
+            msg = f'✅ {published_count} result(s) published!'
+            if auto_stamped_count:
+                msg += f' ({auto_stamped_count} were auto-stamped first)'
+            if skipped_count:
+                msg += f' {skipped_count} already published, skipped.'
+            messages.success(request, msg)
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
+    
+    return redirect('principal_result_review')
+
 @login_required
 def admin_result_management(request):
     try:
@@ -2335,6 +2555,51 @@ def admin_dashboard(request):
         'teacher_count': teachers.count(),
     }
     return render(request, 'admin_dashboard.html', context)
+
+@login_required
+def admin_change_id(request):
+    """Let the Admin (proprietor) change their own Admin ID for privacy."""
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('unified_login')
+
+    if request.method == 'POST':
+        new_id = request.POST.get('new_admin_id', '').strip().upper()
+
+        if not new_id:
+            messages.error(request, 'Please enter a new ID.')
+            return redirect('admin_change_id')
+
+        if ' ' in new_id:
+            messages.error(request, 'ID cannot contain spaces.')
+            return redirect('admin_change_id')
+
+        if new_id == admin.admin_id:
+            messages.error(request, 'That is already your current ID.')
+            return redirect('admin_change_id')
+
+        if Admin.objects.filter(admin_id=new_id).exclude(pk=admin.pk).exists():
+            messages.error(request, f'ID "{new_id}" is already taken. Please choose a different one.')
+            return redirect('admin_change_id')
+
+        old_id = admin.admin_id
+        admin.admin_id = new_id
+        admin.save()
+
+        ActivityLog.objects.create(
+            action='admin_id_changed',
+            description=f'Admin changed their login ID from {old_id} to {new_id}',
+            performed_by_type='admin',
+            performed_by_name=admin.full_name
+        )
+
+        messages.success(request, f'✅ Your Admin ID has been changed to {new_id}. Please use this new ID next time you log in.')
+        return redirect('admin_dashboard')
+
+    context = {'admin': admin}
+    return render(request, 'admin_change_id.html', context)
 
 @login_required
 def register_student(request):
@@ -2739,6 +3004,150 @@ def manage_finance(request):
     }
     return render(request, 'manage_finance.html', context)
 
+# ============================================================
+# NEW: SIBLING DISCOUNT (3+ children discounted together)
+# ============================================================
+@login_required
+def start_discount_record(request):
+    """Bursar (or Admin) records a discounted fee for 3+ siblings in one batch.
+    This is picked manually each time — no permanent family link is stored."""
+    try:
+        bursar = Bursar.objects.get(user=request.user)
+        is_admin = False
+        user_name = bursar.full_name
+    except Bursar.DoesNotExist:
+        try:
+            admin = Admin.objects.get(user=request.user)
+            is_admin = True
+            user_name = admin.full_name
+        except Admin.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+
+    from decimal import Decimal, InvalidOperation
+
+    if request.method == 'POST':
+        try:
+            student_ids = request.POST.getlist('student_id[]')
+            original_fees = request.POST.getlist('original_fee[]')
+            discounts = request.POST.getlist('discount_amount[]')
+            amounts_paid = request.POST.getlist('amount_paid[]')
+
+            fee_type = request.POST.get('fee_type', 'Tuition Fee').strip() or 'Tuition Fee'
+            payment_method = request.POST.get('payment_method')
+            payment_date = request.POST.get('payment_date') or timezone.now().date()
+            current_term = Term.objects.filter(is_current=True).first()
+
+            def to_decimal(val):
+                try:
+                    return Decimal(val) if val not in (None, '',) else Decimal('0')
+                except InvalidOperation:
+                    return Decimal('0')
+
+            rows = []
+            for i in range(len(student_ids)):
+                sid = (student_ids[i] or '').strip()
+                if not sid:
+                    continue
+                rows.append({
+                    'student_id': sid,
+                    'original_fee': to_decimal(original_fees[i] if i < len(original_fees) else '0'),
+                    'discount': to_decimal(discounts[i] if i < len(discounts) else '0'),
+                    'amount_paid': to_decimal(amounts_paid[i] if i < len(amounts_paid) else '0'),
+                })
+
+            if len(rows) < 3:
+                messages.error(request, '⚠️ A sibling discount record needs at least 3 children. Please add more before submitting.')
+                return redirect('start_discount_record')
+
+            group = SiblingDiscountRecord.objects.create(
+                fee_type=fee_type,
+                payment_method=payment_method,
+                payment_date=payment_date,
+                term=current_term,
+                created_by=None if is_admin else bursar,
+                created_by_admin=admin if is_admin else None,
+            )
+
+            total_before = Decimal('0.00')
+            total_discount = Decimal('0.00')
+            total_after = Decimal('0.00')
+            total_paid = Decimal('0.00')
+            child_names = []
+
+            for row in rows:
+                student = Student.objects.get(student_id=row['student_id'])
+                fee_after = row['original_fee'] - row['discount']
+                if fee_after < 0:
+                    fee_after = Decimal('0.00')
+
+                SiblingDiscountEntry.objects.create(
+                    group=group,
+                    student=student,
+                    fee_before_discount=row['original_fee'],
+                    discount_amount=row['discount'],
+                    amount_paid=row['amount_paid'],
+                )
+
+                FeeRecord.objects.create(
+                    student=student,
+                    term=current_term,
+                    total_fee=fee_after,
+                    amount_paid=row['amount_paid'],
+                    fee_type=f"{fee_type} (Sibling Discount)",
+                    payment_method=payment_method,
+                    payment_date=payment_date,
+                    recorded_by=None if is_admin else bursar,
+                    recorded_by_admin=admin if is_admin else None,
+                    sibling_group=group,
+                )
+
+                total_before += row['original_fee']
+                total_discount += row['discount']
+                total_after += fee_after
+                total_paid += row['amount_paid']
+                child_names.append(student.full_name)
+
+            group.total_fee_before_discount = total_before
+            group.total_discount_amount = total_discount
+            group.total_fee_after_discount = total_after
+            group.total_amount_paid = total_paid
+            group.save()
+
+            ActivityLog.objects.create(
+                action='fee_recorded',
+                description=f'Sibling discount record ({group.group_id}) created for {len(rows)} children: {", ".join(child_names)}. Before: ₦{total_before} → After: ₦{total_after} (saved ₦{total_discount})',
+                performed_by_type='admin' if is_admin else 'bursar',
+                performed_by_name=user_name
+            )
+
+            messages.success(
+                request,
+                f'✅ Discount record {group.group_id} created for {len(rows)} children! '
+                f'Total before discount: ₦{total_before:.2f} → After discount: ₦{total_after:.2f} '
+                f'(saved ₦{total_discount:.2f} total)'
+            )
+            return redirect('bursar_dashboard')
+
+        except Student.DoesNotExist:
+            messages.error(request, 'One of the selected students could not be found. Please check the student IDs.')
+        except Exception as e:
+            messages.error(request, f'Error creating discount record: {str(e)}')
+
+    students = Student.objects.all().order_by('full_name')
+    students_json = [
+        {'student_id': s.student_id, 'full_name': s.full_name, 'class_name': s.class_name}
+        for s in students
+    ]
+    recent_batches = SiblingDiscountRecord.objects.all().order_by('-created_at')[:15]
+    context = {
+        'students': students,
+        'students_json': students_json,
+        'is_admin': is_admin,
+        'recent_batches': recent_batches,
+    }
+    return render(request, 'start_discount_record.html', context)
+
 # ============= PRINCIPAL VIEWS =============
 @login_required
 def principal_dashboard(request):
@@ -2818,6 +3227,7 @@ def bursar_dashboard(request):
     total_outstanding = sum([r['balance'] for r in outstanding_records])
     
     recent_activities = ActivityLog.objects.filter(performed_by_type='bursar')[:20]
+    active_tab = request.GET.get('tab', 'overview')
     
     context = {
         'bursar': bursar,
@@ -2828,6 +3238,7 @@ def bursar_dashboard(request):
         'total_students': students.count(),
         'activities': recent_activities,
         'search_query': search_query,
+        'active_tab': active_tab,
     }
     return render(request, 'bursar_dashboard.html', context)
 
@@ -3301,3 +3712,331 @@ def admin_fix_promotion_status(request):
         'total_results': StudentResult.objects.count(),
     }
     return render(request, 'fix_promotion_confirm.html', context)
+
+# ============================================================
+# NEW: ID CARD GENERATOR (Admin & Principal only)
+# ============================================================
+
+def _get_id_card_actor(request):
+    """Returns (admin_or_none, principal_or_none, is_admin, actor_name) or None if access denied."""
+    try:
+        admin = Admin.objects.get(user=request.user)
+        return admin, None, True, admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            return None, principal, False, principal.full_name
+        except Principal.DoesNotExist:
+            return None, None, None, None
+
+
+@login_required
+def id_card_hub(request):
+    """Landing page for the ID Card Generator - Admin and Principal only."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+
+    search_query = request.GET.get('search', '')
+    cards = IDCard.objects.all()
+    if search_query:
+        cards = cards.filter(
+            Q(full_name__icontains=search_query) | Q(id_number__icontains=search_query)
+        )
+
+    context = {
+        'admin': admin,
+        'principal': principal,
+        'is_admin': is_admin,
+        'cards': cards[:200],
+        'search_query': search_query,
+        'total_cards': IDCard.objects.count(),
+    }
+    return render(request, 'id_card_hub.html', context)
+
+
+@login_required
+def generate_student_id_card(request):
+    """Generate an ID card for an already-registered student."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+
+    if request.method == 'POST':
+        try:
+            student = Student.objects.get(student_id=request.POST.get('student_id'))
+            photo = request.FILES.get('photo') or student.profile_picture or None
+
+            card = IDCard.objects.create(
+                holder_type='student',
+                student=student,
+                full_name=student.full_name,
+                id_number=student.student_id,
+                phone_number=student.phone or '',
+                role_title=f"{student.class_name} Student",
+                photo=photo,
+                generated_by_admin=admin,
+                generated_by_principal=principal,
+            )
+
+            ActivityLog.objects.create(
+                action='student_registered',
+                description=f'ID Card generated for student {student.full_name} ({student.student_id})',
+                performed_by_type='admin' if is_admin else 'principal',
+                performed_by_name=actor_name
+            )
+
+            messages.success(request, f'✅ ID Card generated for {student.full_name}!')
+            return redirect('view_id_card', card_id=card.id)
+        except Student.DoesNotExist:
+            messages.error(request, 'Student not found.')
+        except Exception as e:
+            messages.error(request, f'Error generating ID card: {str(e)}')
+
+    students = Student.objects.all().order_by('full_name')
+    context = {
+        'students': students,
+        'is_admin': is_admin,
+    }
+    return render(request, 'generate_student_id_card.html', context)
+
+
+@login_required
+def generate_staff_id_card(request):
+    """Generate an ID card for Teaching Staff or Non-Teaching Staff.
+    Teaching staff must already be a registered Teacher (picked from a dropdown).
+    Non-Teaching staff can either be picked from existing records, or a brand
+    new one can be registered right here in the same step."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+
+    if request.method == 'POST':
+        try:
+            staff_type = request.POST.get('staff_type')
+            photo = request.FILES.get('photo')
+
+            if staff_type == 'teaching':
+                teacher = Teacher.objects.get(id=request.POST.get('teacher_id'))
+
+                card = IDCard.objects.create(
+                    holder_type='teaching_staff',
+                    teacher=teacher,
+                    full_name=teacher.full_name,
+                    id_number=teacher.teacher_id,
+                    phone_number=teacher.phone or '',
+                    role_title=f"{teacher.subject} Teacher",
+                    photo=photo,
+                    generated_by_admin=admin,
+                    generated_by_principal=principal,
+                )
+                holder_name = teacher.full_name
+
+            elif staff_type == 'non_teaching':
+                existing_id = request.POST.get('non_teaching_staff_id', '')
+
+                if existing_id and existing_id != '__new__':
+                    staff = NonTeachingStaff.objects.get(id=existing_id)
+                    new_phone = request.POST.get('phone_number', '').strip()
+                    new_role = request.POST.get('role_title', '').strip()
+                    if new_phone:
+                        staff.phone = new_phone
+                    if new_role:
+                        staff.role_title = new_role
+                    staff.save()
+                else:
+                    full_name = request.POST.get('new_full_name', '').strip()
+                    phone = request.POST.get('phone_number', '').strip()
+                    role_title = request.POST.get('role_title', '').strip() or 'Staff'
+
+                    if not full_name:
+                        messages.error(request, 'Please enter the staff full name.')
+                        return redirect('generate_staff_id_card')
+
+                    staff = NonTeachingStaff.objects.create(
+                        full_name=full_name,
+                        phone=phone,
+                        role_title=role_title,
+                        registered_by=admin,
+                        registered_by_principal=principal,
+                    )
+
+                    ActivityLog.objects.create(
+                        action='teacher_registered',
+                        description=f'New non-teaching staff registered: {staff.full_name} ({staff.staff_id}) - {staff.role_title}',
+                        performed_by_type='admin' if is_admin else 'principal',
+                        performed_by_name=actor_name
+                    )
+
+                card = IDCard.objects.create(
+                    holder_type='non_teaching_staff',
+                    non_teaching_staff=staff,
+                    full_name=staff.full_name,
+                    id_number=staff.staff_id,
+                    phone_number=staff.phone or '',
+                    role_title=staff.role_title or 'Staff',
+                    photo=photo,
+                    generated_by_admin=admin,
+                    generated_by_principal=principal,
+                )
+                holder_name = staff.full_name
+            else:
+                messages.error(request, 'Please choose Teaching Staff or Non-Teaching Staff.')
+                return redirect('generate_staff_id_card')
+
+            messages.success(request, f'✅ ID Card generated for {holder_name}!')
+            return redirect('view_id_card', card_id=card.id)
+
+        except Teacher.DoesNotExist:
+            messages.error(request, 'Selected teacher not found.')
+        except NonTeachingStaff.DoesNotExist:
+            messages.error(request, 'Selected staff member not found.')
+        except Exception as e:
+            messages.error(request, f'Error generating ID card: {str(e)}')
+
+    teachers = Teacher.objects.all().order_by('full_name')
+    non_teaching_staff = NonTeachingStaff.objects.all().order_by('full_name')
+    context = {
+        'teachers': teachers,
+        'non_teaching_staff': non_teaching_staff,
+        'is_admin': is_admin,
+    }
+    return render(request, 'generate_staff_id_card.html', context)
+
+
+@login_required
+def generate_principal_id_card(request):
+    """Generate an ID card for the Principal - Admin only."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+    if not is_admin:
+        messages.error(request, 'Only Admin can generate the Principal\'s ID card.')
+        return redirect('id_card_hub')
+
+    principals = Principal.objects.all().order_by('full_name')
+
+    if request.method == 'POST':
+        try:
+            target_principal = Principal.objects.get(id=request.POST.get('principal_id'))
+            photo = request.FILES.get('photo')
+
+            card = IDCard.objects.create(
+                holder_type='principal',
+                principal=target_principal,
+                full_name=target_principal.full_name,
+                id_number=target_principal.principal_id,
+                phone_number=request.POST.get('phone_number', '').strip(),
+                role_title='Principal',
+                photo=photo,
+                generated_by_admin=admin,
+            )
+
+            messages.success(request, f'✅ ID Card generated for Principal {target_principal.full_name}!')
+            return redirect('view_id_card', card_id=card.id)
+        except Principal.DoesNotExist:
+            messages.error(request, 'Principal not found.')
+        except Exception as e:
+            messages.error(request, f'Error generating ID card: {str(e)}')
+
+    context = {'principals': principals}
+    return render(request, 'generate_special_id_card.html', context)
+
+
+@login_required
+def generate_admin_id_card(request):
+    """Admin (proprietor) generates their own ID card."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+    if not is_admin:
+        messages.error(request, 'Only the Admin can generate their own card here.')
+        return redirect('id_card_hub')
+
+    if request.method == 'POST':
+        try:
+            photo = request.FILES.get('photo')
+
+            card = IDCard.objects.create(
+                holder_type='admin',
+                admin=admin,
+                full_name=admin.full_name,
+                id_number=admin.admin_id,
+                phone_number=request.POST.get('phone_number', '').strip(),
+                role_title='Administrator / Proprietor',
+                photo=photo,
+                generated_by_admin=admin,
+            )
+
+            messages.success(request, '✅ Your ID Card has been generated!')
+            return redirect('view_id_card', card_id=card.id)
+        except Exception as e:
+            messages.error(request, f'Error generating ID card: {str(e)}')
+
+    context = {'admin_self': admin}
+    return render(request, 'generate_special_id_card.html', context)
+
+
+@login_required
+def view_id_card(request, card_id):
+    """View / print a single generated ID card."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+
+    card = get_object_or_404(IDCard, id=card_id)
+    school = SchoolSettings.objects.first()
+
+    context = {'card': card, 'school': school}
+    return render(request, 'view_id_card.html', context)
+
+
+@login_required
+def id_card_print_sheet(request):
+    """Print up to 4 selected ID cards on one A4 sheet (2 top, 2 bottom)."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+
+    ids_param = request.GET.get('ids', '')
+    card_ids = [i for i in ids_param.split(',') if i.strip().isdigit()][:4]
+
+    if not card_ids:
+        messages.error(request, 'No cards selected to print.')
+        return redirect('id_card_hub')
+
+    # Preserve the order the user selected them in
+    cards = list(IDCard.objects.filter(id__in=card_ids))
+    cards.sort(key=lambda c: card_ids.index(str(c.id)))
+
+    school = SchoolSettings.objects.first()
+    context = {'cards': cards, 'school': school}
+    return render(request, 'id_card_print_sheet.html', context)
+
+
+@login_required
+def delete_id_card(request, card_id):
+    """Delete a generated ID card record (does not affect the underlying
+    student/teacher/staff record it was generated from)."""
+    admin, principal, is_admin, actor_name = _get_id_card_actor(request)
+    if is_admin is None:
+        messages.error(request, 'Access denied. Admin or Principal only.')
+        return redirect('unified_login')
+
+    if request.method == 'POST':
+        try:
+            card = IDCard.objects.get(id=card_id)
+            name = card.full_name
+            card.delete()
+            messages.success(request, f'🗑️ ID Card for {name} deleted.')
+        except IDCard.DoesNotExist:
+            messages.error(request, 'ID Card not found.')
+
+    return redirect('id_card_hub')

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Finance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -141,12 +142,20 @@
         .student-option:hover {
             background: #f0f0f0;
         }
-    </style>
+    
+@media (max-width: 720px) {
+    .form-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>💰 Manage Finance</h1>
-        <a href="{% if is_admin %}{% url 'admin_dashboard' %}{% else %}{% url 'bursar_dashboard' %}{% endif %}">← Back to Dashboard</a>
+        <h1><i class="fa-solid fa-sack-dollar"></i> Manage Finance</h1>
+        <a href="{% if is_admin %}{% url 'admin_dashboard' %}{% else %}{% url 'bursar_dashboard' %}{% endif %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -160,7 +169,7 @@
         
         <!-- Record Payment Form -->
         <div class="form-card">
-            <h2>💳 Record New Payment</h2>
+            <h2><i class="fa-solid fa-credit-card"></i> Record New Payment</h2>
             
             <form method="POST">
                 {% csrf_token %}
@@ -174,9 +183,9 @@
                             <input type="text" 
                                    id="student_search" 
                                    class="search-input" 
-                                   placeholder="🔍 Search by name or ID..." 
+                                   placeholder="Search by name or ID..." 
                                    onkeyup="filterStudents()">
-                            <span class="search-icon">🔍</span>
+                            <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
                         </div>
                         
                         <select name="student_id" id="student_id" required size="8" style="height: 200px;">
@@ -231,7 +240,7 @@
                 </div>
                 
                 <button type="submit" class="btn-submit">
-                    💰 Record Payment
+                    <i class="fa-solid fa-sack-dollar"></i> Record Payment
                 </button>
             </form>
         </div>

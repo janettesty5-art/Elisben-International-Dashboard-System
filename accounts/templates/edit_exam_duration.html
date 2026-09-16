@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Exam - {{ exam.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f5f7fa; }
@@ -45,8 +46,8 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>⏱️ Edit Exam Duration</h1>
-        <a href="{% url 'teacher_dashboard' %}">← Dashboard</a>
+        <h1><i class="fa-solid fa-stopwatch"></i> Edit Exam Duration</h1>
+        <a href="{% url 'teacher_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Dashboard</a>
     </nav>
 
     <div class="container">
@@ -65,11 +66,11 @@
                 <p><strong>Subject:</strong> {{ exam.subject }}</p>
                 <p><strong>Class:</strong> {{ exam.class_name }}</p>
                 <p><strong>Questions:</strong> {{ exam.questions.count }}</p>
-                <p><strong>Status:</strong> {% if exam.is_published %}✅ Published{% else %}📝 Draft{% endif %}</p>
+                <p><strong>Status:</strong> {% if exam.is_published %}<i class="fa-solid fa-circle-check"></i> Published{% else %}<i class="fa-solid fa-pen"></i> Draft{% endif %}</p>
             </div>
 
             <div class="info-box">
-                ⚠️ <strong>Note:</strong> If students are currently taking this exam, the new duration will apply to new sessions only. Students already in the exam will continue with the original time.
+                <i class="fa-solid fa-triangle-exclamation"></i> <strong>Note:</strong> If students are currently taking this exam, the new duration will apply to new sessions only. Students already in the exam will continue with the original time.
             </div>
 
             <form method="POST">
@@ -84,7 +85,7 @@
 
                 <div class="btn-row">
                     <a href="{% url 'teacher_dashboard' %}" class="btn btn-cancel">Cancel</a>
-                    <button type="submit" class="btn btn-save">💾 Save Duration</button>
+                    <button type="submit" class="btn btn-save"><i class="fa-solid fa-floppy-disk"></i> Save Duration</button>
                 </div>
             </form>
         </div>

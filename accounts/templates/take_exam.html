@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Take Exam - {{ exam.title }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         :root {
@@ -108,7 +109,7 @@
             display: flex; align-items: center; justify-content: center;
         }
         .g-btn.answered { background: var(--success); color: white; }
-        .g-btn.answered::after { content:'✓'; position:absolute; top:1px; right:3px; font-size:8px; }
+        .g-btn.answered::after { content:'<i class="fa-solid fa-check"></i>'; position:absolute; top:1px; right:3px; font-size:8px; }
         .g-btn.active { background: var(--primary); color: white; box-shadow: 0 0 0 3px rgba(26,86,219,0.3); }
         .g-btn:hover:not(.active) { transform: scale(1.1); }
 
@@ -179,7 +180,7 @@
 <!-- FIXED HEADER -->
 <header class="exam-header">
     <div class="exam-title-wrap">
-        <h1>📝 {{ exam.title }}</h1>
+        <h1><i class="fa-solid fa-pen"></i> {{ exam.title }}</h1>
         <p>{{ exam.subject }} &middot; {{ exam.class_name }} &middot; {{ questions|length }} Questions</p>
     </div>
     <div class="timer-box" id="timerBox">

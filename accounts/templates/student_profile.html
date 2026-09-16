@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -175,12 +176,16 @@
             font-weight: bold;
             margin-bottom: 20px;
         }
-    </style>
+    
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>👤 My Profile</h1>
-        <a href="{% url 'student_dashboard' %}">← Back to Dashboard</a>
+        <h1><i class="fa-solid fa-user"></i> My Profile</h1>
+        <a href="{% url 'student_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -205,7 +210,7 @@
                             </div>
                         {% endif %}
                         <label for="fileInput" class="upload-btn" title="Change profile picture">
-                            📷
+                            <i class="fa-solid fa-camera"></i>
                         </label>
                         <input type="file" id="fileInput" name="profile_picture" accept="image/*" onchange="previewImage(event)">
                     </div>

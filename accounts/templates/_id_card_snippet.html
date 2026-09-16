@@ -1,0 +1,43 @@
+{% comment %}
+Includable partial - renders ONE physical ID card.
+Expects: card (IDCard instance), school (SchoolSettings instance or None)
+Card size: 3.4in x 2.15in - standard-ish badge size, 4 fit neatly on one A4 sheet (2x2).
+{% endcomment %}
+<div class="id-card" style="--c1: {{ card.card_color.0 }}; --c2: {{ card.card_color.1 }};">
+    <div class="id-card-header">
+        {% if school.logo %}
+            <img src="{{ school.logo.url }}" alt="Logo" class="id-card-logo-img">
+        {% else %}
+            <div class="id-card-logo">{{ school.school_name|default:"School"|slice:":1" }}</div>
+        {% endif %}
+        <div>
+            <div class="id-card-school-name">{{ school.school_name|default:"Elisben International College" }}</div>
+            <div class="id-card-school-sub">{{ school.school_motto|default:"Excellence in Education" }}</div>
+        </div>
+    </div>
+
+    <div class="id-card-body">
+        {% if card.photo %}
+            <img src="{{ card.photo.url }}" alt="{{ card.full_name }}" class="id-card-photo">
+        {% else %}
+            <div class="id-card-photo id-card-photo-placeholder">{{ card.full_name|slice:":1" }}</div>
+        {% endif %}
+        <div class="id-card-info">
+            <div class="id-card-name">{{ card.full_name }}</div>
+            <div class="id-card-role">{{ card.role_title }}</div>
+            <div class="id-card-id">ID: {{ card.id_number }}</div>
+            {% if card.phone_number %}
+            <div class="id-card-phone"><i class="fa-solid fa-phone"></i> {{ card.phone_number }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="id-card-footer">
+        <div class="id-card-barcode">
+            {% for i in "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" %}
+                <span style="height: {% cycle '16px' '10px' '14px' '8px' '12px' %}; width: {% cycle '2px' '1px' '3px' '1px' '2px' %};"></span>
+            {% endfor %}
+        </div>
+        <div class="id-card-valid">If found, return to school office</div>
+    </div>
+</div>

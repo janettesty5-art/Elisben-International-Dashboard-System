@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
@@ -53,7 +54,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <h1>👨‍🏫 Teacher Dashboard</h1>
+        <h1><i class="fa-solid fa-chalkboard-user"></i> Teacher Dashboard</h1>
         <div class="user-info">
             <span>Welcome, {{ teacher.full_name }}</span>
             <span style="opacity: 0.8;">Subject: {{ teacher.subject }}</span>
@@ -72,17 +73,17 @@
         <!-- Quick Actions -->
         <div class="actions-grid">
             <a href="{% url 'create_exam' %}" class="action-btn">
-                <div class="icon">📝</div>
+                <div class="icon"><i class="fa-solid fa-pen"></i></div>
                 <div><strong>Create CBT Exam</strong></div>
                 <div style="font-size: 12px; color: #999; margin-top: 5px;">Add MCQ Questions</div>
             </a>
             <a href="{% url 'mark_attendance' %}" class="action-btn">
-                <div class="icon">✅</div>
+                <div class="icon"><i class="fa-solid fa-circle-check"></i></div>
                 <div><strong>Mark Attendance</strong></div>
                 <div style="font-size: 12px; color: #999; margin-top: 5px;">Track Student Presence</div>
             </a>
             <a href="{% url 'view_attendance' %}" class="action-btn">
-                <div class="icon">👀</div>
+                <div class="icon"><i class="fa-solid fa-eye"></i></div>
                 <div><strong>View Attendance</strong></div>
                 <div style="font-size: 12px; color: #999; margin-top: 5px;">Search Records</div>
             </a>
@@ -90,7 +91,7 @@
         
         <!-- DRAFT EXAMS SECTION -->
         <div class="section" style="border-left: 5px solid #ffc107;">
-            <h2>📝 Draft Exams <span style="font-size: 14px; color: #999; font-weight: normal;">(Not visible to students)</span></h2>
+            <h2><i class="fa-solid fa-pen"></i> Draft Exams <span style="font-size: 14px; color: #999; font-weight: normal;">(Not visible to students)</span></h2>
             <table>
                 <thead>
                     <tr>
@@ -109,16 +110,16 @@
                         <td>{{ exam.title }}</td>
                         <td>{{ exam.class_name }}</td>
                         <td>{{ exam.questions.count }} questions</td>
-                        <td><span class="status-badge status-draft">📝 DRAFT</span></td>
+                        <td><span class="status-badge status-draft"><i class="fa-solid fa-pen"></i> DRAFT</span></td>
                         <td>
-                            <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit">✏️ Edit Questions</a>
-                            <a href="{% url 'edit_exam_duration' exam.id %}" class="btn btn-duration">⏱️ Duration</a>
+                            <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit"><i class="fa-solid fa-pen-to-square"></i> Edit Questions</a>
+                            <a href="{% url 'edit_exam_duration' exam.id %}" class="btn btn-duration"><i class="fa-solid fa-stopwatch"></i> Duration</a>
                             <form method="POST" action="{% url 'toggle_exam_publish' exam.id %}" style="display:inline;">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-publish">✅ Publish</button>
+                                <button type="submit" class="btn btn-publish"><i class="fa-solid fa-circle-check"></i> Publish</button>
                             </form>
                             <a href="{% url 'delete_exam' exam.id %}" class="btn btn-delete" 
-                               onclick="return confirm('Delete this exam permanently?')">🗑️ Delete</a>
+                               onclick="return confirm('Delete this exam permanently?')"><i class="fa-solid fa-trash"></i> Delete</a>
                         </td>
                     </tr>
                     {% empty %}
@@ -132,7 +133,7 @@
         
         <!-- PUBLISHED EXAMS SECTION -->
         <div class="section" style="border-left: 5px solid #28a745;">
-            <h2>✅ Published Exams <span style="font-size: 14px; color: #999; font-weight: normal;">(Visible to students)</span></h2>
+            <h2><i class="fa-solid fa-circle-check"></i> Published Exams <span style="font-size: 14px; color: #999; font-weight: normal;">(Visible to students)</span></h2>
             <table>
                 <thead>
                     <tr>
@@ -153,15 +154,15 @@
                         <td>{{ exam.class_name }}</td>
                         <td>{{ exam.questions.count }} questions</td>
                         <td>{{ exam.duration_minutes }} mins</td>
-                        <td><span class="status-badge status-published">✅ PUBLISHED</span></td>
+                        <td><span class="status-badge status-published"><i class="fa-solid fa-circle-check"></i> PUBLISHED</span></td>
                         <td>
-                            <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit">✏️ Edit</a>
-                            <a href="{% url 'edit_exam_duration' exam.id %}" class="btn btn-duration">⏱️ Duration</a>
+                            <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
+                            <a href="{% url 'edit_exam_duration' exam.id %}" class="btn btn-duration"><i class="fa-solid fa-stopwatch"></i> Duration</a>
                             <form method="POST" action="{% url 'toggle_exam_publish' exam.id %}" style="display:inline;">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-unpublish">📝 Unpublish</button>
+                                <button type="submit" class="btn btn-unpublish"><i class="fa-solid fa-pen"></i> Unpublish</button>
                             </form>
-                            <a href="{% url 'export_results' exam.id %}" class="btn btn-export">📊 Results</a>
+                            <a href="{% url 'export_results' exam.id %}" class="btn btn-export"><i class="fa-solid fa-chart-column"></i> Results</a>
                         </td>
                     </tr>
                     {% empty %}
@@ -175,7 +176,7 @@
         
         <!-- Recent Submissions -->
         <div class="section">
-            <h2>📊 Recent Exam Submissions</h2>
+            <h2><i class="fa-solid fa-chart-column"></i> Recent Exam Submissions</h2>
             <table>
                 <thead>
                     <tr>

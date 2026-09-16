@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Exam</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -103,12 +104,16 @@
             color: #0066cc;
             font-size: 14px;
         }
-    </style>
+    
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>📝 Create New Exam</h1>
-        <a href="{% url 'teacher_dashboard' %}">← Back to Dashboard</a>
+        <h1><i class="fa-solid fa-pen"></i> Create New Exam</h1>
+        <a href="{% url 'teacher_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -116,7 +121,7 @@
             <h2>Exam Details</h2>
             
             <div class="info-box">
-                <p><strong>ℹ️ Note:</strong> After creating the exam, you'll be able to add questions with multiple choice options (A, B, C, D).</p>
+                <p><strong><i class="fa-solid fa-circle-info"></i> Note:</strong> After creating the exam, you'll be able to add questions with multiple choice options (A, B, C, D).</p>
             </div>
             
             <form method="POST">

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if admin_self %}Generate My ID Card{% else %}Generate Principal ID Card{% endif %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, {% if admin_self %}#667eea 0%, #764ba2{% else %}#8e44ad 0%, #663399{% endif %} 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 22px; }
+        .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; }
+        .container { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+
+        .card { background: white; padding: 35px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; }
+        input:focus, select:focus { outline: none; border-color: {% if admin_self %}#667eea{% else %}#8e44ad{% endif %}; }
+        input[readonly] { background: #f0f0f0; }
+
+        .photo-upload { border: 2px dashed #ddd; background: #fafafa; border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; }
+        .photo-upload:hover { background: #f2f2f2; }
+        .photo-upload input { display: none; }
+        .photo-preview { width: 100px; height: 120px; object-fit: cover; border-radius: 8px; margin: 0 auto 10px; display: block; }
+
+        .btn-submit {
+            background: linear-gradient(135deg, {% if admin_self %}#667eea 0%, #764ba2{% else %}#8e44ad 0%, #663399{% endif %} 100%);
+            color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px;
+        }
+        .btn-submit:hover { opacity: 0.92; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>{% if admin_self %}<i class="fa-solid fa-crown"></i> Generate My Own ID Card{% else %}<i class="fa-solid fa-user-tie"></i> Generate Principal's ID Card{% endif %}</h1>
+        <a href="{% url 'id_card_hub' %}"><i class="fa-solid fa-arrow-left"></i> Back to ID Card Hub</a>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-error">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {% if admin_self %}
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" value="{{ admin_self.full_name }}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Admin ID</label>
+                        <input type="text" value="{{ admin_self.admin_id }}" readonly>
+                    </div>
+                {% else %}
+                    <div class="form-group">
+                        <label>Select Principal *</label>
+                        <select name="principal_id" required>
+                            <option value="">-- Select Principal --</option>
+                            {% for p in principals %}
+                            <option value="{{ p.id }}">{{ p.full_name }} ({{ p.principal_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="text" name="phone_number" placeholder="+234 XXX XXX XXXX">
+                </div>
+
+                <div class="form-group">
+                    <label>Photo for the ID Card *</label>
+                    <label class="photo-upload" id="photoLabel">
+                        <div id="photoPreviewWrap"><i class="fa-solid fa-camera"></i> <br>Click to upload {% if admin_self %}your{% else %}their{% endif %} best picture</div>
+                        <input type="file" name="photo" id="photoInput" accept="image/*" onchange="previewPhoto(event)" required>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fa-solid fa-id-card-clip"></i> Generate ID Card</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('photoPreviewWrap').innerHTML =
+                    '<img src="' + e.target.result + '" class="photo-preview"><div>Click to change photo</div>';
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>

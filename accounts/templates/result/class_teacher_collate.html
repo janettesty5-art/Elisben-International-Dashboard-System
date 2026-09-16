@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Teacher - Collate Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -56,7 +57,7 @@
         .dept-art { background: #fce4ec; color: #c2185b; }
         .dept-commercial { background: #fff3e0; color: #f57c00; }
         
-        /* ✅ MODAL STYLES */
+        /* <i class="fa-solid fa-circle-check"></i> MODAL STYLES */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 10% auto; padding: 30px; border: 1px solid #888; border-radius: 10px; width: 90%; max-width: 500px; text-align: center; }
         .modal-icon { font-size: 60px; margin-bottom: 20px; }
@@ -68,11 +69,17 @@
         .modal-btn-yes:hover { background: #c0392b; }
         .modal-btn-no { background: #95a5a6; color: white; }
         .modal-btn-no:hover { background: #7f8c8d; }
-    </style>
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 720px) {
+    .filter-row { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
     <div class="navbar">
-        <h1>📋 Class Teacher - Collate Results</h1>
+        <h1><i class="fa-solid fa-clipboard-list"></i> Class Teacher - Collate Results</h1>
     </div>
     
     <div class="container">
@@ -126,7 +133,7 @@
             
             {% if is_senior_class and not department %}
             <div class="alert alert-warning" style="margin-top: 20px;">
-                ⚠️ <strong>Please select a department</strong> to view students for this senior class ({{ selected_class }}).
+                <i class="fa-solid fa-triangle-exclamation"></i> <strong>Please select a department</strong> to view students for this senior class ({{ selected_class }}).
             </div>
             {% endif %}
         </div>
@@ -134,7 +141,7 @@
         {% if unsent_results or sent_results %}
         {% if department %}
         <div class="dept-section">
-            <h3>🎓 Working on: {{ selected_class }} - {{ department }} Department</h3>
+            <h3><i class="fa-solid fa-graduation-cap"></i> Working on: {{ selected_class }} - {{ department }} Department</h3>
             <p style="color: #666; font-size: 14px;">You are collating results for students in the {{ department }} department.</p>
         </div>
         {% endif %}
@@ -142,10 +149,10 @@
         <div class="card">
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('unsent')">
-                    📋 Unsent Results ({{ unsent_results|length }})
+                    <i class="fa-solid fa-clipboard-list"></i> Unsent Results ({{ unsent_results|length }})
                 </button>
                 <button class="tab" onclick="switchTab('sent')">
-                    ✅ Sent Results ({{ sent_results|length }})
+                    <i class="fa-solid fa-circle-check"></i> Sent Results ({{ sent_results|length }})
                 </button>
             </div>
             
@@ -156,7 +163,8 @@
                 <form method="POST" action="{% url 'send_batch_to_principal' %}">
                     {% csrf_token %}
                     
-                    <table>
+                    <div class="table-scroll-wrap">
+<table>
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="select-all-unsent"></th>
@@ -187,30 +195,30 @@
                                 <td>{{ item.subject_count }} subjects</td>
                                 <td>
                                     {% if item.result %}
-                                        <span class="status-badge status-unsent">📝 READY TO SEND</span>
+                                        <span class="status-badge status-unsent"><i class="fa-solid fa-pen"></i> READY TO SEND</span>
                                     {% else %}
-                                        <span class="status-badge status-unsent">⚠️ NOT STARTED</span>
+                                        <span class="status-badge status-unsent"><i class="fa-solid fa-triangle-exclamation"></i> NOT STARTED</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     {% if item.result %}
-                                        <!-- ✅ DELETE BUTTON WITH MODAL -->
+                                        <!-- <i class="fa-solid fa-circle-check"></i> DELETE BUTTON WITH MODAL -->
                                         <button type="button" class="btn btn-delete delete-result-btn" 
                                                 style="font-size: 13px; padding: 8px 15px;"
                                                 data-result-id="{{ item.result.id }}"
                                                 data-student-name="{{ item.student.full_name }}">
-                                            🗑️ Delete
+                                            <i class="fa-solid fa-trash"></i> Delete
                                         </button>
                                         
                                         <a href="{% url 'class_teacher_edit_result' item.result.id %}" class="btn btn-edit" style="font-size: 13px; padding: 8px 15px;">
-                                            ✏️ Edit
+                                            <i class="fa-solid fa-pen-to-square"></i> Edit
                                         </a>
                                         <a href="{% url 'send_result_to_principal' item.result.id %}" class="btn btn-send" style="font-size: 13px; padding: 8px 15px;">
-                                            📤 Send to Principal
+                                            <i class="fa-solid fa-paper-plane"></i> Send to Principal
                                         </a>
                                     {% else %}
                                         <a href="{% url 'class_teacher_start_result' %}?student_id={{ item.student.id }}&term={{ term }}&year={{ academic_year }}" class="btn" style="font-size: 13px; padding: 8px 15px;">
-                                            ➕ Start Result
+                                            <i class="fa-solid fa-plus"></i> Start Result
                                         </a>
                                     {% endif %}
                                 </td>
@@ -218,24 +226,26 @@
                             {% endfor %}
                         </tbody>
                     </table>
+</div>
                     
                     <div style="margin-top: 30px; text-align: center;">
-                        <button type="submit" class="btn btn-send">📤 Send Selected to Principal</button>
+                        <button type="submit" class="btn btn-send"><i class="fa-solid fa-paper-plane"></i> Send Selected to Principal</button>
                     </div>
                 </form>
             </div>
             
             <!-- SENT RESULTS TAB -->
             <div id="sent-tab" class="tab-content">
-                <h2>📤 Sent Results</h2>
+                <h2><i class="fa-solid fa-paper-plane"></i> Sent Results</h2>
                 <p class="alert-info" style="padding: 10px; margin-bottom: 20px;">
-                    ℹ️ These results have been sent to Principal. You can still edit and resend them if needed.
+                    <i class="fa-solid fa-circle-info"></i> These results have been sent to Principal. You can still edit and resend them if needed.
                 </p>
                 
                 <form method="POST" action="{% url 'send_batch_to_principal' %}">
                     {% csrf_token %}
                     
-                    <table>
+                    <div class="table-scroll-wrap">
+<table>
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="select-all-sent"></th>
@@ -265,11 +275,11 @@
                                 <td>{{ item.subject_count }} subjects</td>
                                 <td>
                                     {% if item.result.status == 'sent_to_principal' %}
-                                        <span class="status-badge status-sent">✅ SENT TO PRINCIPAL</span>
+                                        <span class="status-badge status-sent"><i class="fa-solid fa-circle-check"></i> SENT TO PRINCIPAL</span>
                                     {% elif item.result.status == 'sent_to_admin' %}
-                                        <span class="status-badge status-sent">✅ WITH ADMIN</span>
+                                        <span class="status-badge status-sent"><i class="fa-solid fa-circle-check"></i> WITH ADMIN</span>
                                     {% elif item.result.status == 'published' %}
-                                        <span class="status-badge status-sent">🎉 PUBLISHED</span>
+                                        <span class="status-badge status-sent"><i class="fa-solid fa-champagne-glasses"></i> PUBLISHED</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -281,11 +291,11 @@
                                 </td>
                                 <td>
                                     <a href="{% url 'class_teacher_edit_result' item.result.id %}" class="btn btn-edit" style="font-size: 13px; padding: 8px 15px;">
-                                        ✏️ Edit
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
                                     </a>
                                     {% if item.result.status != 'published' %}
                                     <a href="{% url 'send_result_to_principal' item.result.id %}" class="btn btn-resend" style="font-size: 13px; padding: 8px 15px;">
-                                        🔄 Resend (Update)
+                                        <i class="fa-solid fa-rotate"></i> Resend (Update)
                                     </a>
                                     {% endif %}
                                 </td>
@@ -293,9 +303,10 @@
                             {% endfor %}
                         </tbody>
                     </table>
+</div>
                     
                     <div style="margin-top: 30px; text-align: center;">
-                        <button type="submit" class="btn btn-resend">🔄 Resend Selected (Update)</button>
+                        <button type="submit" class="btn btn-resend"><i class="fa-solid fa-rotate"></i> Resend Selected (Update)</button>
                     </div>
                 </form>
             </div>
@@ -303,14 +314,14 @@
         {% endif %}
         
         <div style="text-align: center;">
-            <a href="{% url 'make_result_portal' %}" class="btn btn-back">← Back</a>
+            <a href="{% url 'make_result_portal' %}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
         </div>
     </div>
     
-    <!-- ✅ DELETE CONFIRMATION MODAL -->
+    <!-- <i class="fa-solid fa-circle-check"></i> DELETE CONFIRMATION MODAL -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
-            <div class="modal-icon">⚠️</div>
+            <div class="modal-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <div class="modal-message">Are you sure you want to delete this result?</div>
             <div class="modal-sub" id="deleteStudentName"></div>
             <p style="color: #e74c3c; font-size: 13px; margin-bottom: 20px;">This action cannot be undone!</p>
@@ -346,7 +357,7 @@
             });
         });
         
-        // ✅ DELETE MODAL FUNCTIONALITY
+        // <i class="fa-solid fa-circle-check"></i> DELETE MODAL FUNCTIONALITY
         const deleteModal = document.getElementById('deleteModal');
         const deleteStudentName = document.getElementById('deleteStudentName');
         const confirmDeleteBtn = document.getElementById('confirmDelete');

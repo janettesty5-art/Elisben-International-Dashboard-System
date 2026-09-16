@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mark Attendance</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -218,12 +219,16 @@
             font-size: 60px;
             margin-bottom: 20px;
         }
-    </style>
+    
+@media (max-width: 768px) {
+    .navbar { flex-direction: column; gap: 10px; text-align: center; }
+}
+</style>
 </head>
 <body>
     <nav class="navbar">
-        <h1>✅ Mark Attendance</h1>
-        <a href="{% url 'teacher_dashboard' %}">← Back to Dashboard</a>
+        <h1><i class="fa-solid fa-circle-check"></i> Mark Attendance</h1>
+        <a href="{% url 'teacher_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
     </nav>
     
     <div class="container">
@@ -275,17 +280,17 @@
                         <div class="attendance-options">
                             <label class="attendance-btn present">
                                 <input type="radio" name="status_{{ student.id }}" value="Present" required>
-                                <span>✓ Present</span>
+                                <span><i class="fa-solid fa-check"></i> Present</span>
                             </label>
                             
                             <label class="attendance-btn absent">
                                 <input type="radio" name="status_{{ student.id }}" value="Absent">
-                                <span>✗ Absent</span>
+                                <span><i class="fa-solid fa-xmark"></i> Absent</span>
                             </label>
                             
                             <label class="attendance-btn late">
                                 <input type="radio" name="status_{{ student.id }}" value="Late">
-                                <span>⏰ Late</span>
+                                <span><i class="fa-solid fa-clock"></i> Late</span>
                             </label>
                         </div>
                     </div>
@@ -300,7 +305,7 @@
         {% elif selected_class %}
         <div class="attendance-card">
             <div class="empty-state">
-                <div class="empty-state-icon">📚</div>
+                <div class="empty-state-icon"><i class="fa-solid fa-book"></i></div>
                 <h3>No Students Found</h3>
                 <p>There are no students registered in {{ selected_class }}.</p>
             </div>
@@ -308,7 +313,7 @@
         {% else %}
         <div class="attendance-card">
             <div class="empty-state">
-                <div class="empty-state-icon">👆</div>
+                <div class="empty-state-icon"><i class="fa-solid fa-hand-point-up"></i></div>
                 <h3>Select a Class</h3>
                 <p>Choose a class from the dropdown above to mark attendance.</p>
             </div>

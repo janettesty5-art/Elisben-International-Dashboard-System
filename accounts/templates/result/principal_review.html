@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Principal - Review Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -23,11 +24,17 @@
         table th, table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         table th { background: #8e44ad; color: white; }
         .status-badge { padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; background: #fff3cd; color: #856404; }
-    </style>
+        .stamp-badge { padding: 5px 12px; border-radius: 15px; font-size: 12px; font-weight: 600; background: #d4edda; color: #155724; }
+        .btn-stamp { background: #f39c12; }
+        .btn-publish { background: #16a085; }
+        .action-toolbar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; }
+    
+.table-scroll-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
 </head>
 <body>
     <div class="navbar">
-        <h1>👔 Principal - Review Incoming Results</h1>
+        <h1><i class="fa-solid fa-user-tie"></i> Principal - Review Incoming Results</h1>
     </div>
     
     <div class="container">
@@ -38,17 +45,21 @@
         {% endif %}
         
         <div class="alert alert-info">
-            <strong>ℹ️ Your Task:</strong> Review results sent by class teachers. Add your principal's comment and forward to admin for final approval.
+            <strong><i class="fa-solid fa-circle-info"></i> Your Task:</strong> Review results sent by class teachers. Add your principal's comment and forward to admin for final approval.
         </div>
         
         <div class="card">
-            <h2>📥 Incoming Results</h2>
+            <h2><i class="fa-solid fa-inbox"></i> Incoming Results</h2>
             
             {% if incoming_results %}
-                <form method="POST" action="{% url 'send_batch_to_admin' %}">
+                <div class="alert alert-info" style="margin-bottom: 20px;">
+                    <strong><i class="fa-solid fa-print"></i> New:</strong> You can now Stamp and Publish results directly from here — no need to send everything to Admin first. Select multiple results and use the toolbar below to stamp or publish them all at once.
+                </div>
+                <form method="POST" id="resultsForm">
                     {% csrf_token %}
                     
-                    <table>
+                    <div class="table-scroll-wrap">
+<table>
                         <thead>
                             <tr>
                                 <th><input type="checkbox" id="select-all"></th>
@@ -75,15 +86,28 @@
                                 <td><strong>{{ result.average_score|floatformat:2 }}%</strong></td>
                                 <td>{{ result.class_teacher.full_name }}</td>
                                 <td>
-                                    <span class="status-badge">📝 PENDING</span>
+                                    {% if result.has_stamp %}
+                                        <span class="stamp-badge"><i class="fa-solid fa-print"></i> STAMPED</span>
+                                    {% else %}
+                                        <span class="status-badge"><i class="fa-solid fa-pen"></i> PENDING</span>
+                                    {% endif %}
                                 </td>
                                 <td>
                                     <a href="{% url 'principal_add_comment' result.id %}" class="btn" style="font-size: 13px; padding: 8px 15px;">
-                                        💬 Add Comment
+                                        <i class="fa-solid fa-comment"></i> Comment
                                     </a>
                                     {% if result.principal_comment %}
                                     <a href="{% url 'send_result_to_admin' result.id %}" class="btn btn-send" style="font-size: 13px; padding: 8px 15px;">
-                                        📤 Send to Admin
+                                        <i class="fa-solid fa-paper-plane"></i> To Admin
+                                    </a>
+                                    {% endif %}
+                                    {% if not result.has_stamp %}
+                                    <a href="{% url 'principal_add_stamp' result.id %}" class="btn btn-stamp" style="font-size: 13px; padding: 8px 15px;">
+                                        <i class="fa-solid fa-print"></i> Stamp
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'principal_publish_result' result.id %}" class="btn btn-publish" style="font-size: 13px; padding: 8px 15px;">
+                                        <i class="fa-solid fa-circle-check"></i> Publish
                                     </a>
                                     {% endif %}
                                 </td>
@@ -91,10 +115,13 @@
                             {% endfor %}
                         </tbody>
                     </table>
+</div>
                     
-                    <div style="margin-top: 30px; text-align: center;">
-                        <button type="submit" class="btn btn-send-all">📤 Send Selected to Admin</button>
-                        <a href="{% url 'make_result_portal' %}" class="btn btn-back">← Back</a>
+                    <div class="action-toolbar">
+                        <button type="submit" formaction="{% url 'principal_stamp_batch' %}" class="btn btn-stamp"><i class="fa-solid fa-print"></i> Stamp Selected</button>
+                        <button type="submit" formaction="{% url 'principal_publish_batch' %}" class="btn btn-publish"><i class="fa-solid fa-circle-check"></i> Publish Selected (auto-stamps if needed)</button>
+                        <button type="submit" formaction="{% url 'send_batch_to_admin' %}" class="btn btn-send-all"><i class="fa-solid fa-paper-plane"></i> Send Selected to Admin</button>
+                        <a href="{% url 'make_result_portal' %}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
                     </div>
                 </form>
             {% else %}

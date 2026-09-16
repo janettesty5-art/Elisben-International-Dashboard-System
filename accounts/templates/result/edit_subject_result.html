@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subject Teacher - Edit Result</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; background: #f5f5f5; }
@@ -28,11 +29,17 @@
         .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
         .grade-ref { background: #fff3cd; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 13px; }
         .grade-ref h4 { color: #856404; margin-bottom: 10px; }
-    </style>
+    
+@media (max-width: 720px) {
+    .info-grid { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: 1fr; }
+    .calc-grid { grid-template-columns: 1fr; }
+}
+</style>
 </head>
 <body>
     <div class="navbar">
-        <h1>✏️ Subject Teacher - Edit Result</h1>
+        <h1><i class="fa-solid fa-pen-to-square"></i> Subject Teacher - Edit Result</h1>
     </div>
     
     <div class="container">
@@ -166,15 +173,15 @@
                 
                 <!-- Submit Buttons -->
                 <div style="text-align: center; margin-top: 30px;">
-                    <button type="submit" class="btn">💾 Save Changes</button>
-                    <a href="{% url 'subject_teacher_entry' %}" class="btn btn-back">← Back</a>
+                    <button type="submit" class="btn"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+                    <a href="{% url 'subject_teacher_entry' %}" class="btn btn-back"><i class="fa-solid fa-arrow-left"></i> Back</a>
                 </div>
             </form>
         </div>
     </div>
     
     <script>
-        // ✅ FIXED: Proper way to check term in JavaScript
+        // <i class="fa-solid fa-circle-check"></i> FIXED: Proper way to check term in JavaScript
         const currentTerm = "{{ result.term }}";
         const isTerm2or3 = (currentTerm === "Second Term" || currentTerm === "Third Term");
         
