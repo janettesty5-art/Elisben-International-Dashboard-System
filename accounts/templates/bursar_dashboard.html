@@ -93,17 +93,25 @@
             .search-bar-form { flex-direction: column; }
             .tab-strip { flex-wrap: nowrap; }
         }
+
+        .btn-back { background: rgba(255,255,255,0.35); color: white; padding: 10px 20px; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; }
+.btn-back:hover { background: rgba(255,255,255,0.5); }
     </style>
 </head>
 <body>
-    <nav class="navbar">
-        <h1><i class="fa-solid fa-sack-dollar"></i> Bursar Dashboard</h1>
-        <div class="user-info">
-            <span>Welcome, {{ bursar.full_name }}</span>
-            <span style="opacity: 0.7;">ID: {{ bursar.bursar_id }}</span>
-            <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
-        </div>
-    </nav>
+   <nav class="navbar">
+    <h1><i class="fa-solid fa-sack-dollar"></i> Bursar Dashboard</h1>
+    <div class="user-info">
+        <span>Welcome, {{ viewer_name }}</span>
+        <span style="opacity: 0.7;">ID: {{ viewer_id }}</span>
+        {% if is_admin %}
+            <a href="{% url 'admin_dashboard' %}" class="btn-back">
+                <i class="fa-solid fa-arrow-left"></i> Admin Dashboard
+            </a>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+    </div>
+</nav>
 
     <div class="container">
         {% if messages %}

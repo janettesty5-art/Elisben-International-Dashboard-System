@@ -3005,7 +3005,7 @@ def manage_finance(request):
             )
             
             messages.success(request, '✅ PAYMENT RECORDED SUCCESSFULLY!')
-            return redirect('bursar_dashboard' if not is_admin else 'manage_finance')
+            return redirect('bursar_dashboard')
         except Student.DoesNotExist:
             messages.error(request, 'Student not found.')
         except Exception as e:
@@ -3188,71 +3188,123 @@ def principal_dashboard(request):
 
 # ============= REPLACE YOUR bursar_dashboard VIEW =============
 
+# ============= BURSAR DASHBOARD =============
 @login_required
 def bursar_dashboard(request):
+    """Full finance dashboard.
+
+    Owned by the Bursar. The Admin/proprietor sees the exact same page with
+    the same powers. This view is read-only as far as the database is
+    concerned — it writes no ActivityLog row, so opening it leaves no trace.
+    """
+    from decimal import Decimal
+    from django.db.models import Count, Value, DecimalField
+    from django.db.models.functions import Coalesce
+
+    bursar = None
+    admin = None
     try:
         bursar = Bursar.objects.get(user=request.user)
+        is_admin = False
+        viewer_name = bursar.full_name
+        viewer_id = bursar.bursar_id
     except Bursar.DoesNotExist:
-        messages.error(request, 'Access denied.')
-        return redirect('unified_login')
-    
-    from decimal import Decimal
-    
-    search_query = request.GET.get('search', '')
-    
-    # Get all students
-    students = Student.objects.all()
-    
-    # Calculate balanced and outstanding records
+        try:
+            admin = Admin.objects.get(user=request.user)
+            is_admin = True
+            viewer_name = admin.full_name
+            viewer_id = admin.admin_id
+        except Admin.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+
+    search_query = request.GET.get('search', '').strip()
+    money = DecimalField(max_digits=12, decimal_places=2)
+
+    def annotated_students():
+        """Every student who has at least one fee record, with their
+        totals rolled up in SQL instead of a query per student."""
+        return Student.objects.annotate(
+            record_count=Count('feerecord'),
+            sum_fees=Coalesce(Sum('feerecord__total_fee'),
+                              Value(Decimal('0.00')), output_field=money),
+            sum_paid=Coalesce(Sum('feerecord__amount_paid'),
+                              Value(Decimal('0.00')), output_field=money),
+        ).filter(record_count__gt=0)
+
+    # --- School-wide figures: always the true totals, never the search subset
+    school_fees = Decimal('0.00')
+    school_outstanding = Decimal('0.00')
+    for fees, paid in annotated_students().values_list('sum_fees', 'sum_paid'):
+        school_fees += paid
+        if fees > paid:
+            school_outstanding += (fees - paid)
+
+    # --- The table rows (search applies here only)
+    rows = annotated_students()
+    if search_query:
+        rows = rows.filter(
+            Q(full_name__icontains=search_query) |
+            Q(student_id__icontains=search_query)
+        )
+    rows = rows.order_by('full_name')
+
+    # Newest payment per student, in a single query
+    latest_by_student_pk = {}
+    for record in FeeRecord.objects.filter(
+        student__in=rows
+    ).order_by('student', '-payment_date', '-created_at'):
+        latest_by_student_pk.setdefault(record.student_id, record)
+
     balanced_records = []
     outstanding_records = []
-    
-    for student in students:
-        # Get all payment records for this student
-        student_records = FeeRecord.objects.filter(student=student).order_by('-payment_date')
-        
-        if student_records.exists():
-            # Calculate total fees and total paid using Decimal for precision
-            total_fees = sum([Decimal(str(r.total_fee)) for r in student_records])
-            total_paid = sum([Decimal(str(r.amount_paid)) for r in student_records])
-            balance = total_fees - total_paid
-            
-            latest_record = student_records.first()
-            
-            record_data = {
-                'student': student,
-                'total_fees': total_fees,
-                'total_paid': total_paid,
-                'balance': balance,
-                'latest_record': latest_record,
-                'record_count': student_records.count(),
-            }
-            
-            # Use Decimal comparison for accuracy
-            if balance <= Decimal('0.00'):
-                balanced_records.append(record_data)
-            else:
-                outstanding_records.append(record_data)
-    
-    # Apply search filter
-    if search_query:
-        balanced_records = [r for r in balanced_records if search_query.lower() in r['student'].full_name.lower() or search_query.lower() in r['student'].student_id.lower()]
-        outstanding_records = [r for r in outstanding_records if search_query.lower() in r['student'].full_name.lower() or search_query.lower() in r['student'].student_id.lower()]
-    
-    # Calculate totals
-    total_fees_collected = sum([r['total_paid'] for r in balanced_records + outstanding_records])
-    total_outstanding = sum([r['balance'] for r in outstanding_records])
-    
-    recent_activities = ActivityLog.objects.filter(performed_by_type='bursar')[:20]
+
+    for student in rows:
+        balance = student.sum_fees - student.sum_paid
+        record_data = {
+            'student': student,
+            'total_fees': student.sum_fees,
+            'total_paid': student.sum_paid,
+            'balance': balance,
+            'latest_record': latest_by_student_pk.get(student.pk),
+            'record_count': student.record_count,
+        }
+        if balance <= Decimal('0.00'):
+            balanced_records.append(record_data)
+        else:
+            outstanding_records.append(record_data)
+
+    # Biggest debtors first, so the Outstanding tab is actionable
+    outstanding_records.sort(key=lambda r: r['balance'], reverse=True)
+
+    # --- Activity feed
+    if is_admin:
+        # Proprietor sees every money movement, whoever recorded it
+        recent_activities = ActivityLog.objects.filter(
+            Q(performed_by_type='bursar') | Q(action='fee_recorded')
+        ).order_by('-timestamp')[:20]
+    else:
+        recent_activities = ActivityLog.objects.filter(
+            performed_by_type='bursar'
+        ).order_by('-timestamp')[:20]
+
     active_tab = request.GET.get('tab', 'overview')
-    
+    if active_tab not in ('overview', 'outstanding', 'balanced'):
+        active_tab = 'overview'
+    if search_query and request.GET.get('tab') is None:
+        active_tab = 'outstanding'
+
     context = {
         'bursar': bursar,
+        'admin': admin,
+        'is_admin': is_admin,
+        'viewer_name': viewer_name,
+        'viewer_id': viewer_id,
         'balanced_records': balanced_records,
         'outstanding_records': outstanding_records,
-        'total_fees': total_fees_collected,
-        'total_outstanding': total_outstanding,
-        'total_students': students.count(),
+        'total_fees': school_fees,
+        'total_outstanding': school_outstanding,
+        'total_students': Student.objects.count(),
         'activities': recent_activities,
         'search_query': search_query,
         'active_tab': active_tab,
