@@ -3823,7 +3823,7 @@ def generate_student_id_card(request):
                 full_name=student.full_name,
                 id_number=student.student_id,
                 phone_number=student.phone or '',
-                role_title=f"{student.class_name} Student",
+                role_title="Verified EIC Student",
                 photo=photo,
                 generated_by_admin=admin,
                 generated_by_principal=principal,
@@ -3971,11 +3971,16 @@ def generate_principal_id_card(request):
     if request.method == 'POST':
         try:
             target_principal = Principal.objects.get(id=request.POST.get('principal_id'))
+
+            entered_name = request.POST.get('principal_name', '').strip()
+            if entered_name:
+                target_principal.full_name = entered_name
+                target_principal.save()
+
             photo = _normalize_photo(request.FILES.get('photo'))
 
             school = SchoolSettings.objects.first()
             school_name = school.school_name if school and school.school_name else 'Elisben International College'
-            # e.g. "ELISBEN INTERNATIONAL COLLEGE PRINCIPAL"
             role_title = f"{school_name} PRINCIPAL".upper()
 
             card = IDCard.objects.create(
@@ -4013,6 +4018,11 @@ def generate_admin_id_card(request):
 
     if request.method == 'POST':
         try:
+            entered_name = request.POST.get('full_name', '').strip()
+            if entered_name:
+                admin.full_name = entered_name
+                admin.save()
+
             photo = _normalize_photo(request.FILES.get('photo'))
 
             card = IDCard.objects.create(

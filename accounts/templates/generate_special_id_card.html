@@ -23,6 +23,8 @@
         input:focus, select:focus { outline: none; border-color: {% if admin_self %}#667eea{% else %}#8e44ad{% endif %}; }
         input[readonly] { background: #f0f0f0; }
 
+        .hint { font-size: 12px; color: #888; margin-top: 6px; }
+
         .photo-upload { border: 2px dashed #ddd; background: #fafafa; border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; }
         .photo-upload:hover { background: #f2f2f2; }
         .photo-upload input { display: none; }
@@ -53,13 +55,14 @@
         {% endif %}
 
         <div class="card">
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" id="specialForm">
                 {% csrf_token %}
 
                 {% if admin_self %}
                     <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" value="{{ admin_self.full_name }}" readonly>
+                        <label>Full Name *</label>
+                        <input type="text" name="full_name" id="fullNameInput" value="{{ admin_self.full_name }}" required>
+                        <div class="hint">This is what will print on the card — edit it if it's wrong.</div>
                     </div>
                     <div class="form-group">
                         <label>Admin ID</label>
@@ -68,12 +71,17 @@
                 {% else %}
                     <div class="form-group">
                         <label>Select Principal *</label>
-                        <select name="principal_id" required>
+                        <select name="principal_id" id="principalSelect" required onchange="fillPrincipalName()">
                             <option value="">-- Select Principal --</option>
                             {% for p in principals %}
-                            <option value="{{ p.id }}">{{ p.full_name }} ({{ p.principal_id }})</option>
+                            <option value="{{ p.id }}" data-name="{{ p.full_name }}">{{ p.full_name }} ({{ p.principal_id }})</option>
                             {% endfor %}
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Principal Name *</label>
+                        <input type="text" name="principal_name" id="principalNameInput" placeholder="Enter the Principal's full name" required>
+                        <div class="hint">Auto-filled when you pick a Principal above — edit it if it's wrong or needs updating.</div>
                     </div>
                 {% endif %}
 
@@ -96,6 +104,16 @@
     </div>
 
     <script>
+        function fillPrincipalName() {
+            const select = document.getElementById('principalSelect');
+            const nameInput = document.getElementById('principalNameInput');
+            const selected = select.options[select.selectedIndex];
+            const name = selected ? selected.getAttribute('data-name') : '';
+            if (name) {
+                nameInput.value = name;
+            }
+        }
+
         function previewPhoto(event) {
             const file = event.target.files[0];
             if (!file) return;
