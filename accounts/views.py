@@ -4251,3 +4251,47 @@ def delete_id_card(request, card_id):
             messages.error(request, 'ID Card not found.')
 
     return redirect('id_card_hub')
+
+# ============= SCHOOL SETTINGS (LOGO UPLOAD) =============
+@login_required
+def school_settings_edit(request):
+    """Let the Admin upload/change the school logo and basic details,
+    without ever touching Django admin."""
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('unified_login')
+
+    school = SchoolSettings.objects.first()
+    if school is None:
+        school = SchoolSettings.objects.create()
+
+    if request.method == 'POST':
+        try:
+            school.school_name = request.POST.get('school_name', school.school_name).strip() or school.school_name
+            school.school_motto = request.POST.get('school_motto', school.school_motto).strip() or school.school_motto
+            school.address = request.POST.get('address', school.address)
+            school.phone = request.POST.get('phone', school.phone).strip() or school.phone
+            school.email = request.POST.get('email', school.email).strip() or school.email
+            school.website = request.POST.get('website', '').strip() or None
+
+            if request.FILES.get('logo'):
+                school.logo = request.FILES['logo']
+
+            school.save()
+
+            ActivityLog.objects.create(
+                action='admin_id_changed',
+                description=f'Admin {admin.full_name} updated school settings' + (' (new logo uploaded)' if request.FILES.get('logo') else ''),
+                performed_by_type='admin',
+                performed_by_name=admin.full_name
+            )
+
+            messages.success(request, '✅ School settings updated successfully!')
+            return redirect('school_settings_edit')
+        except Exception as e:
+            messages.error(request, f'Error updating school settings: {str(e)}')
+
+    context = {'admin': admin, 'school': school}
+    return render(request, 'school_settings_edit.html', context)

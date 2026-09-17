@@ -131,4 +131,5 @@ urlpatterns = [
     path('id-cards/view/<int:card_id>/', views.view_id_card, name='view_id_card'),
     path('id-cards/print-sheet/', views.id_card_print_sheet, name='id_card_print_sheet'),
     path('id-cards/delete/<int:card_id>/', views.delete_id_card, name='delete_id_card'),
+    path('admin/school-settings/', views.school_settings_edit, name='school_settings_edit'),
 ]

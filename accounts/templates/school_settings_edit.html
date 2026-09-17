@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Settings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar h1 { font-size: 22px; }
+        .navbar a { color: white; text-decoration: none; padding: 10px 20px; background: rgba(255,255,255,0.2); border-radius: 8px; }
+        .container { max-width: 650px; margin: 40px auto; padding: 0 20px; }
+
+        .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+
+        .card { background: white; padding: 35px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .form-group { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+        input, textarea { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 15px; font-family: inherit; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
+        textarea { resize: vertical; min-height: 70px; }
+
+        .logo-current { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; padding: 14px; background: #f8f9fa; border-radius: 10px; }
+        .logo-current img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid #eee; background: #fff; }
+        .logo-current .placeholder { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 24px; }
+        .logo-current .label { font-size: 13px; color: #888; }
+
+        .photo-upload { border: 2px dashed #ddd; background: #fafafa; border-radius: 10px; padding: 22px; text-align: center; cursor: pointer; }
+        .photo-upload:hover { background: #f2f2f2; }
+        .photo-upload input { display: none; }
+        .photo-preview { width: 90px; height: 90px; object-fit: cover; border-radius: 50%; margin: 0 auto 10px; display: block; }
+
+        .btn-submit { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-submit:hover { opacity: 0.92; }
+
+        @media (max-width: 768px) {
+            .navbar { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1><i class="fa-solid fa-school"></i> School Settings</h1>
+        <a href="{% url 'admin_dashboard' %}"><i class="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
+    </nav>
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label>School Logo</label>
+                    <div class="logo-current">
+                        {% if school.logo %}
+                            <img src="{{ school.logo.url }}" alt="Current logo">
+                            <div class="label">Current logo — upload a new one below to replace it</div>
+                        {% else %}
+                            <div class="placeholder">{{ school.school_name|slice:":1" }}</div>
+                            <div class="label">No logo uploaded yet — the "{{ school.school_name|slice:":1" }}" badge shows on ID cards and results until you add one</div>
+                        {% endif %}
+                    </div>
+                    <label class="photo-upload" id="photoLabel">
+                        <div id="photoPreviewWrap"><i class="fa-solid fa-image"></i> <br>Click to upload the school logo</div>
+                        <input type="file" name="logo" id="photoInput" accept="image/*" onchange="previewPhoto(event)">
+                    </label>
+                    <p style="font-size:12px; color:#888; margin-top:6px;">Leave empty if you don't want to change the logo right now.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>School Name</label>
+                    <input type="text" name="school_name" value="{{ school.school_name }}">
+                </div>
+
+                <div class="form-group">
+                    <label>School Motto</label>
+                    <input type="text" name="school_motto" value="{{ school.school_motto }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea name="address">{{ school.address }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" name="phone" value="{{ school.phone }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ school.email }}">
+                </div>
+
+                <div class="form-group">
+                    <label>Website (optional)</label>
+                    <input type="url" name="website" value="{{ school.website|default:'' }}" placeholder="https://...">
+                </div>
+
+                <button type="submit" class="btn-submit"><i class="fa-solid fa-floppy-disk"></i> Save Settings</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function previewPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('photoPreviewWrap').innerHTML =
+                    '<img src="' + e.target.result + '" class="photo-preview">' +
+                    '<div>Click to change logo</div>';
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
