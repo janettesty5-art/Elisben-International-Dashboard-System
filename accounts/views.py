@@ -2182,48 +2182,74 @@ def principal_publish_batch(request):
 
 @login_required
 def admin_result_management(request):
+    admin = None
+    principal = None
     try:
         admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        viewer_name = admin.full_name
     except Admin.DoesNotExist:
-        messages.error(request, 'Access denied. Admin only.')
-        return redirect('unified_login')
-    
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            viewer_name = principal.full_name
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied. Admin or Principal only.')
+            return redirect('unified_login')
+
     incoming_results = StudentResult.objects.filter(
         status='sent_to_admin'
     ).order_by('class_name', 'student__full_name')
-    
+
     results_by_class = {}
     for result in incoming_results:
         if result.class_name not in results_by_class:
             results_by_class[result.class_name] = []
         results_by_class[result.class_name].append(result)
-    
+
     context = {
         'admin': admin,
+        'principal': principal,
+        'is_admin': is_admin,
+        'viewer_name': viewer_name,
         'results_by_class': results_by_class,
     }
     return render(request, 'result/admin_management.html', context)
 
 @login_required
 def admin_edit_result(request, result_id):
+    admin = None
+    principal = None
     try:
         admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        actor_name = admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            actor_name = principal.full_name
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('admin_result_management')
+
+    try:
         result = StudentResult.objects.get(id=result_id)
-    except:
-        messages.error(request, 'Access denied.')
+    except StudentResult.DoesNotExist:
+        messages.error(request, 'Result not found.')
         return redirect('admin_result_management')
-    
+
     subject_results = SubjectResult.objects.filter(
         student=result.student,
         term=result.term,
         academic_year=result.academic_year
     ).order_by('subject_name')
-    
+
     if request.method == 'POST':
         try:
             result.student.full_name = request.POST.get('student_name', result.student.full_name)
             result.student.save()
-            
+
             result.times_school_opened = int(request.POST.get('times_opened', result.times_school_opened))
             result.times_present = int(request.POST.get('times_present', result.times_present))
             result.times_absent = int(request.POST.get('times_absent', result.times_absent))
@@ -2231,12 +2257,12 @@ def admin_edit_result(request, result_id):
             result.resumption_date = request.POST.get('resumption_date', result.resumption_date)
             result.next_term_pta_fee = float(request.POST.get('pta_fee', result.next_term_pta_fee))
             result.next_term_school_fee = float(request.POST.get('school_fee', result.next_term_school_fee))
-            
+
             result.class_teacher_comment = request.POST.get('class_teacher_comment', result.class_teacher_comment)
             result.principal_comment = request.POST.get('principal_comment', result.principal_comment)
-            
+
             result.save()
-            
+
             for subject_result in subject_results:
                 sr_id = subject_result.id
                 if f'test_a_{sr_id}' in request.POST:
@@ -2245,145 +2271,209 @@ def admin_edit_result(request, result_id):
                     subject_result.test_c = float(request.POST.get(f'test_c_{sr_id}', subject_result.test_c))
                     subject_result.exam = float(request.POST.get(f'exam_{sr_id}', subject_result.exam))
                     subject_result.save()
-            
+
             ResultActivityLog.objects.create(
                 action='admin_edited',
-                description=f'Admin edited result for {result.student.full_name}',
+                description=f'{"Admin" if is_admin else "Principal"} {actor_name} edited result for {result.student.full_name}',
                 student_result=result,
-                performed_by_type='admin',
-                performed_by_name=admin.full_name
+                performed_by_type='admin' if is_admin else 'principal',
+                performed_by_name=actor_name
             )
-            
+
             messages.success(request, 'Result updated successfully!')
             return redirect('admin_result_management')
         except Exception as e:
             messages.error(request, f'Error updating result: {str(e)}')
             return redirect('admin_result_management')
-    
+
     context = {
         'result': result,
         'subject_results': subject_results,
         'admin': admin,
+        'principal': principal,
+        'is_admin': is_admin,
     }
     return render(request, 'result/admin_edit_result.html', context)
 
 @login_required
 def admin_add_stamp(request, result_id):
+    admin = None
+    principal = None
     try:
         admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        actor_name = admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            actor_name = principal.full_name
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('admin_result_management')
+
+    try:
         result = StudentResult.objects.get(id=result_id)
-        
+
         result.has_stamp = True
         result.stamped_at = timezone.now()
-        result.stamped_by = admin
+        if is_admin:
+            result.stamped_by = admin
+        else:
+            result.stamped_by_principal = principal
         result.save()
-        
+
         ResultActivityLog.objects.create(
             action='stamp_added',
-            description=f'Stamp added to {result.student.full_name} result',
+            description=f'Stamp added to {result.student.full_name} result by {"Admin" if is_admin else "Principal"} {actor_name}',
             student_result=result,
-            performed_by_type='admin',
-            performed_by_name=admin.full_name
+            performed_by_type='admin' if is_admin else 'principal',
+            performed_by_name=actor_name
         )
-        
+
         messages.success(request, '✅ Stamp added!')
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
-    
+
     return redirect('admin_result_management')
 
 @login_required
 def admin_publish_result(request, result_id):
+    admin = None
+    principal = None
     try:
         admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        actor_name = admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            actor_name = principal.full_name
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('admin_result_management')
+
+    try:
         result = StudentResult.objects.get(id=result_id, has_stamp=True)
-        
+
         pin = PublishedResult.generate_pin()
-        
+
         PublishedResult.objects.create(
             result=result,
             pin=pin,
-            published_by=admin,
+            published_by=admin if is_admin else None,
+            published_by_principal=principal if not is_admin else None,
             academic_year=result.academic_year,
             term=result.term,
             class_name=result.class_name
         )
-        
+
         result.status = 'published'
         result.save()
-        
+
         ResultActivityLog.objects.create(
             action='result_published',
-            description=f'Result published for {result.student.full_name} - PIN: {pin}',
+            description=f'Result published for {result.student.full_name} by {"Admin" if is_admin else "Principal"} {actor_name} - PIN: {pin}',
             student_result=result,
-            performed_by_type='admin',
-            performed_by_name=admin.full_name
+            performed_by_type='admin' if is_admin else 'principal',
+            performed_by_name=actor_name
         )
-        
+
         messages.success(request, f'✅ Result published! PIN: {pin}')
     except Exception as e:
         messages.error(request, f'Error: {str(e)}')
-    
+
     return redirect('admin_result_management')
 
 @login_required
 def admin_publish_batch(request):
+    admin = None
+    principal = None
+    try:
+        admin = Admin.objects.get(user=request.user)
+        is_admin = True
+        actor_name = admin.full_name
+    except Admin.DoesNotExist:
+        try:
+            principal = Principal.objects.get(user=request.user)
+            is_admin = False
+            actor_name = principal.full_name
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('admin_result_management')
+
     if request.method == 'POST':
         try:
-            admin = Admin.objects.get(user=request.user)
             result_ids = request.POST.getlist('result_ids')
-            
+
             published_count = 0
             for result_id in result_ids:
                 result = StudentResult.objects.get(id=result_id, has_stamp=True)
-                
+
                 pin = PublishedResult.generate_pin()
                 PublishedResult.objects.create(
                     result=result,
                     pin=pin,
-                    published_by=admin,
+                    published_by=admin if is_admin else None,
+                    published_by_principal=principal if not is_admin else None,
                     academic_year=result.academic_year,
                     term=result.term,
                     class_name=result.class_name
                 )
-                
+
                 result.status = 'published'
                 result.save()
                 published_count += 1
-            
+
+            if published_count:
+                ResultActivityLog.objects.create(
+                    action='result_published',
+                    description=f'{published_count} results published in bulk by {"Admin" if is_admin else "Principal"} {actor_name}',
+                    performed_by_type='admin' if is_admin else 'principal',
+                    performed_by_name=actor_name
+                )
+
             messages.success(request, f'✅ {published_count} results published!')
         except Exception as e:
             messages.error(request, f'Error: {str(e)}')
-    
+
     return redirect('admin_result_management')
 
 @login_required
 def admin_view_published(request):
+    admin = None
+    is_admin = True
     try:
         admin = Admin.objects.get(user=request.user)
     except Admin.DoesNotExist:
-        messages.error(request, 'Access denied.')
-        return redirect('unified_login')
-    
+        try:
+            Principal.objects.get(user=request.user)
+            is_admin = False
+        except Principal.DoesNotExist:
+            messages.error(request, 'Access denied.')
+            return redirect('unified_login')
+
     academic_year = request.GET.get('academic_year')
     term = request.GET.get('term')
     class_name = request.GET.get('class_name')
-    
+
     published = PublishedResult.objects.all().order_by('-published_at')
-    
+
     if academic_year:
         published = published.filter(academic_year=academic_year)
     if term:
         published = published.filter(term=term)
     if class_name:
         published = published.filter(class_name=class_name)
-    
+
     years = PublishedResult.objects.values_list('academic_year', flat=True).distinct()
     terms = PublishedResult.objects.values_list('term', flat=True).distinct()
     classes = PublishedResult.objects.values_list('class_name', flat=True).distinct()
-    
+
     context = {
         'admin': admin,
+        'is_admin': is_admin,
         'published_results': published,
         'years': years,
         'terms': terms,

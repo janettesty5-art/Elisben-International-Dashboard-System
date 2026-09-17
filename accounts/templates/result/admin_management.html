@@ -31,8 +31,13 @@
     </style>
 </head>
 <body>
-    <div class="navbar">
+       <div class="navbar" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
         <h1><i class="fa-solid fa-lock"></i> Admin - Result Management</h1>
+        {% if not is_admin %}
+        <a href="{% url 'principal_result_review' %}" style="color:white; background:rgba(255,255,255,0.2); padding:10px 20px; border-radius:8px; text-decoration:none;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Principal Review
+        </a>
+        {% endif %}
     </div>
     
     <div class="container">
