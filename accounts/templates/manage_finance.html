@@ -112,6 +112,46 @@
             background: #d4edda;
             color: #155724;
         }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* NEW: Class/Term/Session selector block */
+        .selector-box {
+            background: #f0f2ff;
+            border: 2px solid #d6dbff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .selector-box h3 {
+            color: #444;
+            font-size: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .selector-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        @media (max-width: 720px) {
+            .selector-grid { grid-template-columns: 1fr; }
+        }
+
+        .student-picker-locked {
+            padding: 30px;
+            text-align: center;
+            color: #999;
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            font-size: 14.5px;
+        }
+        .student-picker-locked i { display: block; font-size: 28px; margin-bottom: 10px; color: #bbb; }
         
         /* Search Box Styles */
         .search-box {
@@ -190,7 +230,7 @@
     <div class="container">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
+                <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}">
                     {{ message }}
                 </div>
             {% endfor %}
@@ -200,34 +240,71 @@
         <div class="form-card">
             <h2><i class="fa-solid fa-credit-card"></i> Record New Payment</h2>
             
-            <form method="POST">
+            <form method="POST" id="paymentForm">
                 {% csrf_token %}
+
+                <!-- NEW: Class / Term / Session selector -->
+                <div class="selector-box">
+                    <h3><i class="fa-solid fa-filter"></i> Choose Class, Term &amp; Session to Record For</h3>
+                    <div class="selector-grid">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="class_select">Choose Class *</label>
+                            <select id="class_select" onchange="onClassChange()">
+                                <option value="">-- Select Class --</option>
+                                {% for cls in classes %}
+                                <option value="{{ cls }}">{{ cls }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="term_choice">Term *</label>
+                            <select name="term_choice" id="term_choice" required>
+                                <option value="">-- Select Term --</option>
+                                <option value="First">First Term</option>
+                                <option value="Second">Second Term</option>
+                                <option value="Third">Third Term</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="session_year">Session Year *</label>
+                            <input type="text" name="session_year" id="session_year" placeholder="e.g. 2026/2027" value="{{ default_session_year }}" required>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="form-grid">
-                    <div class="form-group">
-                        <label for="student_id">Student ID *</label>
-                        
-                        <!-- Search Box -->
-                        <div class="search-box">
-                            <input type="text" 
-                                   id="student_search" 
-                                   class="search-input" 
-                                   placeholder="Search by name or ID..." 
-                                   onkeyup="filterStudents()">
-                            <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <div class="form-group full-width">
+                        <label for="student_id">Student *</label>
+
+                        <!-- Locked state: shown until a class is picked -->
+                        <div class="student-picker-locked" id="pickerLocked">
+                            <i class="fa-solid fa-lock"></i>
+                            Choose a class above to search for students
                         </div>
-                        
-                        <div class="student-list" id="studentList">
-    {% for student in students %}
-    <label class="student-card" data-name="{{ student.full_name|lower }}" data-id="{{ student.student_id|lower }}">
-        <input type="radio" name="student_id" value="{{ student.student_id }}" required onclick="markSelected(this)">
-        <span class="student-card-id">{{ student.student_id }}</span>
-        <span class="student-card-name">{{ student.full_name }}</span>
-    </label>
-    {% empty %}
-    <p style="padding:15px; color:#999;">No students registered yet.</p>
-    {% endfor %}
-</div>
+
+                        <!-- Search Box + List: hidden until a class is picked -->
+                        <div id="pickerUnlocked" style="display:none;">
+                            <div class="search-box">
+                                <input type="text" 
+                                       id="student_search" 
+                                       class="search-input" 
+                                       placeholder="Type a student's name or ID to search this class..." 
+                                       onkeyup="filterStudents()">
+                                <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            </div>
+                            
+                            <div class="student-list" id="studentList">
+                                {% for student in students %}
+                                <label class="student-card" data-name="{{ student.full_name|lower }}" data-id="{{ student.student_id|lower }}" data-class="{{ student.class_name }}">
+                                    <input type="radio" name="student_id" value="{{ student.student_id }}" onclick="markSelected(this)">
+                                    <span class="student-card-id">{{ student.student_id }}</span>
+                                    <span class="student-card-name">{{ student.full_name }}</span>
+                                </label>
+                                {% empty %}
+                                <p style="padding:15px; color:#999;">No students registered yet.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -286,41 +363,86 @@
         clickedInput.closest('.student-card').classList.add('selected');
     }
 
-    // Filter student cards as the admin/bursar types
+    // Called when the class dropdown changes
+    function onClassChange() {
+        const selectedClass = document.getElementById('class_select').value;
+        const locked = document.getElementById('pickerLocked');
+        const unlocked = document.getElementById('pickerUnlocked');
+
+        // Clear any previously selected student when class changes
+        document.querySelectorAll('.student-card input[type="radio"]').forEach(r => r.checked = false);
+        document.querySelectorAll('.student-card').forEach(card => card.classList.remove('selected'));
+        document.getElementById('student_search').value = '';
+
+        if (selectedClass) {
+            locked.style.display = 'none';
+            unlocked.style.display = 'block';
+        } else {
+            locked.style.display = 'block';
+            unlocked.style.display = 'none';
+        }
+
+        filterStudents();
+    }
+
+    // Filter student cards as the admin/bursar types, scoped to the chosen class
     function filterStudents() {
         const searchInput = document.getElementById('student_search').value.toLowerCase().trim();
+        const selectedClass = document.getElementById('class_select').value;
         const cards = document.querySelectorAll('.student-card');
         let visibleCount = 0;
 
         cards.forEach(card => {
             const name = card.getAttribute('data-name') || '';
             const id = card.getAttribute('data-id') || '';
-            const matches = name.includes(searchInput) || id.includes(searchInput);
-            card.style.display = matches ? '' : 'none';
-            if (matches) visibleCount++;
+            const cls = card.getAttribute('data-class') || '';
+
+            const matchesClass = selectedClass !== '' && cls === selectedClass;
+            const matchesSearch = name.includes(searchInput) || id.includes(searchInput);
+            const visible = matchesClass && matchesSearch;
+
+            card.style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
         });
 
-        showNoResultsMessage(visibleCount);
+        showNoResultsMessage(visibleCount, selectedClass);
     }
 
-    // Show a friendly message if a search matches nobody
-    function showNoResultsMessage(visibleCount) {
+    // Show a friendly message if a search matches nobody in the chosen class
+    function showNoResultsMessage(visibleCount, selectedClass) {
         const list = document.getElementById('studentList');
         let noResultsMsg = document.getElementById('noResultsMsg');
 
-        if (visibleCount === 0) {
+        if (visibleCount === 0 && selectedClass) {
             if (!noResultsMsg) {
                 noResultsMsg = document.createElement('p');
                 noResultsMsg.id = 'noResultsMsg';
                 noResultsMsg.style.cssText = 'padding:15px; color:#999; text-align:center;';
-                noResultsMsg.textContent = 'No students match your search.';
                 list.appendChild(noResultsMsg);
             }
+            noResultsMsg.textContent = 'No students match your search in ' + selectedClass + '.';
             noResultsMsg.style.display = '';
         } else if (noResultsMsg) {
             noResultsMsg.style.display = 'none';
         }
     }
+
+    // Guard against submitting with no class / no student picked
+    document.getElementById('paymentForm').addEventListener('submit', function (e) {
+        const selectedClass = document.getElementById('class_select').value;
+        const checkedStudent = document.querySelector('.student-card input[type="radio"]:checked');
+
+        if (!selectedClass) {
+            e.preventDefault();
+            alert('Please choose a class first.');
+            return;
+        }
+        if (!checkedStudent) {
+            e.preventDefault();
+            alert('Please select a student from the list.');
+            return;
+        }
+    });
 </script>
 </body>
 </html>

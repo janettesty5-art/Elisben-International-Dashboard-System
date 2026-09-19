@@ -3047,6 +3047,7 @@ def search_teachers(request):
     return render(request, template, context)
 
 # ============= FINANCE MANAGEMENT =============
+# ============= FINANCE MANAGEMENT =============
 @login_required
 def manage_finance(request):
     try:
@@ -3070,10 +3071,29 @@ def manage_finance(request):
             fee_type = request.POST.get('fee_type')
             payment_method = request.POST.get('payment_method')
             payment_date = request.POST.get('payment_date') or timezone.now().date()
-            
+
+            term_choice = request.POST.get('term_choice', '').strip()
+            session_year = request.POST.get('session_year', '').strip()
+
+            if not term_choice:
+                messages.error(request, 'Please select a term.')
+                return redirect('bursar_finance')
+            if not session_year:
+                messages.error(request, 'Please enter the session year.')
+                return redirect('bursar_finance')
+
             student = Student.objects.get(student_id=student_id)
-            current_term = Term.objects.filter(is_current=True).first()
-            
+
+            # Find-or-create the exact AcademicSession + Term the bursar picked,
+            # instead of silently using whatever Term happens to be marked current.
+            academic_session, _ = AcademicSession.objects.get_or_create(
+                session_name=session_year
+            )
+            current_term, _ = Term.objects.get_or_create(
+                session=academic_session,
+                term=term_choice
+            )
+
             fee_record = FeeRecord.objects.create(
                 student=student,
                 term=current_term,
@@ -3089,7 +3109,7 @@ def manage_finance(request):
             
             ActivityLog.objects.create(
                 action='fee_recorded',
-                description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name}',
+                description=f'Fee payment of ₦{amount_paid} recorded for {student.full_name} ({current_term.get_term_display()}, {session_year})',
                 performed_by_type='admin' if is_admin else 'bursar',
                 performed_by_name=user_name
             )
@@ -3102,11 +3122,22 @@ def manage_finance(request):
             messages.error(request, f'Error recording payment: {str(e)}')
     
     fee_records = FeeRecord.objects.all().order_by('-payment_date')
-    students = Student.objects.all()
+    students = Student.objects.all().order_by('full_name')
+    classes = Student.objects.values_list('class_name', flat=True).distinct().order_by('class_name')
+
+    from datetime import datetime
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+    if current_month <= 8:
+        default_session_year = f"{current_year - 1}/{current_year}"
+    else:
+        default_session_year = f"{current_year}/{current_year + 1}"
     
     context = {
         'fee_records': fee_records,
         'students': students,
+        'classes': classes,
+        'default_session_year': default_session_year,
         'is_admin': is_admin,
     }
     return render(request, 'manage_finance.html', context)
