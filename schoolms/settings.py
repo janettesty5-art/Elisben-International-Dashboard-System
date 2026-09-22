@@ -191,3 +191,18 @@ CLOUDINARY_STORAGE = {
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
 MEDIA_URL = '/media/'
+
+# Explicitly configure the Cloudinary SDK at startup.
+# 'cloudinary_storage' was removed from INSTALLED_APPS earlier (it was
+# hijacking collectstatic) — but that app's startup hook was also what
+# auto-configured the Cloudinary client from CLOUDINARY_STORAGE above.
+# Without it, cloud_name was never set, causing the intermittent
+# "Must supply cloud_name" crashes whenever a student photo's .url
+# was accessed. This makes the configuration explicit and guaranteed.
+import cloudinary
+cloudinary.config(
+    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+    secure=True,
+)

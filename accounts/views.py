@@ -2488,6 +2488,17 @@ def result_bulletin(request):
 def check_result_portal(request):
     return render(request, 'result/check_result_portal.html')
 
+def _safe_file_url(file_field):
+    """Return a file field's URL, or None if the storage backend can't
+    build one (e.g. a Cloudinary hiccup). Never raises."""
+    if not file_field:
+        return None
+    try:
+        return file_field.url
+    except Exception:
+        return None
+
+
 def view_student_result(request):
     if request.method == 'POST':
         pin = request.POST.get('result_pin')
@@ -2529,11 +2540,14 @@ def view_student_result(request):
                         display_position = f"{idx}/{total}"
                         break
             
+            student_photo_url = _safe_file_url(result.student.profile_picture)
+            
             context = {
                 'result': result,
                 'subject_results': subject_results,
                 'published': published_result,
                 'display_position': display_position,
+                'student_photo_url': student_photo_url,
             }
             return render(request, 'result/student_result_view.html', context)
             
@@ -3920,6 +3934,15 @@ def admin_fix_promotion_status(request):
 # NEW: ID CARD GENERATOR (Admin & Principal only)
 # ============================================================
 
+def _safe_file_url(file_field):
+    """Return a file field's URL, or None if the storage backend can't
+    build one (e.g. a Cloudinary hiccup). Never raises."""
+    if not file_field:
+        return None
+    try:
+        return file_field.url
+    except Exception:
+        return None
 
 def _normalize_photo(uploaded_file, max_size=(700, 900)):
     """Accept ANY image the user picks (jpg, png, webp, heic, bmp, tiff, gif...)
