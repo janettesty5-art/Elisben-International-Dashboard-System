@@ -34,12 +34,28 @@
     body {
         background: white;
     }
-    
+
     .result-sheet {
+        height: 297mm;
+        width: 210mm;
         padding: 8mm;
+        box-sizing: border-box;
         box-shadow: none !important;
+        overflow: hidden;
         transform-origin: top left;
+        display: flex;
+        flex-direction: column;
     }
+
+    .page-filler {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+}
+
+.page-filler {
+    display: block;
+    height: 0;
 }
         
         @media screen {
@@ -446,6 +462,9 @@
         
         <img src="{% static 'images/stamp.jpeg' %}" class="stamp" alt="School Stamp">
         
+                <div class="page-filler"></div>
+
+
         <p class="footer-text">
             <i class="fa-solid fa-graduation-cap"></i> Elisben International College. All rights reserved ©2026
         </p>
@@ -462,12 +481,27 @@
 
     function fitResultToOnePage() {
         var sheet = document.querySelector('.result-sheet');
+        var filler = document.querySelector('.page-filler');
         if (!sheet) return;
-        sheet.style.transform = 'none';           // reset before measuring
-        var naturalHeight = sheet.scrollHeight;
-        if (!naturalHeight) return;
-        var scaleY = PAGE_HEIGHT_PX / naturalHeight;
-        sheet.style.transform = 'scaleY(' + scaleY + ')';
+
+        sheet.style.transform = 'none';
+
+        // Collapse the filler to measure the REAL content height (no forced blank space)
+        if (filler) filler.style.flexGrow = '0';
+        var contentHeight = sheet.scrollHeight;
+        if (filler) filler.style.flexGrow = '';   // hand control back to the CSS flex:1
+
+        if (contentHeight > PAGE_HEIGHT_PX) {
+            // Only ever SHRINK, and always proportionally (both axes together) —
+            // that keeps letters, the logo and table cells looking normal, just smaller.
+            var scale = PAGE_HEIGHT_PX / contentHeight;
+            sheet.style.transform = 'scale(' + scale + ')';
+        } else {
+            // Content is shorter than one page — the CSS spacer (.page-filler) has
+            // already stretched to push the footer to the bottom of the page.
+            // Nothing needs resizing, so nothing looks distorted.
+            sheet.style.transform = 'none';
+        }
     }
 
     function resetResultScale() {
