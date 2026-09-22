@@ -7,21 +7,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     {% load static %}
     <style>
-        @media print {
-            @page { 
-                size: A4;
-                margin: 0;
-            }
-            body { 
-                margin: 0;
-                padding: 0;
-            }
-            .no-print { display: none !important; }
-            html, body {
-                height: 100%;
-                overflow: hidden;
-            }
-        }
+       @media print {
+        @page { 
+        size: A4;
+        margin: 0;
+    }
+    html, body {
+        margin: 0;
+        padding: 0;
+        width: 210mm;
+        height: 297mm;
+        overflow: hidden;
+    }
+    .no-print { display: none !important; }
+}
         
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -37,10 +36,9 @@
     }
     
     .result-sheet {
-        max-height: 297mm;
         padding: 8mm;
         box-shadow: none !important;
-        page-break-inside: avoid !important;
+        transform-origin: top left;
     }
 }
         
@@ -412,9 +410,44 @@
     </div>
 
 <div class="no-print">
-    <button onclick="window.print()" class="btn" style="background: #28a745;"><i class="fa-solid fa-inbox"></i> Download PDF</button>
+<button onclick="fitResultToOnePage(); window.print()" class="btn" style="background: #28a745;"><i class="fa-solid fa-inbox"></i> Download PDF</button>
     <button onclick="window.history.back()" class="btn" style="background: #666;"><i class="fa-solid fa-arrow-left"></i> Go Back</button>
 </div>
 
+<script>
+(function() {
+    var PAGE_HEIGHT_PX = 1122.52; // 297mm at 96dpi — one A4 page, height only
+
+    function fitResultToOnePage() {
+        var sheet = document.querySelector('.result-sheet');
+        if (!sheet) return;
+        sheet.style.transform = 'none';           // reset before measuring
+        var naturalHeight = sheet.scrollHeight;
+        if (!naturalHeight) return;
+        var scaleY = PAGE_HEIGHT_PX / naturalHeight;
+        sheet.style.transform = 'scaleY(' + scaleY + ')';
+    }
+
+    function resetResultScale() {
+        var sheet = document.querySelector('.result-sheet');
+        if (sheet) sheet.style.transform = 'none';
+    }
+
+    window.fitResultToOnePage = fitResultToOnePage;
+
+    window.addEventListener('beforeprint', fitResultToOnePage);
+    window.addEventListener('afterprint', resetResultScale);
+
+    if (window.matchMedia) {
+        var mql = window.matchMedia('print');
+        var handler = function(e) {
+            if (e.matches) fitResultToOnePage();
+            else resetResultScale();
+        };
+        if (mql.addEventListener) mql.addEventListener('change', handler);
+        else if (mql.addListener) mql.addListener(handler);
+    }
+})();
+</script>
 </body>
 </html>
