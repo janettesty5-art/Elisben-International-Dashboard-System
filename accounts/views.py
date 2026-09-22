@@ -2540,8 +2540,15 @@ def view_student_result(request):
         except PublishedResult.DoesNotExist:
             messages.error(request, 'Invalid PIN. Please check and try again.')
             return redirect('check_result_portal')
+        except Exception as e:
+            import traceback
+            print(f"❌ ERROR loading result for PIN '{pin}': {e}")
+            traceback.print_exc()
+            messages.error(request, 'Sorry, something went wrong loading this result. Please try again, or contact the school office.')
+            return redirect('check_result_portal')
     
     return redirect('check_result_portal')
+    
 @login_required
 def print_result(request, result_id):
     try:
@@ -2596,6 +2603,12 @@ def print_result(request, result_id):
         
     except StudentResult.DoesNotExist:
         messages.error(request, 'Result not found.')
+        return redirect('admin_result_management')
+    except Exception as e:
+        import traceback
+        print(f"❌ ERROR printing result_id={result_id}: {e}")
+        traceback.print_exc()
+        messages.error(request, 'Sorry, something went wrong generating this printout. Please try again, or contact support.')
         return redirect('admin_result_management')
 
 def export_results(request, exam_id):
