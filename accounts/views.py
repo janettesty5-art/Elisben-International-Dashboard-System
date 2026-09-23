@@ -3930,6 +3930,69 @@ def admin_fix_promotion_status(request):
     }
     return render(request, 'fix_promotion_confirm.html', context)
 
+@login_required
+def admin_promote_students(request):
+    """
+    Promote students to their next class based on their Third Term result
+    for a chosen academic year. Works without shell access.
+    """
+    try:
+        admin = Admin.objects.get(user=request.user)
+    except Admin.DoesNotExist:
+        messages.error(request, 'Access denied.')
+        return redirect('unified_login')
+
+    academic_years = list(
+        StudentResult.objects.filter(term='Third Term')
+        .values_list('academic_year', flat=True)
+        .distinct()
+        .order_by('-academic_year')
+    )
+
+    third_term_count_by_year = {
+        year: StudentResult.objects.filter(term='Third Term', academic_year=year).count()
+        for year in academic_years
+    }
+
+    if request.method == 'POST':
+        academic_year = request.POST.get('academic_year', '').strip()
+        confirmation = request.POST.get('confirmation', '').strip()
+        expected = f'PROMOTE {academic_year}'
+
+        if not academic_year:
+            messages.error(request, 'Please select an academic year.')
+        elif confirmation != expected:
+            messages.error(request, f'Incorrect confirmation text. Please type exactly: {expected}')
+        else:
+            output = StringIO()
+            try:
+                call_command('promote_students', academic_year, '--yes', stdout=output)
+                result_text = output.getvalue()
+
+                ActivityLog.objects.create(
+                    action='result_generated',
+                    description=f'Admin {admin.full_name} ran student promotion for {academic_year}',
+                    performed_by_type='admin',
+                    performed_by_name=admin.full_name
+                )
+
+                messages.success(request, 'Promotion run completed! See output below.')
+                context = {
+                    'output': result_text,
+                    'ran': True,
+                    'academic_years': academic_years,
+                    'third_term_count_by_year': third_term_count_by_year,
+                }
+                return render(request, 'promote_students_confirm.html', context)
+            except Exception as e:
+                messages.error(request, f'Error running promotion: {str(e)}')
+
+    context = {
+        'academic_years': academic_years,
+        'third_term_count_by_year': third_term_count_by_year,
+    }
+    return render(request, 'promote_students_confirm.html', context)
+
 # ============================================================
 # NEW: ID CARD GENERATOR (Admin & Principal only)
 # ============================================================
