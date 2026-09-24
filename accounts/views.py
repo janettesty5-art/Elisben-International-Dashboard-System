@@ -1048,9 +1048,11 @@ def class_teacher_collate(request):
     current_month = datetime.now().month
     
     if current_month <= 8:
-        academic_year = f"{current_year - 1}/{current_year}"
+        default_academic_year = f"{current_year - 1}/{current_year}"
     else:
-        academic_year = f"{current_year}/{current_year + 1}"
+        default_academic_year = f"{current_year}/{current_year + 1}"
+
+    academic_year = request.GET.get('academic_year', default_academic_year)
     
     classes = Student.objects.values_list('class_name', flat=True).distinct()
     departments = ['Science', 'Art', 'Commercial']
