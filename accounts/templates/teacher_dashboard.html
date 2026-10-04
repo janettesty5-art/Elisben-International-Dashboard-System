@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -109,7 +109,7 @@
                         <td><strong>{{ exam.exam_id }}</strong></td>
                         <td>{{ exam.title }}</td>
                         <td>{{ exam.class_name }}</td>
-                        <td>{{ exam.questions.count }} questions</td>
+                        <td>{{ exam.question_total }} questions</td>
                         <td><span class="status-badge status-draft"><i class="fa-solid fa-pen"></i> DRAFT</span></td>
                         <td>
                             <a href="{% url 'add_questions' exam.id %}" class="btn btn-edit"><i class="fa-solid fa-pen-to-square"></i> Edit Questions</a>
@@ -152,7 +152,7 @@
                         <td><strong>{{ exam.exam_id }}</strong></td>
                         <td>{{ exam.title }}</td>
                         <td>{{ exam.class_name }}</td>
-                        <td>{{ exam.questions.count }} questions</td>
+                        <td>{{ exam.question_total }} questions</td>
                         <td>{{ exam.duration_minutes }} mins</td>
                         <td><span class="status-badge status-published"><i class="fa-solid fa-circle-check"></i> PUBLISHED</span></td>
                         <td>

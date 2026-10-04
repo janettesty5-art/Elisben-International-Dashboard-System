@@ -3465,31 +3465,30 @@ def bursar_dashboard(request):
 
 @login_required
 def teacher_dashboard(request):
+    from django.db.models import Count
     try:
         teacher = Teacher.objects.get(user=request.user)
     except Teacher.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
- 
-    published_exams = Exam.objects.filter(
-        created_by=teacher, is_published=True
+
+    base_exams = Exam.objects.filter(created_by=teacher).annotate(
+        question_total=Count('questions')
     ).order_by('-created_at')
- 
-    draft_exams = Exam.objects.filter(
-        created_by=teacher, is_published=False
-    ).order_by('-created_at')
- 
-    # ALL submissions for this teacher's exams - no [:10] limit
+
+    published_exams = base_exams.filter(is_published=True)
+    draft_exams = base_exams.filter(is_published=False)
+
     submissions = ExamSubmission.objects.filter(
         exam__created_by=teacher
-    ).order_by('-submitted_at')
- 
+    ).select_related('student', 'exam').order_by('-submitted_at')[:100]
+
     context = {
         'teacher': teacher,
         'published_exams': published_exams,
         'draft_exams': draft_exams,
-        'recent_submissions': submissions,   # ALL submissions, not just 10
-        'total_exams': published_exams.count() + draft_exams.count(),
+        'recent_submissions': submissions,
+        'total_exams': base_exams.count(),
     }
     return render(request, 'teacher_dashboard.html', context)
 
