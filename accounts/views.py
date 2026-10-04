@@ -399,38 +399,36 @@ def view_attendance(request):
 # ============= STUDENT VIEWS =============
 @login_required
 def student_dashboard(request):
+    from django.db.models import Count
     try:
         student = Student.objects.get(user=request.user)
     except Student.DoesNotExist:
         messages.error(request, 'Access denied.')
         return redirect('unified_login')
- 
-    # Show ALL submissions - no limit, no filter
+
+    # ALL of the student's results, with the exam loaded in the same query
     submissions = ExamSubmission.objects.filter(
         student=student
-    ).order_by('-submitted_at')
- 
-    # Get published exams for student's class
+    ).select_related('exam').order_by('-submitted_at')
+
+    # Which (exam, version) pairs this student has already taken - no extra query
+    taken = {(s.exam_id, s.exam_version) for s in submissions}
+
+    # Published exams for the student's class, with question counts in the same query
     available_exams_all = Exam.objects.filter(
         class_name=student.class_name,
         is_active=True,
         is_published=True
-    )
- 
-    # Only exclude exams the student has ALREADY submitted for CURRENT version
-    available_exams = []
-    for exam in available_exams_all:
-        already_taken = ExamSubmission.objects.filter(
-            student=student,
-            exam=exam,
-            exam_version=exam.version
-        ).exists()
-        if not already_taken:
-            available_exams.append(exam)
- 
+    ).annotate(question_total=Count('questions'))
+
+    available_exams = [
+        exam for exam in available_exams_all
+        if (exam.id, exam.version) not in taken
+    ]
+
     context = {
         'student': student,
-        'submissions': submissions,       # ALL results, no limit
+        'submissions': submissions,
         'available_exams': available_exams,
     }
     return render(request, 'student_dashboard.html', context)

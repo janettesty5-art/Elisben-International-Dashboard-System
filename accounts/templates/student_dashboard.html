@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -335,7 +335,7 @@
                     <h3>{{ exam.title }}</h3>
                     <div class="exam-meta">
                         <i class="fa-solid fa-book"></i> {{ exam.subject }} | <i class="fa-solid fa-clock"></i> {{ exam.duration_minutes }} minutes | 
-                        <i class="fa-solid fa-clipboard-list"></i> {{ exam.questions.count }} questions | <i class="fa-solid fa-id-card"></i> Exam ID: {{ exam.exam_id }}
+                        <i class="fa-solid fa-clipboard-list"></i> {{ exam.question_total }} questions | <i class="fa-solid fa-id-card"></i> Exam ID: {{ exam.exam_id }}
                     </div>
                 </div>
                 <a href="{% url 'take_exam' exam.exam_id %}" class="btn-take-exam">
