@@ -516,7 +516,10 @@ def student_profile(request):
         else:
             messages.error(request, 'Please select a picture to upload.')
     
-    context = {'student': student}
+    context = {
+        'student': student,
+        'profile_picture_url': _safe_file_url(student.profile_picture),
+    }
     return render(request, 'student_profile.html', context)
 
 @login_required

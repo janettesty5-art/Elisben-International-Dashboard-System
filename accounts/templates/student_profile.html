@@ -202,8 +202,8 @@
                 <form method="POST" enctype="multipart/form-data" id="profileForm">
                     {% csrf_token %}
                     <div class="profile-pic-container">
-                        {% if student.profile_picture %}
-                            <img src="{{ student.profile_picture.url }}" alt="Profile" class="profile-pic" id="profileImage">
+                                               {% if profile_picture_url %}
+                            <img src="{{ profile_picture_url }}" alt="Profile" class="profile-pic" id="profileImage">
                         {% else %}
                             <div class="profile-pic-placeholder" id="profilePlaceholder">
                                 {{ student.full_name.0 }}
