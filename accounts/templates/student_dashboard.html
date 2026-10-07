@@ -299,8 +299,8 @@
     <div class="container">
         <!-- Profile Card -->
         <div class="profile-card">
-            {% if student.profile_picture %}
-                <img src="{{ student.profile_picture.url }}" alt="Profile" class="profile-pic">
+                      {% if profile_picture_url %}
+                <img src="{{ profile_picture_url }}" alt="Profile" class="profile-pic">
             {% else %}
                 <div class="profile-pic-placeholder">
                     {{ student.full_name.0 }}

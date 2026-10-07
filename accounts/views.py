@@ -430,6 +430,7 @@ def student_dashboard(request):
         'student': student,
         'submissions': submissions,
         'available_exams': available_exams,
+        'profile_picture_url': _safe_file_url(student.profile_picture),
     }
     return render(request, 'student_dashboard.html', context)
 
