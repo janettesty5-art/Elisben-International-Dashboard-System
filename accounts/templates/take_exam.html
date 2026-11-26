@@ -285,27 +285,25 @@ function render() {
     var box = document.getElementById('optionsBox');
     box.innerHTML = '';
     var letters = ['A', 'B', 'C', 'D'];
-    var keys    = ['a', 'b', 'c', 'd'];
-    for (var i = 0; i < 4; i++) {
-        var L   = letters[i];
-        var txt = q[keys[i]];
-        var sel = (ans[q.id] === L);
+    for (var i = 0; i < q.opts.length; i++) {
+        var o   = q.opts[i];              // o.k = original letter, o.t = text
+        var sel = (ans[q.id] === o.k);
         var div = document.createElement('div');
         div.className = 'option-item' + (sel ? ' selected' : '');
-        div.setAttribute('data-letter', L);
+        div.setAttribute('data-letter', o.k);
         div.setAttribute('data-qid', q.id);
 
         var badge = document.createElement('span');
         badge.className = 'option-badge';
-        badge.textContent = L;
+        badge.textContent = letters[i];   // label by position
 
         var label = document.createElement('span');
         label.className = 'option-text';
-        label.textContent = txt;
+        label.textContent = o.t;
 
         div.appendChild(badge);
         div.appendChild(label);
-        div.addEventListener('click', makePickHandler(q.id, L));
+        div.addEventListener('click', makePickHandler(q.id, o.k));
         box.appendChild(div);
     }
 

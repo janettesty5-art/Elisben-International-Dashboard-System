@@ -521,8 +521,10 @@ def student_profile(request):
         'profile_picture_url': _safe_file_url(student.profile_picture),
     }
     return render(request, 'student_profile.html', context)
+from django.views.decorators.cache import never_cache
 
 @login_required
+@never_cache
 def take_exam(request, exam_id):
     import random
 
@@ -562,6 +564,9 @@ def take_exam(request, exam_id):
     shuffled = questions[:]
     if exam.shuffle_questions:
         random.shuffle(shuffled)
+
+    print(f"SHUFFLE student={student.student_id} exam={exam.exam_id} "
+        f"flag={exam.shuffle_questions} first5={[q.id for q in shuffled[:5]]}", flush=True)
 
     # ── POST: grade the submission ────────────────────────────────────────────
     if request.method == 'POST':
@@ -618,17 +623,17 @@ def take_exam(request, exam_id):
     # ── GET: build the plain Python list — NO json.dumps() ───────────────────
     # json_script in the template handles serialisation itself.
     # Passing a pre-serialised string causes double-encoding → QS.length = char count.
-    questions_data = [
-        {
-            'id':   q.id,
+    questions_data = []
+    for q in shuffled:
+        opts = [('A', q.option_a), ('B', q.option_b),
+                ('C', q.option_c), ('D', q.option_d)]
+        if exam.shuffle_questions:
+            random.shuffle(opts)
+        questions_data.append({
+            'id': q.id,
             'text': q.question_text,
-            'a':    q.option_a,
-            'b':    q.option_b,
-            'c':    q.option_c,
-            'd':    q.option_d,
-        }
-        for q in shuffled          # shuffled order for the student
-    ]
+            'opts': [{'k': k, 't': t} for k, t in opts],
+        })
 
     context = {
         'exam':           exam,
